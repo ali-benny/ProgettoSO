@@ -27,8 +27,8 @@ typedef struct pcb_t {
     struct list_head p_sib;    /* sibling list  */
 
     /* process status information */
-    state_t p_s;    /* processor state */
-    cpu_t   p_time; /* cpu time used by proc */
+    //state_t p_s;    /* processor state */
+    //cpu_t   p_time; /* cpu time used by proc */
 
     /* Pointer to the semaphore the process is currently blocked on */
     int *p_semAdd;

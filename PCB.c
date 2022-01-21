@@ -1,23 +1,15 @@
 #include "PCB.h"
 
 /* 
-    1
-    Inizializza la lista pcbFree in modo da 
-    contenere tutti gli elementi della 
-    pcbFree_table. Questo metodo deve 
-    essere chiamato una volta sola in fase di 
+    Inizializza la lista pcbFree in modo da contenere tutti gli elementi della 
+    pcbFree_table. 
+    Questo metodo deve essere chiamato una volta sola in fase di 
     inizializzazione della struttura dati
 */
 void initPcbs(){
-    //scegliere come inizializzare la lista (sentinella che punta a se stessa) :D
-    //LIST_HEAD(pcbFree_h);
-    //INIT_LIST_HEAD(pcbFree_h);
-    LIST_HEAD_INIT(pcbFree_h);
-    pcb_PTR iter = pcbFree_h;
+    LIST_HEAD(pcbFree_h);
     for (int i=0; i<MAXPROC; i++){
-        pcb_PTR new = pcbFree_table[i];
-        list_add(new, iter);
-        iter = list_next(iter);
+        list_add( &pcbFree_table[i].p_list, &pcbFree_h);
     }
 }
 
@@ -25,7 +17,7 @@ void initPcbs(){
     Inserisce il PCB puntato da p nella lista dei PCB liberi (pcbFree_h)
 */
 void freePcb(pcb_t * p){
-    
+    list_add( &p->p_list, &pcbFree_h);
 }
 
 /*  3
@@ -35,7 +27,14 @@ void freePcb(pcb_t * p){
     e restituisce l’elemento rimosso.
 */
 pcb_t *allocPcb(){
-
+    pcb_PTR resPcb = NULL;
+    if ( !( list_empty( &pcbFree_h ))) {
+        struct list_head * res_head = list_next(&pcbFree_h);
+        if(res_head != NULL) {
+            pcb_PTR resPcb = container_of(res_head, pcb_t, p_list);
+        }
+    }
+    return resPcb;
 }
 
 /*  4
@@ -52,7 +51,7 @@ int emptyProcQ(struct list_head *head);
     Inserisce l’elemento puntato da p nella 
     coda dei processi puntata da head.
 */
-void insertProcQ(struct list_head* head, pcb* p);
+void insertProcQ(struct list_head* head, pcb_t* p);
 
 /*  7
     Restituisce l’elemento di testa della coda dei processi da head, SENZA RIMUOVERLO. 
@@ -105,3 +104,9 @@ pcb_t* removeChild(pcb_t *p);
 padre).
 */
 pcb_t *outChild(pcb_t* p);
+
+int main(){
+    pcb_t * p;
+    initPcbs();
+    freePcb(p);
+} 
