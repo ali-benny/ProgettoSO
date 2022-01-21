@@ -82,7 +82,7 @@ struct list_head {
     Funzione inline che inizializza la lista list come vuota (entrambi i campi
     che puntano a se stessa).
     Mentre LIST_HEAD_INIT crea una struttura anonima da assegnare a una
-    variabile, INIT_LIST_HEAD inizializza i campi di una struttura gia'
+    variabile, ! INIT_LIST_HEAD inizializza i campi di una struttura gia'
     esistente.
 
     list: lista da inizializzare
