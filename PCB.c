@@ -1,13 +1,15 @@
 #include "PCB.h"
+#include <stdio.h>
 
-/* 
+
+/* -- funziona :D
     Inizializza la lista pcbFree in modo da contenere tutti gli elementi della 
     pcbFree_table. 
     Questo metodo deve essere chiamato una volta sola in fase di 
     inizializzazione della struttura dati
 */
 void initPcbs(){
-    LIST_HEAD(pcbFree_h);
+    INIT_LIST_HEAD(&pcbFree_h);
     for (int i=0; i<MAXPROC; i++){
         list_add( &pcbFree_table[i].p_list, &pcbFree_h);
     }
@@ -31,8 +33,20 @@ pcb_t *allocPcb(){
     if ( !( list_empty( &pcbFree_h ))) {
         struct list_head * res_head = list_next(&pcbFree_h);
         if(res_head != NULL) {
-            pcb_PTR resPcb = container_of(res_head, pcb_t, p_list);
-        }
+            pcb_PTR resPcb = container_of(res_head, pcb_t, p_list); //! warning container_of
+            
+            resPcb->p_list.next = NULL;
+            resPcb->p_list.prev = NULL;
+            resPcb->p_parent = NULL;
+            resPcb->p_child.next = NULL;
+            resPcb->p_child.prev = NULL;
+            resPcb->p_sib.next = NULL;
+            resPcb->p_sib.prev = NULL;
+            resPcb->p_semAdd = NULL;
+        // da decommentare per test
+            //! resPcb->p_s = 0;
+            //! resPcb->p_time = 0;
+        } 
     }
     return resPcb;
 }
@@ -40,24 +54,33 @@ pcb_t *allocPcb(){
 /*  4
     Crea una lista di PCB, inizializzandola come lista vuota
 */
-void mkEmptyProcQ(struct list_head *head){}
+void mkEmptyProcQ(struct list_head *head){
+    INIT_LIST_HEAD(head);
+}
 
 /*  5
     Restituisce TRUE se la lista puntata da head è vuota, FALSE altrimenti.
 */
-int emptyProcQ(struct list_head *head);
+int emptyProcQ(struct list_head *head){
+    return (list_empty(head));
+}
 
 /*  6
-    Inserisce l’elemento puntato da p nella 
-    coda dei processi puntata da head.
+    Inserisce l’elemento puntato da p nella coda dei processi puntata da head.
 */
-void insertProcQ(struct list_head* head, pcb_t* p);
+void insertProcQ(struct list_head* head, pcb_t* p){
+    list_add(&p->p_list, head);
+}
 
 /*  7
-    Restituisce l’elemento di testa della coda dei processi da head, SENZA RIMUOVERLO. 
+    Restituisce l’elemento di testa della coda dei processi da head //!(sentinella), SENZA RIMUOVERLO. 
     Ritorna NULL se la coda non ha elementi.
 */
-pcb_t headProcQ(struct list_head* head);
+pcb_t * headProcQ(struct list_head* head){
+    if (!list_empty(head))
+        return container_of(list_next(head), pcb_t, p_list);
+    else return NULL; 
+}
 
 /*  8
     Rimuove il primo elemento dalla coda dei 
@@ -106,7 +129,19 @@ padre).
 pcb_t *outChild(pcb_t* p);
 
 int main(){
-    pcb_t * p;
     initPcbs();
-    freePcb(p);
+    pcb_PTR a = allocPcb();
+    pcb_PTR p = &pcbFree_table[0];
+    printf("\nalloc");
+    //freePcb(p);
+    LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
+    struct list_head* head=&list;
+    mkEmptyProcQ(head);
+    int empty = emptyProcQ(head);
+    printf("\nlista e' vuota %d", (int) empty);
+    insertProcQ(head, p);
+    printf("\ninsertProc");
+    headProcQ(head);
+    printf("\nheadProc");
+    return 0;
 } 

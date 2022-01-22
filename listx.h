@@ -53,7 +53,8 @@ typedef unsigned int size_tt;
     inserire al loro interno un campo di tipo list_head.
 */
 struct list_head {
-    struct list_head *next, *prev;
+    struct list_head *next;
+    struct list_head *prev;
 };
 
 /*
