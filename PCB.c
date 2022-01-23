@@ -45,7 +45,14 @@ pcb_t *allocPcb(){
             resPcb->p_semAdd = NULL;
         // da decommentare per test
 #ifdef UMPS3
-            resPcb->p_s = 0;
+	        resPcb->p_s.entry_hi = 0;
+	        resPcb->p_s.cause = 0;
+	        resPcb->p_s.status = 0;
+	        resPcb->p_s.pc_epc = 0;
+	        resPcb->p_s.gpr[STATE_GPR_LEN] = 0;
+	        resPcb->p_s.hi = 0;
+	        resPcb->p_s.lo = 0;
+            
             resPcb->p_time = 0;
 #endif
         } 
