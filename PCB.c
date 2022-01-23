@@ -30,10 +30,9 @@ void freePcb(pcb_t * p){
 */
 pcb_t *allocPcb(){
     pcb_PTR resPcb = NULL;
-    if ( !( list_empty( &pcbFree_h ))) {
-        struct list_head * res_head = list_next(&pcbFree_h);
-        if(res_head != NULL) {
-            pcb_PTR resPcb = container_of(res_head, pcb_t, p_list); //! warning container_of
+    if ( !(list_empty(&pcbFree_h))) {
+        if(list_next(&pcbFree_h)!= NULL) {
+            pcb_PTR resPcb = container_of(list_next(&pcbFree_h), pcb_t, p_list); //! warning container_of
             
             resPcb->p_list.next = NULL;
             resPcb->p_list.prev = NULL;
@@ -52,7 +51,7 @@ pcb_t *allocPcb(){
 	        resPcb->p_s.gpr[STATE_GPR_LEN] = 0;
 	        resPcb->p_s.hi = 0;
 	        resPcb->p_s.lo = 0;
-            
+
             resPcb->p_time = 0;
 #endif
         } 
