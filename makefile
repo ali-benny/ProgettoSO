@@ -11,7 +11,7 @@ LD = $(XT_PRG_PREFIX)ld
 ifneq ($(wildcard /usr/bin/umps3),)
     UMPS3_DIR_PREFIX = /usr
 else
-   UMPS3_DIR_PREFIX = /usr/local
+    UMPS3_DIR_PREFIX = /usr/local
 endif
 
 UMPS3_DATA_DIR = $(UMPS3_DIR_PREFIX)/share/umps3
@@ -34,7 +34,7 @@ VPATH = $(UMPS3_DATA_DIR)
 all : kernel.core.umps
 
 kernel.core.umps : kernel
-  umps3-elf2umps -k $<
+	umps3-elf2umps -k $<
 
 # gli header non vanno compilati vanno sono inclusi!
 #inserisco tutti i flag nella "macro" CFLAGS_MIPS" e chiamo la compilazione cono solo
@@ -47,14 +47,14 @@ headers = listx.h pandos_const.h pandos_types.h
 OBJ = PCB.o
 
 PCB.o: PCB.c $(headers)
-	$(COMPILE) PCB.c
+    (COMPILE) PCB.c
 
 p1test.o: p1test.c $(headers)
 	$(COMPILE) p1test.c
 
 kernel : PCB.o p1test.o
 #kernel : main.o p1.5test_rikaya_v0.o crtso.o libumps.o
-  $(LD) -o $@ $^ $(LDFLAGS)
+    $(LD) -o $@ $^ $(LDFLAGS)
 
 # linking command:
 #  mipsel-linux-gnu-ld -o
@@ -64,9 +64,9 @@ kernel : PCB.o p1test.o
 #  usr/local/share/umps2/umpscore.ldscript
 
 clean :
-  #su rikaia due anni fa era -rm e non rm e basta
-  rm -f *.o kernel kernel.*.umps
+    #su rikaia due anni fa era -rm e non rm e basta
+    rm -f *.o kernel kernel.*.umps
 
 # Pattern rule for assembly modules
 %.o : %.S
-  $(CC) $(CFLAGS) -c -o $@ $<
+    $(CC) $(CFLAGS) -c -o $@ $<
