@@ -1,6 +1,9 @@
 #ifndef PANDOS_CONST_H_INCLUDED
 #define PANDOS_CONST_H_INCLUDED
 
+// da mettere-togliere in base a dove si esegue
+#define UMPS3
+
 /****************************************************************************
  *
  * This header file contains utility constants & macro definitions.
@@ -12,7 +15,6 @@
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/
 #define WORDLEN  4    /* word size in bytes	*/
-
 
 /* timer, timescale, TOD-LO and other bus regs */
 #define RAMBASEADDR   0x10000000

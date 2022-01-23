@@ -6,8 +6,10 @@
  * This header file contains utility types definitions.
  *
  ****************************************************************************/
+#ifdef UMPS3
+    #include <umps3/umps/types.h>
+#endif
 
-//#include <umps3/umps/types.h>
 #include "pandos_const.h"
 #include "listx.h"
 
@@ -27,8 +29,10 @@ typedef struct pcb_t {
     struct list_head p_sib;    /* sibling list  */
 
     /* process status information */
-    //state_t p_s;    /* processor state */
-    //cpu_t   p_time; /* cpu time used by proc */
+#ifdef UMPS3
+    state_t p_s;    /* processor state */
+    cpu_t   p_time; /* cpu time used by proc */
+#endif
 
     /* Pointer to the semaphore the process is currently blocked on */
     int *p_semAdd;
