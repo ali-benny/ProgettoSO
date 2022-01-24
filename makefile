@@ -12,4 +12,4 @@ all: app
 	./app
 
 clean:
-	rm *.o
+	rm *.o app
