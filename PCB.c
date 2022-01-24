@@ -19,7 +19,10 @@ void initPcbs(){
 	Inserisce il PCB puntato da p nella lista dei PCB liberi (pcbFree_h)
 */
 void freePcb(pcb_t * p){
-	list_add( &p->p_list, &pcbFree_h);
+	if(p != NULL)
+		list_add( &p->p_list, &pcbFree_h);
+	else 
+        printf("ERRORE freePcb! p = NULL!");
 }
 
 /*  3
@@ -60,21 +63,36 @@ pcb_t *allocPcb(){
 	Crea una lista di PCB, inizializzandola come lista vuota
 */
 void mkEmptyProcQ(struct list_head *head){
-	INIT_LIST_HEAD(head);
+    if (head != NULL)
+	    INIT_LIST_HEAD(head);
+    else
+        printf("\nERRORE emptyProcQ! head = NULL!");
 }
 
 /*  5
 	Restituisce TRUE se la lista puntata da head è vuota, FALSE altrimenti.
 */
 int emptyProcQ(struct list_head *head){
-	return (list_empty(head));
+    if (head != NULL)
+	    return (list_empty(head));
+    else{
+        printf("\nERRORE emptyProcQ! head = NULL!");
+		return 0;
+    }
 }
 
 /*  6
 	Inserisce l’elemento puntato da p nella coda dei processi puntata da head.
 */
 void insertProcQ(struct list_head* head, pcb_t* p){
-	list_add_tail(&p->p_list, head);
+	if(head != NULL && p != NULL)
+	    list_add_tail(&p->p_list, head);
+	else{
+		if(p == NULL)
+			printf("\nERRORE insertProcQ(head, p)! p = NULL!");
+		if(head == NULL)
+	    	printf("\nERRORE insertProcQ(head, p)! head = NULL!");
+    }
 }
 
 /*  7
@@ -82,9 +100,15 @@ void insertProcQ(struct list_head* head, pcb_t* p){
 	Ritorna NULL se la coda non ha elementi.
 */
 pcb_t * headProcQ(struct list_head* head){
-	if (!list_empty(head))
-		return container_of(list_next(head), pcb_t, p_list);
-	else return NULL; 
+	if(head != NULL){
+		if (!list_empty(head))
+			return container_of(list_next(head), pcb_t, p_list);
+		else return NULL;
+    }
+    else{
+        printf("\nERRORE headProcQ! head == NULL");
+        return NULL;
+    }
 }
 
 /*  8
