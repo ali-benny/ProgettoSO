@@ -34,7 +34,8 @@ void freePcb(pcb_t * p){
 pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
 	if ( !(list_empty(&pcbFree_h))) {
-		pcb_PTR resPcb = container_of(list_next(&pcbFree_h), pcb_t, p_list); //! warning container_of
+		printf("sono entrato in alloc lista non vuota");
+		resPcb = container_of(list_next(&pcbFree_h), pcb_t, p_list); //! warning container_of
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
 		resPcb->p_parent = NULL;
@@ -160,12 +161,14 @@ pcb_t *outChild(pcb_t* p);
 int main(){
 	initPcbs();
     pcb_PTR p = allocPcb();
-    //pcb_PTR p = &pcbFree_table[0];
 	printf("\np: %d", p);
+	printf("\nalloc done");
+
+    //print pcbFree_table
 	for (int i = 0; i<MAXPROC; i++ )
 		printf("\n pcbFree_table [%d]: %d",i,pcbFree_table[i]);	
-	printf("\nalloc");
 	//freePcb(p);
+
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
 	struct list_head *head = &list;
 	printf("\nhead = %d, \nlist = %d", head, &list);
