@@ -77,7 +77,11 @@ int emptyProcQ(struct list_head *head){
     Inserisce l’elemento puntato da p nella coda dei processi puntata da head.
 */
 void insertProcQ(struct list_head* head, pcb_t* p){
-    list_add(&p->p_list, head);
+    printf("\nprima");
+    struct list_head *new = &p->p_list;
+    printf("\nnew %d &new %d", new, &new);
+    list_add_tail(new, head);
+    printf("\ndopo");
 }
 
 /*  7
@@ -146,13 +150,15 @@ int main(){
     printf("\nalloc");
     //freePcb(p);
     LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
-    struct list_head* head=&list;
-    mkEmptyProcQ(head);
-    int empty = emptyProcQ(head);
-    printf("\nlista e' vuota %d", (int) empty);
-    insertProcQ(head, p);
+    struct list_head *head = &list;
+    //printf("\nhead = %d, \nlist = %d", head, &list);
+   // mkEmptyProcQ(head);
+  //  int empty = emptyProcQ(head);
+  //  printf("\nlista e' vuota %d", (int) empty);
+    
+    insertProcQ(&head, p);
     printf("\ninsertProc");
-    headProcQ(head);
+    headProcQ(&head);
     printf("\nheadProc");
     return 0;
-} 
+}

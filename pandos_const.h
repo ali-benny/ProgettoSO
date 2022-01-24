@@ -2,7 +2,7 @@
 #define PANDOS_CONST_H_INCLUDED
 
 // da mettere-togliere in base a dove si esegue
-//#define UMPS3
+// #define UMPS3
 
 /****************************************************************************
  *
