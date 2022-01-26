@@ -12,31 +12,22 @@
 #include <stdio.h>
 
 
-/*  1-funzionava
+/*  1-funziona
 	Inizializza la lista pcbFree in modo da contenere tutti gli elementi della 
 	pcbFree_table. 
 	Questo metodo deve essere chiamato una volta sola in fase di 
 	inizializzazione della struttura dati
 */
 void initPcbs(){
-	//INIT_LIST_HEAD(&pcbFree_h);
 	LIST_HEAD(pcbFree);
-	//INIT_LIST_HEAD(&pcbFree);
 	pcbFree_h=&pcbFree;
-	//INIT_LIST_HEAD(pcbFree_h);
-	struct list_head *iter;
-	struct list_head *tmp=pcbFree_h->next;
 	for (int i=0; i<MAXPROC; i++){
 		list_add( &pcbFree_table[i].p_list, pcbFree_h);
 	}
-	for (int i=0;i <MAXPROC; i++) {
-		
-		printf("\nMAXPROC Elemento %d-esimo %d",i, tmp);
-		tmp=tmp->next;
-	}
-	/*list_for_each(iter,pcbFree_h) {
-        printf("\nElemento i-esimo %d", &iter);
-	}*/
+	printf("\npcbFree %d", &pcbFree);
+	printf("\npcbFree_h %d", pcbFree_h);
+	printf("\npcbFree_h->next %d", pcbFree_h->next);
+	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
 }
 
 /*  2-funziona
@@ -59,7 +50,7 @@ pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
 	if ( !(list_empty(pcbFree_h))) {
 		printf("\nstarted alloc...");
-		resPcb = container_of(list_next(pcbFree_h), pcb_t, p_list); //! warning container_of
+		resPcb = container_of(list_next(pcbFree_h->next), pcb_t, p_list); //! warning container_of
 		printf("\nresPcb: %d",resPcb );
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
@@ -237,8 +228,10 @@ int main(){
 	printf("\nalloc done!");
 
     //print pcbFree_table
-	for (int i = 0; i<MAXPROC; i++ )
-		printf("\n pcbFree_table [%d]: %d",i,&pcbFree_table[i]);	
+	for (int i = 0; i<MAXPROC; i++ ){
+		printf("\n pcbFree_table indirizzo [%d]: %d",i,&pcbFree_table[i]);
+		printf("\n pcbFree_table [%d]: %d",i,pcbFree_table[i]);
+	}
 	//freePcb(p);
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
 	struct list_head *iter;
@@ -249,9 +242,9 @@ int main(){
    // mkEmptyProcQ(head);
   //  int empty = emptyProcQ(head);
   //  printf("\nlista e' vuota %d", (int) empty);
-//	insertProcQ(list, p);
+	insertProcQ(&list, p);
 	printf("\ninsertProc done!");
-//	headProcQ(list);
+	headProcQ(&list);
 	printf("\nheadProc done!");
     printf("\n");
 	return 0;
