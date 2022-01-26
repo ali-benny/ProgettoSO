@@ -19,9 +19,10 @@
 	inizializzazione della struttura dati
 */
 void initPcbs(){
-	INIT_LIST_HEAD(&pcbFree_h);
+	LIST_HEAD(pcbFree);
+	pcbFree_h=&pcbFree;
 	for (int i=0; i<MAXPROC; i++){
-		list_add( &pcbFree_table[i].p_list, &pcbFree_h);
+		list_add( &pcbFree_table[i].p_list, pcbFree_h);
 	}
 }
 
@@ -30,7 +31,7 @@ void initPcbs(){
 */
 void freePcb(pcb_t * p){
 	if(p != NULL)
-		list_add( &p->p_list, &pcbFree_h);
+		list_add( &p->p_list, pcbFree_h);
 	else 
         printf("ERRORE freePcb! p = NULL!");
 }
@@ -43,9 +44,9 @@ void freePcb(pcb_t * p){
 */
 pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
-	if ( !(list_empty(&pcbFree_h))) {
+	if ( !(list_empty(pcbFree_h))) {
 		printf("started alloc...");
-		resPcb = container_of(list_next(&pcbFree_h), pcb_t, p_list); //! warning container_of
+		resPcb = container_of(list_next(pcbFree_h), pcb_t, p_list); //! warning container_of
 		printf("\nresPcb: %d",resPcb );
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;

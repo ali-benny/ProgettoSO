@@ -6,7 +6,7 @@
 #include "listx.h"
 
 pcb_t pcbFree_table[MAXPROC];
-struct list_head pcbFree_h;
+struct list_head *pcbFree_h = NULL;
 
 void initPcbs();
 void freePcb(pcb_t * p);
