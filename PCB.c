@@ -1,3 +1,13 @@
+/**
+ * @file PCB.c
+ * @author: alice benatti, alberto scuderi, gerald manzan, libera longo
+ *  
+ * @version 0.1
+ * @date 2022-01-25
+ * 
+ * @copyright Copyright (c) 2022
+ */
+
 #include "PCB.h"
 #include <stdio.h>
 
@@ -34,8 +44,9 @@ void freePcb(pcb_t * p){
 pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
 	if ( !(list_empty(&pcbFree_h))) {
-		printf("sono entrato in alloc lista non vuota");
+		printf("started alloc...");
 		resPcb = container_of(list_next(&pcbFree_h), pcb_t, p_list); //! warning container_of
+		printf("\nresPcb: %d",resPcb );
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
 		resPcb->p_parent = NULL;
@@ -44,7 +55,7 @@ pcb_t *allocPcb(){
 		resPcb->p_sib.next = NULL;
 		resPcb->p_sib.prev = NULL;
 		resPcb->p_semAdd = NULL;
-		// da decommentare per test umps
+		// per test umps
 #ifdef UMPS3
 		resPcb->p_s.entry_hi = 0;
 		resPcb->p_s.cause = 0;
@@ -118,7 +129,14 @@ pcb_t * headProcQ(struct list_head* head){
 	coda è vuota. Altrimenti ritorna il puntatore 
 	all’elemento rimosso dalla lista.
 */
-pcb_t* removeProcQ(struct list_head* head);
+pcb_t* removeProcQ(struct list_head* head){
+	if(head!=NULL) {
+
+	}
+	else
+		printf("\nErrore removeProcQ! head = NULL!");
+
+}
 
 /*  9
 	Rimuove il PCB puntato da p dalla coda dei 
@@ -126,24 +144,57 @@ pcb_t* removeProcQ(struct list_head* head);
 	nella coda, restituisce NULL. (NOTA: p può 
 	trovarsi in una posizione arbitraria della coda).
 */
-pcb_t* outProcQ(struct list_head* head, pcb_t *p);
+pcb_t* outProcQ(struct list_head* head, pcb_t *p){
+	if(head != NULL && p != NULL) {
 
+	}
+	else {
+		if(head == NULL)
+			printf("\nErrore outProcQ! head = NULL!");
+		if(p == NULL)
+			printf("\nErrore outProcQ! p = NULL!");
+	}
+		
+}
 // ---- Alberi di PCB ----
 /*  10
 	Restituisce TRUE se il PCB puntato da p 
 	non ha figli, FALSE altrimenti.
 */
-int emptyChild(pcb_t *p); 
+int emptyChild(pcb_t *p){
+	if(p != NULL) {
+
+	} 
+	else{
+		printf("\nErrore emptyChild! p = NULL!");
+	}
+}
 
 /*  11
 	Inserisce il PCB puntato da p come figlio del PCB puntato da prnt.
 */
-void insertChild(pcb_t *prnt,pcb_t *p);
+void insertChild(pcb_t *prnt,pcb_t *p){
+	if(prnt != NULL && p != NULL) {
+		
+	}
+	else{
+		if(prnt == NULL)
+			printf("\nErrore insertChild! prnt = NULL!");
+		if(p == NULL)
+			printf("\nErrore insertChild! p = NULL!");
+	}
+}
 
 /*  12
 	Rimuove il primo figlio del PCB puntato da p. Se p non ha figli, restituisce NULL.
 */
-pcb_t* removeChild(pcb_t *p);
+pcb_t* removeChild(pcb_t *p) {
+	if(p != NULL) {
+		
+	}
+	else
+		printf("\nErrore removeChild! p = NULL!");
+}
 
 /*  13
 	Rimuove il PCB puntato da p dalla lista dei figli del padre. 
@@ -156,13 +207,18 @@ pcb_t* removeChild(pcb_t *p);
 	necessariamente il primo figlio del 
 padre).
 */
-pcb_t *outChild(pcb_t* p);
+pcb_t *outChild(pcb_t* p) {
+	if(p != NULL) {
+		
+	} else
+		printf("\nErrore outChild! p = NULL!");
+}
 
 int main(){
 	initPcbs();
     pcb_PTR p = allocPcb();
 	printf("\np: %d", p);
-	printf("\nalloc done");
+	printf("\nalloc done!");
 
     //print pcbFree_table
 	for (int i = 0; i<MAXPROC; i++ )
@@ -176,8 +232,9 @@ int main(){
   //  int empty = emptyProcQ(head);
   //  printf("\nlista e' vuota %d", (int) empty);
 	insertProcQ(&head, p);
-	printf("\ninsertProc");
+	printf("\ninsertProc done!");
 	headProcQ(&head);
-	printf("\nheadProc");
+	printf("\nheadProc done!");
+    printf("\n");
 	return 0;
 }
