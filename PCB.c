@@ -25,7 +25,18 @@ void initPcbs(){
 	pcbFree_h=&pcbFree;
 	//INIT_LIST_HEAD(pcbFree_h);
 	for (int i=0; i<MAXPROC; i++){
-		list_add( &pcbFree_table[i].p_list, pcbFree_h->next);
+		list_add( &pcbFree_table[i].p_list, pcbFree_h);
+		printf("\ninserisco l'elemento %d - esimo", i);
+	}
+	struct list_head *iter;
+	struct list_head *tmp=pcbFree_h->next;
+	for (int i=0;i <MAXPROC; i++) {
+		
+		printf("\nMAXPROC Elemento %d-esimo %d",i, tmp);
+		tmp=tmp->next;
+	}
+	list_for_each(iter,pcbFree_h) {
+        printf("\nElemento i-esimo %d", &iter);
 	}
 }
 
@@ -36,7 +47,7 @@ void freePcb(pcb_t * p){
 	if(p != NULL)
 		list_add( &p->p_list, pcbFree_h);
 	else 
-        printf("ERRORE freePcb! p = NULL!");
+        printf("\nERRORE freePcb! p = NULL!");
 }
 
 /*  3
@@ -48,8 +59,8 @@ void freePcb(pcb_t * p){
 pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
 	if ( !(list_empty(pcbFree_h))) {
-		printf("started alloc...");
-		resPcb = container_of(list_next(pcbFree_h->next), pcb_t, p_list); //! warning container_of
+		printf("\nstarted alloc...");
+		resPcb = container_of(list_next(pcbFree_h), pcb_t, p_list); //! warning container_of
 		printf("\nresPcb: %d",resPcb );
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
@@ -71,6 +82,8 @@ pcb_t *allocPcb(){
 
 		resPcb->p_time = 0;
 #endif
+
+	//! rimuovi elemento resPcb da pcbFree_h
 	}
 	return resPcb;
 }
@@ -229,7 +242,6 @@ int main(){
 		printf("\n pcbFree_table [%d]: %d",i,&pcbFree_table[i]);	
 	//freePcb(p);
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
-	struct list_head *head = &list;
 	struct list_head *iter;
 	list_for_each(iter,pcbFree_h) {
         printf("\nElemento i-esimo %d \n", &iter);
@@ -238,9 +250,9 @@ int main(){
    // mkEmptyProcQ(head);
   //  int empty = emptyProcQ(head);
   //  printf("\nlista e' vuota %d", (int) empty);
-	insertProcQ(&head, p);
+//	insertProcQ(list, p);
 	printf("\ninsertProc done!");
-	headProcQ(&head);
+//	headProcQ(list);
 	printf("\nheadProc done!");
     printf("\n");
 	return 0;
