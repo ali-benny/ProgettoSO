@@ -24,20 +24,19 @@ void initPcbs(){
 	//INIT_LIST_HEAD(&pcbFree);
 	pcbFree_h=&pcbFree;
 	//INIT_LIST_HEAD(pcbFree_h);
-	for (int i=0; i<MAXPROC; i++){
-		list_add( &pcbFree_table[i].p_list, pcbFree_h);
-		printf("\ninserisco l'elemento %d - esimo", i);
-	}
 	struct list_head *iter;
 	struct list_head *tmp=pcbFree_h->next;
+	for (int i=0; i<MAXPROC; i++){
+		list_add( &pcbFree_table[i].p_list, pcbFree_h);
+	}
 	for (int i=0;i <MAXPROC; i++) {
 		
 		printf("\nMAXPROC Elemento %d-esimo %d",i, tmp);
 		tmp=tmp->next;
 	}
-	list_for_each(iter,pcbFree_h) {
+	/*list_for_each(iter,pcbFree_h) {
         printf("\nElemento i-esimo %d", &iter);
-	}
+	}*/
 }
 
 /*  2-funziona
