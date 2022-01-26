@@ -21,11 +21,11 @@
 void initPcbs(){
 	//INIT_LIST_HEAD(&pcbFree_h);
 	LIST_HEAD(pcbFree);
-	INIT_LIST_HEAD(&pcbFree);
+	//INIT_LIST_HEAD(&pcbFree);
 	pcbFree_h=&pcbFree;
-	INIT_LIST_HEAD(pcbFree_h);
+	//INIT_LIST_HEAD(pcbFree_h);
 	for (int i=0; i<MAXPROC; i++){
-		list_add( &pcbFree_table[i].p_list, pcbFree_h);
+		list_add( &pcbFree_table[i].p_list, pcbFree_h->next);
 	}
 }
 
@@ -226,12 +226,15 @@ int main(){
 
     //print pcbFree_table
 	for (int i = 0; i<MAXPROC; i++ )
-		printf("\n pcbFree_table [%d]: %d",i,pcbFree_table[i]);	
+		printf("\n pcbFree_table [%d]: %d",i,&pcbFree_table[i]);	
 	//freePcb(p);
-
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
 	struct list_head *head = &list;
-	printf("\nhead = %d, \nlist = %d", head, &list);
+	struct list_head *iter;
+	list_for_each(iter,pcbFree_h) {
+        printf("\nElemento i-esimo %d \n", &iter);
+	}
+		
    // mkEmptyProcQ(head);
   //  int empty = emptyProcQ(head);
   //  printf("\nlista e' vuota %d", (int) empty);
