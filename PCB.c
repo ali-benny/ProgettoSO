@@ -61,16 +61,15 @@ void freePcb(pcb_t * p){
 	if(p != NULL){
 		
 		printf("\nciao");
-		struct list_head *new =  &p->p_list;
-		struct list_head *prev = pcbFree_h;printf("\nsono in listadd 1");
-		struct list_head *next = pcbFree_h->next;printf("\nsono in listadd2");
 		
-		printf("\nsono in listadd next prev %d\n", &next);
-		struct list_head *ppref = next->prev;
-		ppref = new;printf("\nsono in listadd3");
-		new->next  = next;printf("\nsono in listadd");
-		new->prev  = prev;
-		prev->next = new;
+		printf("\nsono in listadd next prev %d\n", &pcbFree_h->next->prev);
+		if (pcbFree_h->next->prev == NULL)printf("\nnextprev null");
+		
+		pcbFree_h->next->prev = &p->p_list;
+		p->p_list.next  = pcbFree_h->next;
+		p->p_list.prev  = pcbFree_h;		
+		pcbFree_h->next = &p->p_list;
+		
 		//__list_add( &p->p_list, pcbFree_h, pcbFree_h->next);
 		//list_add( &p->p_list, pcbFree_h);
 		//printf("\nfatto listadd");
