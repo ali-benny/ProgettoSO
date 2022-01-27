@@ -40,7 +40,7 @@ void freePcb(pcb_t * p){
         printf("\nERRORE freePcb! p = NULL!");
 }
 
-/*  3
+/*  3-funziona
 	Restituisce NULL se la pcbFree_h è vuota. 
 	Altrimenti rimuove un elemento dalla 
 	pcbFree, inizializza tutti i campi (NULL/0) 
@@ -49,9 +49,13 @@ void freePcb(pcb_t * p){
 pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
 	if ( !(list_empty(pcbFree_h))) {
+		struct list_head *tmp=pcbFree_h->next;
 		printf("\nstarted alloc...");
-		resPcb = container_of(list_next(pcbFree_h->next), pcb_t, p_list); //! warning container_of
+		resPcb = container_of(tmp, pcb_t, p_list); //! warning container_of
 		printf("\nresPcb: %d",resPcb );
+		// rimuovi elemento resPcb da pcbFree_h
+		list_del(pcbFree_h->next);		
+		//DOPO AVERLO RIMOSSO possiamo settare i campi
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
 		resPcb->p_parent = NULL;
@@ -72,8 +76,6 @@ pcb_t *allocPcb(){
 
 		resPcb->p_time = 0;
 #endif
-
-	//! rimuovi elemento resPcb da pcbFree_h
 	}
 	return resPcb;
 }
@@ -223,22 +225,39 @@ pcb_t *outChild(pcb_t* p) {
 
 int main(){
 	initPcbs();
-    pcb_PTR p = allocPcb();
+	struct list_head *tmp=pcbFree_h->next;
+	for (int i=0; i<MAXPROC; i++){
+		printf("\nMAXPROC Elemento i-esimo %d ", tmp);
+		tmp=tmp->next;
+	}
+	pcb_PTR p = allocPcb();
+	tmp=pcbFree_h->next;
+	for (int i=0; i<MAXPROC; i++){
+		printf("\nPostAlloc Elemento i-esimo %d ", tmp);
+		if (tmp == NULL)
+			printf("\nPostAlloc tmp null >D");
+		tmp=tmp->next;
+	}
+    
+	//pcb_PTR p = &pcbFree_table[0];
 	printf("\np: %d", p);
 	printf("\nalloc done!");
 
     //print pcbFree_table
-	for (int i = 0; i<MAXPROC; i++ ){
-		printf("\n pcbFree_table indirizzo [%d]: %d",i,&pcbFree_table[i]);
-		printf("\n pcbFree_table [%d]: %d",i,pcbFree_table[i]);
-	}
+	//for (int i = 0; i<MAXPROC; i++ ){
+		//printf("\n pcbFree_table indirizzo [%d]: %d",i,&pcbFree_table[i]);
+		//printf("\n pcbFree_table [%d]: %d",i,pcbFree_table[i]);
+	//}
 	//freePcb(p);
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
 	struct list_head *iter;
+	printf("\ninizio list for each");
+	int i=0;
 	list_for_each(iter,pcbFree_h) {
-        printf("\nElemento i-esimo %d \n", &iter);
+        printf("\nElemento %d esimo %d ", i,  &iter);
+		i=i+1;
 	}
-		
+	printf("\nfine list for each");
    // mkEmptyProcQ(head);
   //  int empty = emptyProcQ(head);
   //  printf("\nlista e' vuota %d", (int) empty);
