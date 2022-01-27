@@ -32,10 +32,13 @@ void initPcbs(){
 
 /*  2-funziona
 	Inserisce il PCB puntato da p nella lista dei PCB liberi (pcbFree_h)
+
+	warning!
+	! anche se è tail lo aggiunge al primo elemento BOH
 */
 void freePcb(pcb_t * p){
 	if(p != NULL)
-		list_add( &p->p_list, pcbFree_h);
+		list_add_tail( &p->p_list, pcbFree_h->next);
 	else 
         printf("\nERRORE freePcb! p = NULL!");
 }
@@ -225,31 +228,23 @@ pcb_t *outChild(pcb_t* p) {
 
 int main(){
 	initPcbs();
-	struct list_head *tmp=pcbFree_h->next;
-	for (int i=0; i<MAXPROC; i++){
-		printf("\nMAXPROC Elemento i-esimo %d ", tmp);
-		tmp=tmp->next;
-	}
 	pcb_PTR p = allocPcb();
-	tmp=pcbFree_h->next;
-	for (int i=0; i<MAXPROC; i++){
-		printf("\nPostAlloc Elemento i-esimo %d ", tmp);
-		if (tmp == NULL)
-			printf("\nPostAlloc tmp null >D");
-		tmp=tmp->next;
-	}
-    
-	//pcb_PTR p = &pcbFree_table[0];
+	
 	printf("\np: %d", p);
 	printf("\nalloc done!");
-
-    //print pcbFree_table
-	//for (int i = 0; i<MAXPROC; i++ ){
-		//printf("\n pcbFree_table indirizzo [%d]: %d",i,&pcbFree_table[i]);
-		//printf("\n pcbFree_table [%d]: %d",i,pcbFree_table[i]);
-	//}
-	//freePcb(p);
+	
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
+	///*
+	struct list_head* tmp=pcbFree_h->next;
+	for (int i=0;i<MAXPROC;i++){
+		printf("\nprefree %d %d", i, tmp);
+		tmp=tmp->next;
+	}freePcb(p);
+	tmp=pcbFree_h->next;
+	for (int i=0;i<MAXPROC;i++){
+		printf("\n postfree %d %d", i, tmp);
+		tmp=tmp->next;
+	}
 	struct list_head *iter;
 	printf("\ninizio list for each");
 	int i=0;
@@ -258,9 +253,10 @@ int main(){
 		i=i+1;
 	}
 	printf("\nfine list for each");
-   // mkEmptyProcQ(head);
-  //  int empty = emptyProcQ(head);
-  //  printf("\nlista e' vuota %d", (int) empty);
+	//*/
+   	mkEmptyProcQ(&list);
+  	int empty = emptyProcQ(&list);
+    printf("\nlista e' vuota %d", (int) empty);
 	insertProcQ(&list, p);
 	printf("\ninsertProc done!");
 	headProcQ(&list);
