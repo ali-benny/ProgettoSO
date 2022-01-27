@@ -11,6 +11,26 @@
 #include "PCB.h"
 #include <stdio.h>
 
+		//non va *sadge*
+void stampaLista(struct list_head *head, char *stampa)
+{
+	/*struct list_head *tmp=head->next;
+	for (int i=0;i<MAXPROC;i++){
+		printf("\n %s %d %d", stampa, i, tmp);
+		tmp=tmp->next;
+	}*/
+	
+	int i=0;
+	struct list_head *iter;
+	list_for_each(iter,pcbFree_h) {
+        printf("\n%s %d %d ", stampa, i,  &iter);
+		i=i+1;
+	}
+	
+}
+
+
+
 
 /*  1-funziona
 	Inizializza la lista pcbFree in modo da contenere tutti gli elementi della 
@@ -22,6 +42,7 @@ void initPcbs(){
 	LIST_HEAD(pcbFree);
 	pcbFree_h=&pcbFree;
 	for (int i=0; i<MAXPROC; i++){
+		//freePcb(&pcbFree_table[i]);
 		list_add( &pcbFree_table[i].p_list, pcbFree_h);
 	}
 	printf("\npcbFree %d", &pcbFree);
@@ -34,11 +55,26 @@ void initPcbs(){
 	Inserisce il PCB puntato da p nella lista dei PCB liberi (pcbFree_h)
 
 	warning!
-	! anche se è tail lo aggiunge al primo elemento BOH
+	! anche se è list_add_tail lo aggiunge al primo elemento BOH
 */
 void freePcb(pcb_t * p){
-	if(p != NULL)
-		list_add_tail( &p->p_list, pcbFree_h->next);
+	if(p != NULL){
+		
+		printf("\nciao");
+		struct list_head *new =  &p->p_list;
+		struct list_head *prev = pcbFree_h;printf("\nsono in listadd 1");
+		struct list_head *next = pcbFree_h->next;printf("\nsono in listadd2");
+		
+		printf("\nsono in listadd next prev %d\n", &next);
+		struct list_head *ppref = next->prev;
+		ppref = new;printf("\nsono in listadd3");
+		new->next  = next;printf("\nsono in listadd");
+		new->prev  = prev;
+		prev->next = new;
+		//__list_add( &p->p_list, pcbFree_h, pcbFree_h->next);
+		//list_add( &p->p_list, pcbFree_h);
+		//printf("\nfatto listadd");
+	}
 	else 
         printf("\nERRORE freePcb! p = NULL!");
 }
@@ -234,25 +270,20 @@ int main(){
 	printf("\nalloc done!");
 	
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
-	///*
-	struct list_head* tmp=pcbFree_h->next;
+	///*	
+	//stampaLista(pcbFree_h, "prefree");
+	struct list_head *tmp=pcbFree_h->next;
 	for (int i=0;i<MAXPROC;i++){
-		printf("\nprefree %d %d", i, tmp);
+		printf("\n prefree %d %d", i, tmp);
 		tmp=tmp->next;
-	}freePcb(p);
+	}
+	freePcb(p);
+	//stampaLista(pcbFree_h, "postfree");
 	tmp=pcbFree_h->next;
 	for (int i=0;i<MAXPROC;i++){
 		printf("\n postfree %d %d", i, tmp);
 		tmp=tmp->next;
 	}
-	struct list_head *iter;
-	printf("\ninizio list for each");
-	int i=0;
-	list_for_each(iter,pcbFree_h) {
-        printf("\nElemento %d esimo %d ", i,  &iter);
-		i=i+1;
-	}
-	printf("\nfine list for each");
 	//*/
    	mkEmptyProcQ(&list);
   	int empty = emptyProcQ(&list);
