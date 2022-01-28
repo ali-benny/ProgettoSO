@@ -10,20 +10,23 @@
 
 #include "PCB.h"
 #include <stdio.h>
-//non va *sadge*
+
+
 void stampaLista(struct list_head *head, char *stampa)
-{/*
+{
 	struct list_head *tmp=head->next;
 	//for(int i=0;list_is_last(tmp, head);i++)
-	for (int i=0;i<MAXPROC;i++){
+	/*while(tmp!=head){
 		printf("\n %s %d %d", stampa, i, tmp);
+		printf("\np_list %d", container_of(iter, pcb_t, p_list)->p_list);
 		tmp=tmp->next;
-	}*/	
+	}*/
 	int i=0;
 	struct list_head *iter;
 	list_for_each(iter,head) {
-        printf("\n%s %d %d ", stampa, i,  &iter);
-		printf("\np_list %d", container_of(iter, pcb_t, p_list)->p_list);
+        printf("\n%s %d %d ", stampa, i, iter);
+		pcb_PTR current = container_of(iter, pcb_t, p_list);
+		printf("\np_list %d", current->id);
 		i=i+1;
 	}
 	
@@ -41,6 +44,7 @@ void initPcbs(){
 	LIST_HEAD(pcbFree);
 	pcbFree_h=&pcbFree;
 	for (int i=0; i<MAXPROC; i++){
+		pcbFree_table[i].id = i;
 		//freePcb(&pcbFree_table[i]);
 		list_add( &pcbFree_table[i].p_list, pcbFree_h);
 	}
