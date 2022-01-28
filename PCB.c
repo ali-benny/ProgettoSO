@@ -1,6 +1,6 @@
 /**
  * @file PCB.c
- * @author: alice benatti, alberto scuderi, gerald manzan, libera longo
+ * @author: alice benatti, alberto scuderi, gerald manzano, libera longo
  *  
  * @version 0.1
  * @date 2022-01-25
@@ -10,27 +10,26 @@
 
 #include "PCB.h"
 #include <stdio.h>
-
-		//non va *sadge*
+//non va *sadge*
 void stampaLista(struct list_head *head, char *stampa)
-{
-	/*struct list_head *tmp=head->next;
+{/*
+	struct list_head *tmp=head->next;
+	//for(int i=0;list_is_last(tmp, head);i++)
 	for (int i=0;i<MAXPROC;i++){
 		printf("\n %s %d %d", stampa, i, tmp);
 		tmp=tmp->next;
-	}*/
-	
+	}*/	
 	int i=0;
 	struct list_head *iter;
-	list_for_each(iter,pcbFree_h) {
+	list_for_each(iter,head) {
         printf("\n%s %d %d ", stampa, i,  &iter);
+		printf("\np_list %d", container_of(iter, pcb_t, p_list)->p_list);
 		i=i+1;
 	}
 	
 }
 
-
-
+/* ****************************************************************************** */
 
 /*  1-funziona
 	Inizializza la lista pcbFree in modo da contenere tutti gli elementi della 
@@ -59,20 +58,18 @@ void initPcbs(){
 */
 void freePcb(pcb_t * p){
 	if(p != NULL){
-		
-		printf("\nciao");
-		
-		printf("\nsono in listadd next prev %d\n", &pcbFree_h->next->prev);
-		if (pcbFree_h->next->prev == NULL)printf("\nnextprev null");
-		
-		pcbFree_h->next->prev = &p->p_list;
+		printf("\nsono in listadd next%d\n", pcbFree_h->next);
+		printf("\nsono in listadd next prev %d\n", pcbFree_h->next->prev);
+		if (pcbFree_h->next->prev == NULL) printf("\nnextprev null");
+		printf("\nfatto check nextprev");
+		pcbFree_h->next->prev = &p->p_list;printf("\nfatto assegnamento nextprev");
 		p->p_list.next  = pcbFree_h->next;
 		p->p_list.prev  = pcbFree_h;		
-		pcbFree_h->next = &p->p_list;
+		pcbFree_h->next = &(p->p_list);
 		
 		//__list_add( &p->p_list, pcbFree_h, pcbFree_h->next);
 		//list_add( &p->p_list, pcbFree_h);
-		//printf("\nfatto listadd");
+		
 	}
 	else 
         printf("\nERRORE freePcb! p = NULL!");
@@ -92,7 +89,8 @@ pcb_t *allocPcb(){
 		resPcb = container_of(tmp, pcb_t, p_list); //! warning container_of
 		printf("\nresPcb: %d",resPcb );
 		// rimuovi elemento resPcb da pcbFree_h
-		list_del(pcbFree_h->next);		
+		list_del(&resPcb->p_list);
+		//list_del(pcbFree_h->next);		
 		//DOPO AVERLO RIMOSSO possiamo settare i campi
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
@@ -178,11 +176,17 @@ pcb_t * headProcQ(struct list_head* head){
 */
 pcb_t* removeProcQ(struct list_head* head){
 	if(head!=NULL) {
-
+		pcb_PTR res = NULL;
+		if(!list_empty(head)) {
+			res = container_of(head->next, pcb_t, p_list);
+			list_del(&res->p_list);
+		}
+		return res;
 	}
-	else
+	else {
 		printf("\nErrore removeProcQ! head = NULL!");
-
+		return NULL;
+	}
 }
 
 /*  9
@@ -193,13 +197,26 @@ pcb_t* removeProcQ(struct list_head* head){
 */
 pcb_t* outProcQ(struct list_head* head, pcb_t *p){
 	if(head != NULL && p != NULL) {
-
+		if(!list_empty(head)) {
+			struct list_head* iter;
+			pcb_PTR current;
+			list_for_each(iter, head) {
+                current = container_of(iter, pcb_t, p_list);
+				if(current == p) {
+					list_del(&current->p_list);
+					return current;
+				}
+        	}
+		}
+		else
+			return NULL;
 	}
 	else {
 		if(head == NULL)
 			printf("\nErrore outProcQ! head = NULL!");
 		if(p == NULL)
 			printf("\nErrore outProcQ! p = NULL!");
+		return NULL;
 	}
 		
 }
@@ -264,32 +281,37 @@ pcb_t *outChild(pcb_t* p) {
 int main(){
 	initPcbs();
 	pcb_PTR p = allocPcb();
-	
+	pcb_PTR p2 = allocPcb();
+	pcb_PTR p3 = allocPcb();
+	pcb_PTR p4 = allocPcb();
 	printf("\np: %d", p);
 	printf("\nalloc done!");
 	
-	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
-	///*	
-	//stampaLista(pcbFree_h, "prefree");
-	struct list_head *tmp=pcbFree_h->next;
-	for (int i=0;i<MAXPROC;i++){
-		printf("\n prefree %d %d", i, tmp);
-		tmp=tmp->next;
-	}
-	freePcb(p);
-	//stampaLista(pcbFree_h, "postfree");
-	tmp=pcbFree_h->next;
-	for (int i=0;i<MAXPROC;i++){
-		printf("\n postfree %d %d", i, tmp);
-		tmp=tmp->next;
-	}
-	//*/
+	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono	
+	stampaLista(pcbFree_h, "prefree");
+//	freePcb(p);
+//	stampaLista(pcbFree_h, "postfree");
+
    	mkEmptyProcQ(&list);
   	int empty = emptyProcQ(&list);
     printf("\nlista e' vuota %d", (int) empty);
+	stampaLista(&list, "lista appena creata vuota");
+
 	insertProcQ(&list, p);
+	insertProcQ(&list, p2);
+	insertProcQ(&list, p3);
+	insertProcQ(&list, p4);
 	printf("\ninsertProc done!");
-	headProcQ(&list);
+	stampaLista(&list, "lista con un elemento in piu'");
+
+	//removeProcQ(&list);
+	//printf("\nremoveProc done!");
+	
+	outProcQ(&list, p2);
+	printf("\ndopo out proc q");
+	stampaLista(&list, "lista con un elemento in meno");
+	
+	printf("\nheadlist %d",&headProcQ(&list)->p_list);
 	printf("\nheadProc done!");
     printf("\n");
 	return 0;

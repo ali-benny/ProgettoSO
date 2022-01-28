@@ -23,6 +23,8 @@ typedef struct pcb_t {
     /* process queue  */
     struct list_head p_list;
 
+    int id; //identificativo del pcb
+
     /* process tree fields */
     struct pcb_t    *p_parent; /* ptr to parent	*/
     struct list_head p_child;  /* children list */
