@@ -14,9 +14,9 @@
 
 void stampaLista(struct list_head *head, char *stampa)
 {
-	struct list_head *tmp=head->next;
+	/*struct list_head *tmp=head->next;
 	//for(int i=0;list_is_last(tmp, head);i++)
-	/*while(tmp!=head){
+	while(tmp!=head){
 		printf("\n %s %d %d", stampa, i, tmp);
 		printf("\np_list %d", container_of(iter, pcb_t, p_list)->p_list);
 		tmp=tmp->next;
@@ -24,9 +24,8 @@ void stampaLista(struct list_head *head, char *stampa)
 	int i=0;
 	struct list_head *iter;
 	list_for_each(iter,head) {
-        printf("\n%s %d %d ", stampa, i, iter);
 		pcb_PTR current = container_of(iter, pcb_t, p_list);
-		printf("\np_list %d", current->id);
+		printf("\n%s indice= %d PCB id= %d", stampa, i, current->id);
 		i=i+1;
 	}
 	
@@ -224,6 +223,7 @@ pcb_t* outProcQ(struct list_head* head, pcb_t *p){
 	}
 		
 }
+
 // ---- Alberi di PCB ----
 /*  10
 	Restituisce TRUE se il PCB puntato da p 
@@ -231,7 +231,7 @@ pcb_t* outProcQ(struct list_head* head, pcb_t *p){
 */
 int emptyChild(pcb_t *p){
 	if(p != NULL) {
-
+		return (list_empty(&p->p_child));
 	} 
 	else{
 		printf("\nErrore emptyChild! p = NULL!");
@@ -243,8 +243,9 @@ int emptyChild(pcb_t *p){
 */
 void insertChild(pcb_t *prnt,pcb_t *p){
 	if(prnt != NULL && p != NULL) {
-		
-	}
+		p->p_parent=prnt;
+		list_add(&p->p_list, &prnt->p_child);
+	} 
 	else{
 		if(prnt == NULL)
 			printf("\nErrore insertChild! prnt = NULL!");
@@ -282,8 +283,7 @@ pcb_t *outChild(pcb_t* p) {
 		printf("\nErrore outChild! p = NULL!");
 }
 
-int main(){
-	initPcbs();
+int mainListe(){
 	pcb_PTR p = allocPcb();
 	pcb_PTR p2 = allocPcb();
 	pcb_PTR p3 = allocPcb();
@@ -319,4 +319,21 @@ int main(){
 	printf("\nheadProc done!");
     printf("\n");
 	return 0;
+}
+
+int mainAlberi() {
+	pcb_PTR p = allocPcb();		// child
+	pcb_PTR p2 = allocPcb();  	// parent
+
+	int empty = emptyChild(p);
+	printf("\nempty child done! empty = %d", empty);
+	insertChild(p2,p);
+	int empty2 = emptyChild(p2);
+	printf("\ninsert child done! emptyChild = %d", empty2);
+}
+
+int main() {
+	initPcbs();
+	//	mainListe();
+	mainAlberi();
 }
