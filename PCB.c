@@ -231,7 +231,11 @@ pcb_t* outProcQ(struct list_head* head, pcb_t *p){
 */
 int emptyChild(pcb_t *p){
 	if(p != NULL) {
-		return (list_empty(&p->p_child));
+		printf("\n\tp = %d", p);
+		printf("\n\t&p->p_child = %d", &p->p_child );
+		printf("\n\t&p->p_child.next = %d", &p->p_child.next);
+		if(&p->p_child.next == &p->p_child) return 0;
+		else return 1;
 	} 
 	else{
 		printf("\nErrore emptyChild! p = NULL!");
@@ -245,17 +249,26 @@ int emptyChild(pcb_t *p){
 */
 void insertChild(pcb_t *prnt,pcb_t *p){
 	if(prnt != NULL && p != NULL) {
-		printf("\ndentroinsertChild");
 		p->p_parent=prnt;
-		printf("\nfatto ppartent=parent");
-		printf("\np_child.next = %d; Null = %d", prnt->p_child.next, NULL);
-		if(prnt->p_child.next == NULL){
-			printf('\nprima di aver creato sentinella');
+		//p->p_sib.next=p->p_child;
+		if(prnt->p_child.next == NULL || prnt->p_child.prev == NULL)
 			INIT_LIST_HEAD(&prnt->p_child);
-			printf('\ndopo aver creato sentinella');
+		printf("\n\t\tprnt->p_child");
+		if(list_empty(&prnt->p_child)){
+			printf("\nprnt->p_child e' vuota %d",&prnt->p_child);
+			list_add(&p->p_sib,&prnt->p_child);
+			printf("\n\t&prnt->p_child.next = %d",&prnt->p_child.next);
+		} else{
+			printf("\nprnt->p_chid NON e' vuota");
 		}
-		list_add(&prnt->p_child, &p->p_sib);
-		printf("\nfattoInsertfiglio alla lista dei figli del padre");
+			
+		/* 
+		prnt->p_childn.next->&prnt->p_child = &p->p_sib;
+		&p->p_sib->prnt->p_child.next  = prnt->p_child.next;
+		&p->p_sib->&prnt->p_child  = &prnt->p_child;
+		&prnt->p_child->prnt->p_child.next = &p->p_sib;
+		*/
+		printf("\n\t\t");
 	} 
 	else{
 		if(prnt == NULL)
@@ -335,10 +348,13 @@ int mainListe(){
 int mainAlberi() {
 	pcb_PTR p = allocPcb();		// child
 	pcb_PTR p2 = allocPcb();  	// parent
-	printf("\np = %d", p);
+	printf("\np (child)= %d", p);
+	printf("\np2 (parent) = %d", p2);
 	int empty = emptyChild(p);
 	printf("\nempty child done! empty = %d", empty);
 	insertChild(p2,p);
+	printf("\np (child)= %d", p);
+	printf("\np2 (parent) = %d", p2);
 	printf("\ninsert child done!");
 	int empty2 = emptyChild(p2);
 	printf("\ninsert child done! emptyChild = %d", empty2);
