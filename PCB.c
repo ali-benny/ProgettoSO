@@ -240,11 +240,22 @@ int emptyChild(pcb_t *p){
 
 /*  11
 	Inserisce il PCB puntato da p come figlio del PCB puntato da prnt.
+	prnt: daddy
+	p: child
 */
 void insertChild(pcb_t *prnt,pcb_t *p){
 	if(prnt != NULL && p != NULL) {
+		printf("\ndentroinsertChild");
 		p->p_parent=prnt;
-		list_add(&p->p_list, &prnt->p_child);
+		printf("\nfatto ppartent=parent");
+		printf("\np_child.next = %d; Null = %d", prnt->p_child.next, NULL);
+		if(prnt->p_child.next == NULL){
+			printf('\nprima di aver creato sentinella');
+			INIT_LIST_HEAD(&prnt->p_child);
+			printf('\ndopo aver creato sentinella');
+		}
+		list_add(&prnt->p_child, &p->p_sib);
+		printf("\nfattoInsertfiglio alla lista dei figli del padre");
 	} 
 	else{
 		if(prnt == NULL)
@@ -324,10 +335,11 @@ int mainListe(){
 int mainAlberi() {
 	pcb_PTR p = allocPcb();		// child
 	pcb_PTR p2 = allocPcb();  	// parent
-
+	printf("\np = %d", p);
 	int empty = emptyChild(p);
 	printf("\nempty child done! empty = %d", empty);
 	insertChild(p2,p);
+	printf("\ninsert child done!");
 	int empty2 = emptyChild(p2);
 	printf("\ninsert child done! emptyChild = %d", empty2);
 }
