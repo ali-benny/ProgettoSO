@@ -21,6 +21,7 @@ void stampaLista(struct list_head *head, char *stampa)
 	while(tmp!=head){
 		printf("\n %s %d %d", stampa, i, tmp);
 		//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
+		printf("\ntmp prev %d", tmp->prev);
 		tmp=tmp->next;
 		i++;
 	}//*/
@@ -78,7 +79,7 @@ void freePcb(pcb_t * p){
         printf("\nERRORE freePcb! p = NULL!");
 }
 
-/*  3-funziona
+/*  3-funziona!! su linux ma non su visual studio perchè WINDOWS FA SCHIFO! NOOO aLice si dissocia
 	Restituisce NULL se la pcbFree_h è vuota. 
 	Altrimenti rimuove un elemento dalla 
 	pcbFree, inizializza tutti i campi (NULL/0) 
@@ -87,10 +88,10 @@ void freePcb(pcb_t * p){
 pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
 	if ( !(list_empty(pcbFree_h))) {
-		struct list_head *tmp=pcbFree_h->next;
 	//	printf("\nstarted alloc...");
-		resPcb = container_of(tmp, pcb_t, p_list); //! warning container_of
+		resPcb = container_of(pcbFree_h->next, pcb_t, p_list); //! warning container_of
 	//	printf("\nresPcb: %d",resPcb );
+	
 		// rimuovi elemento resPcb da pcbFree_h
 		//list_del(&resPcb->p_list);
 		list_del(pcbFree_h->next);	
@@ -356,6 +357,10 @@ int mainListe(){
 	pcb_PTR p2 = allocPcb();
 	pcb_PTR p3 = allocPcb();
 	pcb_PTR p4 = allocPcb();
+	printf("\n");
+	printf("\npcbFree_h %d", pcbFree_h);
+	printf("\npcbFree_h->next %d", pcbFree_h->next);
+	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
 //	pcb_PTR p5 = allocPcb();
 	printf("\np: %d", p);
 	printf("\np2: %d", p2);
@@ -363,7 +368,8 @@ int mainListe(){
 	printf("\np4: %d", p4);
 //  printf("\np5: %d", p5);
 	printf("\nalloc done!");
-	stampaLista(pcbFree_h, "dopo alloc pcbFree_h =");
+	
+	//stampaLista(pcbFree_h, "dopo alloc pcbFree_h =");
 	
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono	
 	stampaLista(pcbFree_h, "prefree");
