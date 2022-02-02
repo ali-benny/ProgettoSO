@@ -1,4 +1,4 @@
-/* subset of the Linux Kernel source file: "include/linux/list.h" CPLv2 */
+// subset of the Linux Kernel source file: "include/linux/list.h" CPLv2 */
 #ifndef LISTX_H_INCLUDED
 #define LISTX_H_INCLUDED
 
@@ -225,7 +225,7 @@ static inline struct list_head *list_prev(const struct list_head *current) {
         }
 
     pos: puntatore da utilizzare per iterare sugli elementi
-    head: inizio della lista (elemento sentinella)
+    head: inizio della lista (& elemento puntatore alla sentinella)
 */
 #define list_for_each(pos, head) for (pos = (head)->next; pos != (head); pos = pos->next)
 
