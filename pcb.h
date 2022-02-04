@@ -5,6 +5,7 @@
 pcb_t pcbFree_table[MAXPROC];
 struct list_head *pcbFree_h = NULL;
 */
+#include "utils.h"
 
 void initPcbs();
 void freePcb(pcb_t * p);

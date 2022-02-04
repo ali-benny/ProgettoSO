@@ -1,6 +1,6 @@
 #include "utils.h"
 #include "ASL.c"
-#include "pcb.c"
+#include "PCB.c"
 
 void stampaLista(struct list_head *head, char *stampa){
 	///*
@@ -9,10 +9,10 @@ void stampaLista(struct list_head *head, char *stampa){
 	//for(int i=0;list_is_last(tmp, head);i++)
 	while (tmp != head)
 	{	
-		if (tmp==NULL)printf("\ntmp NULL");
-		if (tmp->prev==NULL)printf("\ntmp->prev NULL");
+		if (tmp==NULL)printf("\ntmp NULL");//* DEBUG
+		if (tmp->prev==NULL)printf("\ntmp->prev NULL");	//* DEBUG
 		printf("\n %s %d %d", stampa, i, tmp);
-		if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);
+		if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);	//* DEBUG
 		//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
 		printf("\ntmp->prev %d", tmp->prev);
 		tmp = tmp->next;
