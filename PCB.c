@@ -11,21 +11,24 @@
 #include "pcb.h"
 #include <stdio.h>
 
-
 void stampaLista(struct list_head *head, char *stampa)
 {
 	///*
-	struct list_head *tmp=head->next;
-	int i=0;
+	struct list_head *tmp = head->next;
+	int i = 0;
 	//for(int i=0;list_is_last(tmp, head);i++)
-	while(tmp!=head){
+	while (tmp != head)
+	{	
+		if (tmp==NULL)printf("\ntmp NULL");
+		if (tmp->prev==NULL)printf("\ntmp->prev NULL");
 		printf("\n %s %d %d", stampa, i, tmp);
+		if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);
 		//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
-		printf("\ntmp prev %d", tmp->prev);
-		tmp=tmp->next;
+		printf("\ntmp->prev %d", tmp->prev);
+		tmp = tmp->next;
 		i++;
-	}//*/
-	/*
+	} //*/
+	  /*
 	int i=0;
 	struct list_head *iter;
 	list_for_each(iter,head) {
@@ -33,7 +36,6 @@ void stampaLista(struct list_head *head, char *stampa)
 		printf("\n%s indice= %d PCB id= %d", stampa, i, current->id);
 		i=i+1;
 	}*/
-	
 }
 
 /* ****************************************************************************** */
@@ -44,13 +46,15 @@ void stampaLista(struct list_head *head, char *stampa)
 	Questo metodo deve essere chiamato una volta sola in fase di 
 	inizializzazione della struttura dati
 */
-void initPcbs(){
+void initPcbs()
+{
 	LIST_HEAD(pcbFree);
-	pcbFree_h=&pcbFree;
-	for (int i=0; i<MAXPROC; i++){
-		pcbFree_table[i].id = i;
+	pcbFree_h = &pcbFree;
+	for (int i = 0; i < MAXPROC; i++)
+	{
+		pcbFree_table[i].id = i; //* DEBUG
 		//freePcb(&pcbFree_table[i]);
-		list_add( &pcbFree_table[i].p_list, pcbFree_h);
+		list_add(&pcbFree_table[i].p_list, pcbFree_h);
 	}
 	/*printf("\npcbFree %d", &pcbFree);
 	printf("\npcbFree_h %d", pcbFree_h);
@@ -64,19 +68,20 @@ void initPcbs(){
 	warning!
 	! anche se è list_add_tail lo aggiunge al primo elemento BOH
 */
-void freePcb(pcb_t * p){
-	if(p != NULL){
+void freePcb(pcb_t *p)
+{
+	if (p != NULL)
+	{
 		/*
 		pcbFree_h->next->prev = &p->p_list;
 		p->p_list.next  = pcbFree_h->next;
 		p->p_list.prev  = pcbFree_h;		
 		pcbFree_h->next = &(p->p_list);
 		*/
-		list_add( &p->p_list, pcbFree_h);
-		
+		list_add(&p->p_list, pcbFree_h);
 	}
-	else 
-        printf("\nERRORE freePcb! p = NULL!");
+	else
+		printf("\nERRORE freePcb! p = NULL!");
 }
 
 /*  3-funziona!! su linux ma non su visual studio perchè WINDOWS FA SCHIFO! NOOO aLice si dissocia
@@ -85,16 +90,17 @@ void freePcb(pcb_t * p){
 	pcbFree, inizializza tutti i campi (NULL/0) 
 	e restituisce l’elemento rimosso.
 */
-pcb_t *allocPcb(){
+pcb_t *allocPcb()
+{
 	pcb_PTR resPcb = NULL;
-	if ( !(list_empty(pcbFree_h))) {
-	//	printf("\nstarted alloc...");
+	if (!(list_empty(pcbFree_h))){
+		//	printf("\nstarted alloc...");	//* DEBUG
 		resPcb = container_of(pcbFree_h->next, pcb_t, p_list); //! warning container_of
-	//	printf("\nresPcb: %d",resPcb );
-	
+		//	printf("\nresPcb: %d",resPcb );	//* DEBUG
+
 		// rimuovi elemento resPcb da pcbFree_h
-		//list_del(&resPcb->p_list);
-		list_del(pcbFree_h->next);	
+		//list_del(&resPcb->p_list);	//? forse da togliere
+		list_del(pcbFree_h->next);
 		//DOPO AVERLO RIMOSSO possiamo settare i campi
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
@@ -123,53 +129,62 @@ pcb_t *allocPcb(){
 /*  4
 	Crea una lista di PCB, inizializzandola come lista vuota
 */
-void mkEmptyProcQ(struct list_head *head){
-    if (head != NULL)
-	    INIT_LIST_HEAD(head);
-    else
-        printf("\nERRORE emptyProcQ! head = NULL!");
+void mkEmptyProcQ(struct list_head *head)
+{
+	if (head != NULL)
+		INIT_LIST_HEAD(head);
+	else
+		printf("\nERRORE emptyProcQ! head = NULL!");
 }
 
 /*  5
 	Restituisce TRUE se la lista puntata da head è vuota, FALSE altrimenti.
 */
-int emptyProcQ(struct list_head *head){
-    if (head != NULL)
-	    return (list_empty(head));
-    else{
-        printf("\nERRORE emptyProcQ! head = NULL!");
+int emptyProcQ(struct list_head *head)
+{
+	if (head != NULL)
+		return (list_empty(head));
+	else
+	{
+		printf("\nERRORE emptyProcQ! head = NULL!");
 		return 0;
-    }
+	}
 }
 
 /*  6
 	Inserisce l’elemento puntato da p nella coda dei processi puntata da head.
 */
-void insertProcQ(struct list_head* head, pcb_t* p){
-	if(head != NULL && p != NULL)
-	    list_add_tail(&p->p_list, head);
-	else{
-		if(p == NULL)
+void insertProcQ(struct list_head *head, pcb_t *p)
+{
+	if (head != NULL && p != NULL)
+		list_add_tail(&p->p_list, head);
+	else
+	{
+		if (p == NULL)
 			printf("\nERRORE insertProcQ(head, p)! p = NULL!");
-		if(head == NULL)
-	    	printf("\nERRORE insertProcQ(head, p)! head = NULL!");
-    }
+		if (head == NULL)
+			printf("\nERRORE insertProcQ(head, p)! head = NULL!");
+	}
 }
 
 /*  7
 	Restituisce l’elemento di testa della coda dei processi da head //!(sentinella), SENZA RIMUOVERLO. 
 	Ritorna NULL se la coda non ha elementi.
 */
-pcb_t * headProcQ(struct list_head* head){
-	if(head != NULL){
+pcb_t *headProcQ(struct list_head *head)
+{
+	if (head != NULL)
+	{
 		if (!list_empty(head))
 			return container_of(list_next(head), pcb_t, p_list);
-		else return NULL;
-    }
-    else{
-        printf("\nERRORE headProcQ! head == NULL");
-        return NULL;
-    }
+		else
+			return NULL;
+	}
+	else
+	{
+		printf("\nERRORE headProcQ! head == NULL");
+		return NULL;
+	}
 }
 
 /*  8
@@ -178,16 +193,20 @@ pcb_t * headProcQ(struct list_head* head){
 	coda è vuota. Altrimenti ritorna il puntatore 
 	all’elemento rimosso dalla lista.
 */
-pcb_t* removeProcQ(struct list_head* head){
-	if(head!=NULL) {
+pcb_t *removeProcQ(struct list_head *head)
+{
+	if (head != NULL)
+	{
 		pcb_PTR res = NULL;
-		if(!list_empty(head)) {
+		if (!list_empty(head))
+		{
 			res = container_of(head->next, pcb_t, p_list);
 			list_del(&res->p_list);
 		}
 		return res;
 	}
-	else {
+	else
+	{
 		printf("\nErrore removeProcQ! head = NULL!");
 		return NULL;
 	}
@@ -199,30 +218,35 @@ pcb_t* removeProcQ(struct list_head* head){
 	nella coda, restituisce NULL. (NOTA: p può 
 	trovarsi in una posizione arbitraria della coda).
 */
-pcb_t* outProcQ(struct list_head* head, pcb_t *p){
-	if(head != NULL && p != NULL) {
-		if(!list_empty(head)) {
-			struct list_head* iter;
+pcb_t *outProcQ(struct list_head *head, pcb_t *p)
+{
+	if (head != NULL && p != NULL)
+	{
+		if (!list_empty(head))
+		{
+			struct list_head *iter;
 			pcb_PTR current;
-			list_for_each(iter, head) {
-                current = container_of(iter, pcb_t, p_list);
-				if(current == p) {
+			list_for_each(iter, head)
+			{
+				current = container_of(iter, pcb_t, p_list);
+				if (current == p)
+				{
 					list_del(&current->p_list);
 					return current;
 				}
-        	}
+			}
 		}
 		else
 			return NULL;
 	}
-	else {
-		if(head == NULL)
+	else
+	{
+		if (head == NULL)
 			printf("\nErrore outProcQ! head = NULL!");
-		if(p == NULL)
+		if (p == NULL)
 			printf("\nErrore outProcQ! p = NULL!");
 		return NULL;
 	}
-		
 }
 
 // ---- Alberi di PCB ----
@@ -230,12 +254,17 @@ pcb_t* outProcQ(struct list_head* head, pcb_t *p){
 	Restituisce TRUE se il PCB puntato da p 
 	non ha figli, FALSE altrimenti.
 */
-int emptyChild(pcb_t *p){
-	if(p != NULL) {
-		if(p->p_child.next == NULL) return 0;
-		else return 1;
-	} 
-	else{
+int emptyChild(pcb_t *p)
+{
+	if (p != NULL)
+	{
+		if (p->p_child.next == NULL)
+			return 0;
+		else
+			return 1;
+	}
+	else
+	{
 		printf("\nErrore emptyChild! p = NULL!");
 		return 0;
 	}
@@ -250,30 +279,36 @@ int emptyChild(pcb_t *p){
 	p: child
 
 */
-void insertChild(pcb_t *prnt,pcb_t *p){
-	if(prnt != NULL && p != NULL) {
-		p->p_parent=prnt;
-		if(prnt->p_child.next == NULL || prnt->p_child.prev == NULL){
-			INIT_LIST_HEAD(&prnt->p_child);		// mette una sentinella a p_child
-			/*
+void insertChild(pcb_t *prnt, pcb_t *p)
+{
+	if (prnt != NULL && p != NULL)
+	{
+		p->p_parent = prnt;
+		if (prnt->p_child.next == NULL || prnt->p_child.prev == NULL)
+		{
+			INIT_LIST_HEAD(&prnt->p_child); // mette una sentinella a p_child
+			/*//* DEBUG
 			printf("\n &p->p_sib doprimapo %d",&p->p_sib);	
 			printf("\n &prnt->p_child prima %d",&prnt->p_child);
 			printf("\n prnt->p_child.next prima %d",prnt->p_child.next);*/
 		}
+		//* DEBUG
 		/*(prnt->p_child.next)->prev = &p->p_sib;
 		p->p_sib.next  = &prnt->p_child.next;
 		p->p_sib.prev  = &prnt->p_child;
 		prnt->p_child.next = &p->p_sib;*/
-		
-		list_add_tail(&p->p_sib,&prnt->p_child);
+
+		list_add_tail(&p->p_sib, &prnt->p_child);
+		//* DEBUG
 		/*printf("\n\n &p->p_sib dopo %d",&p->p_sib);
 		printf("\n &prnt->p_child dopo %d",&prnt->p_child);
 		printf("\n prnt->p_child.next dopo %d",prnt->p_child.next);*/
-	} 
-	else{
-		if(prnt == NULL)
+	}
+	else
+	{
+		if (prnt == NULL)
 			printf("\nErrore insertChild! prnt = NULL!");
-		if(p == NULL)
+		if (p == NULL)
 			printf("\nErrore insertChild! p = NULL!");
 	}
 }
@@ -284,18 +319,22 @@ void insertChild(pcb_t *prnt,pcb_t *p){
 
 	return: puntatore all'elemanto rimosso
 */
-pcb_t* removeChild(pcb_t *p) {
-	if(p != NULL) {
+pcb_t *removeChild(pcb_t *p)
+{
+	if (p != NULL)
+	{
 		if (list_empty(&p->p_child))
 			return NULL;
-		else{
+		else
+		{
 			pcb_t *res = container_of(p->p_child.next, pcb_t, p_sib);
 			list_del(&p->p_child.next);
 			printf("\nres.id = %d", res->id);
 			return res;
 		}
 	}
-	else {
+	else
+	{
 		printf("\nErrore removeChild! p = NULL!");
 		return NULL;
 	}
@@ -312,10 +351,12 @@ pcb_t* removeChild(pcb_t *p) {
 	return: 
 	p: 
 */
-pcb_t *outChild(pcb_t* p) {
-	if(p != NULL) {
+pcb_t *outChild(pcb_t *p)
+{
+	if (p != NULL){
 		pcb_PTR daddy = p->p_parent;
-		if (daddy != NULL){
+		if (daddy != NULL)
+		{
 			//cercare p nella lista dei figli di daddy (daddy->p_child)
 			struct list_head *child = &p->p_sib;
 			struct list_head *iteratore;
@@ -330,28 +371,35 @@ pcb_t *outChild(pcb_t* p) {
 				tmp=tmp->next;
 			}
 			*/
-			//scorro la lista dei figli			
-			list_for_each(iteratore, &daddy->p_child) {
-				if(iteratore == child){ //se ho trovato p
+			//scorro la lista dei figli
+			list_for_each(iteratore, &daddy->p_child)
+			{
+				if (iteratore == child)
+				{ //se ho trovato p
 					pcb_t *res = container_of(iteratore, pcb_t, p_sib);
-					list_del(iteratore);	//elimino p dalla lista
+					list_del(iteratore); //elimino p dalla lista
 					printf("\n res.id = %d", res->id);
 					return res; //e ritorno
-				}	
+				}
 			}
 			printf("\n p non trovato");
 			return NULL;
-		}else{
+		}
+		else
+		{
 			printf("\nErrore daddy = NULL");
 			return NULL;
 		}
-	} else{
+	}
+	else
+	{
 		printf("\nErrore outChild! p = NULL!");
 		return NULL;
 	}
 }
 
-int mainListe(){
+int mainListe()
+{
 	stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
 	pcb_PTR p = allocPcb();
 	pcb_PTR p2 = allocPcb();
@@ -361,24 +409,24 @@ int mainListe(){
 	printf("\npcbFree_h %d", pcbFree_h);
 	printf("\npcbFree_h->next %d", pcbFree_h->next);
 	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
-//	pcb_PTR p5 = allocPcb();
+	//	pcb_PTR p5 = allocPcb();
 	printf("\np: %d", p);
 	printf("\np2: %d", p2);
 	printf("\np3: %d", p3);
 	printf("\np4: %d", p4);
-//  printf("\np5: %d", p5);
+	//  printf("\np5: %d", p5);
 	printf("\nalloc done!");
-	
+
 	//stampaLista(pcbFree_h, "dopo alloc pcbFree_h =");
-	
-	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono	
+
+	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
 	stampaLista(pcbFree_h, "prefree");
 	//freePcb(p);
 	stampaLista(pcbFree_h, "postfree");
 
-   	mkEmptyProcQ(&list);
-  	int empty = emptyProcQ(&list);
-    printf("\nlista e' vuota %d", (int) empty);
+	mkEmptyProcQ(&list);
+	int empty = emptyProcQ(&list);
+	printf("\nlista e' vuota %d", (int)empty);
 	stampaLista(&list, "lista appena creata vuota");
 
 	insertProcQ(&list, p);
@@ -390,23 +438,24 @@ int mainListe(){
 
 	//removeProcQ(&list);
 	//printf("\nremoveProc done!");
-	
+
 	outProcQ(&list, p2);
 	printf("\ndopo out proc q");
 	stampaLista(&list, "lista con un elemento in meno");
-	
-	printf("\nheadlist %d",&headProcQ(&list)->p_list);
+
+	printf("\nheadlist %d", &headProcQ(&list)->p_list);
 	printf("\nheadProc done!");
-    printf("\n");
+	printf("\n");
 	return 0;
 }
 
-int mainAlberi() {
+int mainAlberi()
+{
 
-	pcb_PTR p = allocPcb();		// child
-	pcb_PTR p2 = allocPcb();    // parent
-	pcb_PTR p3 = allocPcb(); 	// second child
-	pcb_PTR p4 = allocPcb();	// third child
+	pcb_PTR p = allocPcb();	 // child
+	pcb_PTR p2 = allocPcb(); // parent
+	pcb_PTR p3 = allocPcb(); // second child
+	pcb_PTR p4 = allocPcb(); // third child
 
 	printf("\np (child1) = %d p.id = %d", p, p->id);
 	printf("\np2 (parent) = %d p2.id = %d", p2, p2->id);
@@ -415,23 +464,23 @@ int mainAlberi() {
 
 	int empty = emptyChild(p);
 	printf("\nempty child done! empty = %d", empty);
-	
+
 	insertChild(p2, p);
 	insertChild(p2, p3);
 	insertChild(p2, p4);
-	
+
 	printf("\np (child)= %d", p);
 	printf("\np3 (child2)= %d", p3);
 	printf("\np2 (parent) = %d", p2);
-	printf("\ninsert child done!\n");	
+	printf("\ninsert child done!\n");
 	printf("\np2->p_child = %d", &p2->p_child);
 	printf("\np->p_sib = %d", &p->p_sib);
 	printf("\np3->p_sib = %d", &p3->p_sib);
 	printf("\np2->p_child.next = %d", p2->p_child.next);
-	printf("\np2->p_child.next->next = %d", p2->p_child.next->next);//*/
+	printf("\np2->p_child.next->next = %d", p2->p_child.next->next); //*/
 
 	int empty2 = emptyChild(p2);
-	
+
 	printf("\ninsert child done! emptyChild = %d", empty2);
 
 	//printf("\nremoveChild done! %d", removeChild(p2));
@@ -440,11 +489,15 @@ int mainAlberi() {
 	return 0;
 }
 
-int mainTestPCB() {
+int mainTestPCB()
+{
 	initPcbs();
 	printf("\npcbFree_h %d", pcbFree_h);
 	printf("\npcbFree_h->next %d", pcbFree_h->next);
 	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
 	mainListe();
 	//mainAlberi();
+
+
+	return 0;
 }

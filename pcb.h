@@ -8,6 +8,8 @@
 pcb_t pcbFree_table[MAXPROC];
 struct list_head *pcbFree_h = NULL;
 
+void stampaLista(struct list_head *head, char *stampa);
+
 void initPcbs();
 void freePcb(pcb_t * p);
 pcb_t *allocPcb();

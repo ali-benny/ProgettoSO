@@ -23,7 +23,7 @@ typedef struct pcb_t {
     /* process queue  */
     struct list_head p_list;
 
-    int id; //identificativo del pcb
+    int id; //identificativo del pcb per debug
 
     /* process tree fields */
     struct pcb_t    *p_parent; /* ptr to parent	*/
@@ -45,11 +45,15 @@ typedef struct pcb_t {
 typedef struct semd_t {
     /* Semaphore key */
     int *s_key;
+
+    int id; //identificatore del semaforo per debug
+
     /* Queue of PCBs blocked on the semaphore */
     struct list_head s_procq;
 
     /* Semaphore list */
     struct list_head s_link;
+
 } semd_t, *semd_PTR;
 
 #endif
