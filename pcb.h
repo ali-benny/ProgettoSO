@@ -1,11 +1,11 @@
 #ifndef PCB_H_INCLUDED
 #define PCB_H_INCLUDED
 
-#include "utils.h"
 /*
 pcb_t pcbFree_table[MAXPROC];
 struct list_head *pcbFree_h = NULL;
 */
+
 void initPcbs();
 void freePcb(pcb_t * p);
 pcb_t *allocPcb();

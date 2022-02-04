@@ -1,9 +1,8 @@
-#include "ASL.h"
-#include "pcb.h"
 #include "utils.h"
+#include "ASL.c"
+#include "pcb.c"
 
-void stampaLista(struct list_head *head, char *stampa)
-{
+void stampaLista(struct list_head *head, char *stampa){
 	///*
 	struct list_head *tmp = head->next;
 	int i = 0;
@@ -31,6 +30,7 @@ void stampaLista(struct list_head *head, char *stampa)
 
 int main(){
 	mainSemafori();
+	printf("\nfine main\n");
 	return 0;
 }
 

@@ -5,7 +5,6 @@
 //#include "pandos_const.h"
 //#include "pandos_types.h"
 #include "pcb.h"
-#include "utils.h"
 
 //semd_t semd_table[MAXPROC];
 //struct list_head* semdFree_h = NULL; //lista di semafori liberi
