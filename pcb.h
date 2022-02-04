@@ -1,15 +1,11 @@
 #ifndef PCB_H_INCLUDED
 #define PCB_H_INCLUDED
 
-#include "pandos_const.h"
-#include "pandos_types.h"
-#include "listx.h"
-
+#include "utils.h"
+/*
 pcb_t pcbFree_table[MAXPROC];
 struct list_head *pcbFree_h = NULL;
-
-void stampaLista(struct list_head *head, char *stampa);
-
+*/
 void initPcbs();
 void freePcb(pcb_t * p);
 pcb_t *allocPcb();

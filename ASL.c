@@ -10,6 +10,7 @@
  */
 #include "ASL.h"
 
+
 /*	18
 	Inizializza la lista dei semdFree in modo da contenere 
 	tutti gli elementi della semdTable. 
@@ -126,11 +127,3 @@ pcb_t* semAddBlocked(int *semAdd) {
 	return NULL;
 }
 
-int main() {
-	initASL();
-	printf("\ninitASL done!");
-	printf("\nasl_h %d", asl_h);
-    printf("\nasl_h->next %d", asl_h->next);
-	stampaLista(semdFree_h, "semdfree");
-	printf("\n");
-}
