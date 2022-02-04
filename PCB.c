@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2022
  */
 
-#include "PCB.h"
+#include "pcb.h"
 #include <stdio.h>
 
 
@@ -440,7 +440,7 @@ int mainAlberi() {
 	return 0;
 }
 
-int main() {
+int mainTestPCB() {
 	initPcbs();
 	printf("\npcbFree_h %d", pcbFree_h);
 	printf("\npcbFree_h->next %d", pcbFree_h->next);
