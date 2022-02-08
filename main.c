@@ -1,6 +1,6 @@
 #include "utils.h"
 #include "ASL.h"
-#include "PCB.h"
+#include "pcb.h"
 
 // dichiarazione funzioni main 
 #define DEBUG
@@ -62,24 +62,24 @@ void mainSemafori() {
 int mainTestPCB()
 {
 	initPcbs();
-	printf("\ngetHeadPCB() %d", getHeadPCB());
-	printf("\ngetHeadPCB()->next %d", list_next(getHeadPCB()));
-	printf("\ngetHeadPCB()->next->next %d", list_next(list_next(getHeadPCB())));
+	printf("\ngetHeadFreePCB() %d", getHeadFreePCB());
+	printf("\ngetHeadFreePCB()->next %d", list_next(getHeadFreePCB()));
+	printf("\ngetHeadFreePCB()->next->next %d", list_next(list_next(getHeadFreePCB())));
 	mainListe();
 	//mainAlberi();
 	return 0;
 }
 int mainListe()
 {
-	stampaLista(getHeadPCB(), "prima di alloc getHeadPCB() =");
+	stampaLista(getHeadFreePCB(), "prima di alloc getHeadFreePCB() =");
 	pcb_PTR p = allocPcb();
 	pcb_PTR p2 = allocPcb();
 	pcb_PTR p3 = allocPcb();
 	pcb_PTR p4 = allocPcb();
 	printf("\n");
-	printf("\ngetHeadPCB() %d", getHeadPCB());
-	printf("\ngetHeadPCB()->next %d",list_next(getHeadPCB()));
-	printf("\ngetHeadPCB()->next->next %d",list_next(list_next(getHeadPCB())));
+	printf("\ngetHeadFreePCB() %d", getHeadFreePCB());
+	printf("\ngetHeadFreePCB()->next %d",list_next(getHeadFreePCB()));
+	printf("\ngetHeadFreePCB()->next->next %d",list_next(list_next(getHeadFreePCB())));
 	//	pcb_PTR p5 = allocPcb();
 	printf("\np: %d", p);
 	printf("\np2: %d", p2);
@@ -88,12 +88,12 @@ int mainListe()
 	//  printf("\np5: %d", p5);
 	printf("\nalloc done!");
 
-	//stampaLista(getHeadPCB(), "dopo alloc getHeadPCB() =");
+	//stampaLista(getHeadFreePCB(), "dopo alloc getHeadFreePCB() =");
 
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
-	stampaLista(getHeadPCB(), "prefree");
+	stampaLista(getHeadFreePCB(), "prefree");
 	//freePcb(p);
-	stampaLista(getHeadPCB(), "postfree");
+	stampaLista(getHeadFreePCB(), "postfree");
 
 	mkEmptyProcQ(&list);
 	int empty = emptyProcQ(&list);
