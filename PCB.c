@@ -373,3 +373,8 @@ pcb_t *outChild(pcb_t *p)
 	}
 }
 
+#ifdef DEBUG
+	struct list_head *getHeadFreePCB() {
+		return pcbFree_h;
+	}
+#endif //DEBUG

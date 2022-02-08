@@ -21,4 +21,11 @@ void insertChild(pcb_t *prnt, pcb_t *p);
 pcb_t* removeChild(pcb_t *p);
 pcb_t *outChild(pcb_t* p);
 
+//int mainListe();
+//int mainAlberi();
+
+#ifdef DEBUG
+	struct list_head * getHeadFreePCB()
+#endif //DEBUG
+
 #endif //PCB_H_INCLUDED

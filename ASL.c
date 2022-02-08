@@ -131,3 +131,11 @@ pcb_t* semAddBlocked(int *semAdd) {
 	return NULL;
 }
 
+#ifdef DEBUG
+	struct list_head *getHeadFreeSemd() {
+		return semdFree_h;
+	}
+	struct list_head *getHeadActiveSemd() {
+		return asl_h;
+	}
+#endif //DEBUG

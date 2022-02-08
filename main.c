@@ -3,21 +3,14 @@
 #include "PCB.h"
 
 // dichiarazione funzioni main 
+#define DEBUG
 
 void stampaLista(struct list_head *head, char *stampa);
 void mainSemafori();
 int mainTestPCB();
 int mainListe();
 int mainAlberi();
-/*
-// dichiarazione asl
-semd_t semd_table[MAXPROC];
-struct list_head* semdFree_h = NULL; //lista di semafori liberi
-struct list_head* asl_h = NULL;	 //lista di semafori attivi, utilizzati in questo momento
-// dichiarazione pcb
-pcb_t pcbFree_table[MAXPROC];
-struct list_head *pcbFree_h = NULL;
-*/
+
 /*
 	Funzione stampa lista realizzata da noi
 
@@ -60,33 +53,33 @@ int main(){
 void mainSemafori() {
 	initASL();
 	printf("\ninitASL done!");
-	printf("\nasl_h %d", asl_h);
-    printf("\nasl_h->next %d", asl_h->next);
-	stampaLista(semdFree_h, "semdfree");
+	printf("\ngetHeadActiveSemd() %d", getHeadActiveSemd());
+    printf("\ngetHeadActiveSemd()->next %d", list_next(getHeadActiveSemd()));
+	stampaLista(getHeadFreeSemd(), "semdfree");
 	printf("\n");
 }
 
 int mainTestPCB()
 {
 	initPcbs();
-	printf("\npcbFree_h %d", pcbFree_h);
-	printf("\npcbFree_h->next %d", pcbFree_h->next);
-	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
+	printf("\ngetHeadPCB() %d", getHeadPCB());
+	printf("\ngetHeadPCB()->next %d", list_next(getHeadPCB()));
+	printf("\ngetHeadPCB()->next->next %d", list_next(list_next(getHeadPCB())));
 	mainListe();
 	//mainAlberi();
 	return 0;
 }
 int mainListe()
 {
-	stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
+	stampaLista(getHeadPCB(), "prima di alloc getHeadPCB() =");
 	pcb_PTR p = allocPcb();
 	pcb_PTR p2 = allocPcb();
 	pcb_PTR p3 = allocPcb();
 	pcb_PTR p4 = allocPcb();
 	printf("\n");
-	printf("\npcbFree_h %d", pcbFree_h);
-	printf("\npcbFree_h->next %d", pcbFree_h->next);
-	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
+	printf("\ngetHeadPCB() %d", getHeadPCB());
+	printf("\ngetHeadPCB()->next %d",list_next(getHeadPCB()));
+	printf("\ngetHeadPCB()->next->next %d",list_next(list_next(getHeadPCB())));
 	//	pcb_PTR p5 = allocPcb();
 	printf("\np: %d", p);
 	printf("\np2: %d", p2);
@@ -95,12 +88,12 @@ int mainListe()
 	//  printf("\np5: %d", p5);
 	printf("\nalloc done!");
 
-	//stampaLista(pcbFree_h, "dopo alloc pcbFree_h =");
+	//stampaLista(getHeadPCB(), "dopo alloc getHeadPCB() =");
 
 	LIST_HEAD(list); //usa questo per dichiarare le list_head che ti servono
-	stampaLista(pcbFree_h, "prefree");
+	stampaLista(getHeadPCB(), "prefree");
 	//freePcb(p);
-	stampaLista(pcbFree_h, "postfree");
+	stampaLista(getHeadPCB(), "postfree");
 
 	mkEmptyProcQ(&list);
 	int empty = emptyProcQ(&list);
