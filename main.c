@@ -1,7 +1,30 @@
 #include "utils.h"
-#include "ASL.c"
-#include "PCB.c"
+#include "ASL.h"
+#include "PCB.h"
 
+// dichiarazione funzioni main 
+
+void stampaLista(struct list_head *head, char *stampa);
+void mainSemafori();
+int mainTestPCB();
+int mainListe();
+int mainAlberi();
+/*
+// dichiarazione asl
+semd_t semd_table[MAXPROC];
+struct list_head* semdFree_h = NULL; //lista di semafori liberi
+struct list_head* asl_h = NULL;	 //lista di semafori attivi, utilizzati in questo momento
+// dichiarazione pcb
+pcb_t pcbFree_table[MAXPROC];
+struct list_head *pcbFree_h = NULL;
+*/
+/*
+	Funzione stampa lista realizzata da noi
+
+	head: lista da stampare
+	stampa: descrizione della stampa
+	return: void
+*/
 void stampaLista(struct list_head *head, char *stampa){
 	///*
 	struct list_head *tmp = head->next;

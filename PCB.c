@@ -10,6 +10,9 @@
 
 #include "pcb.h"
 
+pcb_t pcbFree_table[MAXPROC];
+struct list_head *pcbFree_h = NULL;
+
 /* ****************************************************************************** */
 
 /*  1-funziona
