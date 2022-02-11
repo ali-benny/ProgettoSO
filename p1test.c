@@ -14,10 +14,10 @@
 
 #include "pandos_const.h"
 #include "pandos_types.h"
-
-//#include <umps3/umps/libumps.h>
+//#include "const.h"
+#include <umps3/umps/libumps.h>
 #include "pcb.h"
-#include "asl.h"
+#include "ASL.h"
 
 
 #define MAXPROC 20
