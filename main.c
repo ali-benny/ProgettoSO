@@ -54,8 +54,8 @@ void mainSemafori() {
 	initASL();
 	printf("\ninitASL done!");
 	printf("\ngetHeadActiveSemd() %d", getHeadActiveSemd());
-    printf("\ngetHeadActiveSemd()->next %d", list_next(getHeadActiveSemd()));
-	stampaLista(getHeadFreeSemd(), "semdfree");
+    printf("\nsemdfree->next %d", list_next(getHeadActiveSemd()));
+//	stampaLista(getHeadFreeSemd(), "semdfree");
 	printf("\n");
 }
 

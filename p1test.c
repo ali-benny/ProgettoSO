@@ -12,10 +12,10 @@
  *      Modified by Michael Goldweber on May 15, 2004
  */
 
-#include <pandos_const.h>
-#include <pandos_types.h>
+#include "pandos_const.h"
+#include "pandos_types.h"
 
-#include <umps3/umps/libumps.h>
+//#include <umps3/umps/libumps.h>
 #include "pcb.h"
 #include "asl.h"
 

@@ -261,4 +261,4 @@ static inline struct list_head *list_prev(const struct list_head *current) {
     for (pos = container_of((head)->prev, typeof(*pos), member); &pos->member != (head);                               \
          pos = container_of(pos->member.prev, typeof(*pos), member))
 
-#endif
+#endif //LISTX_H_INCLUDED
