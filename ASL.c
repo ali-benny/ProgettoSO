@@ -2,7 +2,7 @@
  * @file ASL.c
  * @author alice benatti, alberto scuderi, gerald manzano, libera longo
  *  
- * @version 0.1
+ * @version 1.0
  * @date 2022-02-04
  * 
  * @copyright Copyright (c) 2022
@@ -10,7 +10,40 @@
  */
 #include "ASL.h"
 #include "pcb.h"
+/*
+	Funzione stampa lista realizzata da noi
 
+	head: lista da stampare
+	stampa: descrizione della stampa
+	return: void
+*/
+void stampaLista(struct list_head *head, char *stampa){
+	///*
+	struct list_head *tmp = head->next;
+	int i = 0;
+	//for(int i=0;list_is_last(tmp, head);i++)
+	while (tmp != head)
+	{	
+		if (tmp==NULL)printf("\ntmp NULL");//* DEBUG
+		if (tmp->prev==NULL)printf("\ntmp->prev NULL");	//* DEBUG
+		printf("\n %s %d %d", stampa, i, tmp);
+		if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);	//* DEBUG
+		//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
+		printf("\ntmp->prev %d", tmp->prev);
+		tmp = tmp->next;
+		i++;
+	} //*/
+	  /*
+	int i=0;
+	struct list_head *iter;
+	list_for_each(iter, head) {
+		if(iter != NULL) {
+			pcb_PTR current = container_of(iter, pcb_t, p_list);
+			printf("\n%s indice= %d PCB id= %d", stampa, i, current->id);
+			i=i+1;
+		} else printf("head null");
+	}*/
+}
 semd_t semd_table[MAXPROC];
 struct list_head* semdFree_h = NULL; //lista di semafori liberi
 struct list_head* asl_h = NULL;	 //lista di semafori attivi, utilizzati in questo momento
@@ -131,11 +164,16 @@ pcb_t* semAddBlocked(int *semAdd) {
 	return NULL;
 }
 
-#ifdef DEBUG
-	struct list_head *getHeadFreeSemd() {
-		return semdFree_h;
-	}
-	struct list_head *getHeadActiveSemd() {
-		return asl_h;
-	}
-#endif //DEBUG
+// ****** MAIN per DEBUG ******
+///*
+int main() {
+	initASL();
+	printf("\ninitASL done!");
+	printf("\ntestaASL %d", semdFree_h);
+    printf("\nsemdfree->next %d", list_next(list_next(semdFree_h)));
+	
+	stampaLista(semdFree_h, "semdfree");
+	printf("\n");
+	return 0;
+}
+//*/

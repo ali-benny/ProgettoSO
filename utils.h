@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 
+void stampaLista(struct list_head *head, char *stampa);
+
 #define DEBUG
 
 #endif

@@ -10,3 +10,4 @@ tempCodeRunnerFile.h
 .vscode/configurationCache.log
 .vscode/dryrun.log
 .vscode/targets.log
+*.out
