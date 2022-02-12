@@ -5,7 +5,7 @@
 #ifndef NULL
 #define NULL ((void *)0xFFFFFFFF)
 #endif
-typedef unsigned int size_tt;
+typedef intptr_t size_tt;
 
 /*
     Macro che restituisce il puntatore all'istanza della struttura che contiene

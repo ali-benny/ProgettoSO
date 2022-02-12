@@ -22,15 +22,14 @@ void stampaLista(struct list_head *head, char *stampa){
 	struct list_head *tmp = head->next;
 	int i = 0;
 	//for(int i=0;list_is_last(tmp, head);i++)
-	while (tmp != head)
-	{	
+	while (tmp != head){	
 		if (tmp==NULL)printf("\ntmp NULL");//* DEBUG
-		if (tmp->prev==NULL)printf("\ntmp->prev NULL");	//* DEBUG
 		printf("\n %s %d %d", stampa, i, tmp);
-		if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);	//* DEBUG
+	//	if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);	//* DEBUG
 		//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
-		printf("\ntmp->prev %d", tmp->prev);
-		tmp = tmp->next;
+	//	printf("\ntmp->prev %d", tmp->prev);
+		if (!list_empty(tmp->next))
+			tmp = tmp->next;
 		i++;
 	} //*/
 	  /*
@@ -53,6 +52,8 @@ struct list_head* asl_h = NULL;	 //lista di semafori attivi, utilizzati in quest
 	tutti gli elementi della semdTable. 
 	Questo metodo viene invocato una volta sola durante
 	l’inizializzazione della struttura dati.
+
+	return: void
 */
 void initASL(){
 	//inizializza la lista di semafori attivi
@@ -68,20 +69,18 @@ void initASL(){
 }
 
 /*	14
-	Viene inserito il PCB puntato da p nella coda dei
-	processi bloccati associata al SEMD con chiave
-	semAdd. Se il semaforo corrispondente non è
-	presente nella ASL, alloca un nuovo SEMD dalla
-	lista di quelli liberi (semdFree) e lo inserisce nella
-	ASL, settando I campi in maniera opportuna (i.e.
-	key e s_procQ). Se non è possibile allocare un
-	nuovo SEMD perché la lista di quelli liberi è vuota,
-	restituisce TRUE=1. In tutti gli altri casi, restituisce
-	FALSE=0.
+	Viene inserito il PCB puntato da p nella coda dei processi bloccati 
+	associata al SEMD con chiave semAdd. 
+	Se il semaforo corrispondente non è presente nella ASL, alloca un nuovo SEMD dalla
+	lista di quelli liberi (semdFree) e lo inserisce nella ASL, settando I campi in 
+	maniera opportuna (i.e. key e s_procQ). 
+	Se non è possibile allocare un nuovo SEMD perché la lista di quelli liberi è vuota, 
+	restituisce TRUE=1. 
+	In tutti gli altri casi, restituisce FALSE=0.
 
     return: 1 se non è possibile aggiungere, 0 altrimenti
-	semAdd: 
-	p: 
+	semAdd: chiave dei processi associati al SEMD
+	p: puntatore al PCB che voglio inserire
 	
 	nota: ASL = Active Semaphore List => (semd_h) lista dei semafori attivi
 */
@@ -101,7 +100,7 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 		//se non è stato trovato nella ASL e la lista dei liberi non è vuota
 		if (found==0 && !list_empty(semdFree_h)) {
 			//alloca e inserisce
-			semd_PTR new = container_of(semdFree_h->next, semd_t, s_link);
+			semd_PTR new = container_of(list_next(semdFree_h), semd_t, s_link);
 			list_del(semdFree_h->next);
 
 			//setta i campi in maniera opportuna (cosa significa?)
@@ -167,12 +166,15 @@ pcb_t* semAddBlocked(int *semAdd) {
 // ****** MAIN per DEBUG ******
 ///*
 int main() {
+	printf("\nInitializing ASL...");
 	initASL();
 	printf("\ninitASL done!");
 	printf("\ntestaASL %d", semdFree_h);
     printf("\nsemdfree->next %d", list_next(list_next(semdFree_h)));
+	//stampaLista(semdFree_h, "semdfree");	//! Segmentation Fault: cerco di usare il semdFree_h->next anche se è NULL
 	
-	stampaLista(semdFree_h, "semdfree");
+	//int insBlock = insertBlocked();
+	//printf("\ninsertBlocked done! %d", insBlock);
 	printf("\n");
 	return 0;
 }

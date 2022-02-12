@@ -1,16 +1,16 @@
 #ifndef PANDOS_CONST_H_INCLUDED
 #define PANDOS_CONST_H_INCLUDED
 
-// da mettere-togliere in base a dove si esegue
-// #define UMPS3
-
 /****************************************************************************
  *
  * This header file contains utility constants & macro definitions.
  *
  ****************************************************************************/
 
-//#include <umps3/umps/const.h>
+//UMPS3 define in utils.h
+#ifdef UMPS3
+	#include <umps3/umps/const.h>
+#endif // UMPS3
 
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/

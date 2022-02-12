@@ -12,40 +12,6 @@
 
 pcb_t pcbFree_table[MAXPROC];
 struct list_head *pcbFree_h = NULL;
-/*
-	Funzione stampa lista realizzata da noi
-
-	head: lista da stampare
-	stampa: descrizione della stampa
-	return: void
-*/
-void stampaLista(struct list_head *head, char *stampa){
-	///*
-	struct list_head *tmp = head->next;
-	int i = 0;
-	//for(int i=0;list_is_last(tmp, head);i++)
-	while (tmp != head)
-	{	
-		if (tmp==NULL)printf("\ntmp NULL");//* DEBUG
-		if (tmp->prev==NULL)printf("\ntmp->prev NULL");	//* DEBUG
-		printf("\n %s %d %d", stampa, i, tmp);
-		if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);	//* DEBUG
-		//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
-		printf("\ntmp->prev %d", tmp->prev);
-		tmp = tmp->next;
-		i++;
-	} //*/
-	  /*
-	int i=0;
-	struct list_head *iter;
-	list_for_each(iter, head) {
-		if(iter != NULL) {
-			pcb_PTR current = container_of(iter, pcb_t, p_list);
-			printf("\n%s indice= %d PCB id= %d", stampa, i, current->id);
-			i=i+1;
-		} else printf("head null");
-	}*/
-}
 
 /* ****************************************************************************** */
 
@@ -337,7 +303,7 @@ pcb_t *removeChild(pcb_t *p)
 		else
 		{
 			pcb_t *res = container_of(p->p_child.next, pcb_t, p_sib);
-			list_del(&p->p_child.next);
+			list_del(p->p_child.next);
 			printf("\nres.id = %d", res->id);
 			return res;
 		}
@@ -410,17 +376,8 @@ pcb_t *outChild(pcb_t *p)
 
 // ****** MAIN per DEBUG ******
 /*
-int main(){
-	initPcbs();	
-	printf("\npcbFree_h %d", pcbFree_h);
-	printf("\npcbFree_h->next %d", list_next(pcbFree_h));
-	printf("\npcbFree_h->next->next %d", list_next(list_next(pcbFree_h)));
-	mainListe();
-	//mainAlberi();
-	return 0;
-}
 int mainListe(){
-	stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
+	//stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
 	pcb_PTR p = allocPcb();
 	pcb_PTR p2 = allocPcb();
 	pcb_PTR p3 = allocPcb();
@@ -503,6 +460,15 @@ int mainAlberi(){
 	//printf("\nremoveChild done! %d", removeChild(p2));
 	printf("\noutChild done! %d", outChild(p));
 	printf("\n");
+	return 0;
+}
+int main(){
+	initPcbs();	
+	printf("\npcbFree_h %d", pcbFree_h);
+	printf("\npcbFree_h->next %d", list_next(pcbFree_h));
+	printf("\npcbFree_h->next->next %d", list_next(list_next(pcbFree_h)));
+	//mainListe();
+	mainAlberi();
 	return 0;
 }
 */

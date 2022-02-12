@@ -12,10 +12,13 @@
  *      Modified by Michael Goldweber on May 15, 2004
  */
 
+//UMPS3 define in utils.h
+#ifdef UMPS3
+    #include <umps3/umps/libumps.h>
+#endif // UMPS3
 #include "pandos_const.h"
 #include "pandos_types.h"
-//#include "const.h"
-#include <umps3/umps/libumps.h>
+
 #include "pcb.h"
 #include "ASL.h"
 

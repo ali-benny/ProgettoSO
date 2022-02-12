@@ -17,9 +17,5 @@ pcb_t* headBlocked(int *semAdd);
 void initASL();
 //void mainSemafori();
 
-#ifdef DEBUG
-struct list_head * getHeadFreeSemd();
-struct list_head * getHeadActiveSemd();
-#endif //DEBUG
 
 #endif //ASL_H

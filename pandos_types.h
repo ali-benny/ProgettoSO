@@ -6,6 +6,8 @@
  * This header file contains utility types definitions.
  *
  ****************************************************************************/
+
+//UMPS3 define in utils.h
 #ifdef UMPS3
     #include <umps3/umps/types.h>
 #endif
@@ -13,10 +15,8 @@
 #include "pandos_const.h"
 #include "listx.h"
 
-
 typedef signed int   cpu_t;
 typedef unsigned int memaddr;
-
 
 /* process table entry type */
 typedef struct pcb_t {
