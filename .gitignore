@@ -11,3 +11,5 @@ tempCodeRunnerFile.h
 .vscode/dryrun.log
 .vscode/targets.log
 *.out
+app
+c
