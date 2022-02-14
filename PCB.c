@@ -65,7 +65,7 @@ void freePcb(pcb_t *p)
 pcb_t *allocPcb()
 {
 	pcb_PTR resPcb = NULL;
-	if (!(list_empty(pcbFree_h))){
+	if (pcbFree_h!=pcbFree_h->next){
 		//	printf("\nstarted alloc...");	//* DEBUG
 		resPcb = container_of(pcbFree_h->next, pcb_t, p_list); //! warning container_of
 		//	printf("\nresPcb: %d",resPcb );	//* DEBUG
@@ -423,11 +423,15 @@ int mainListe(){
 	return 0;
 }
 int mainAlberi(){
-	stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
+	stampaLista(pcbFree_h, "prima di alloc pcbFree_h =>");
 	pcb_PTR p = allocPcb();	 // child
+	stampaLista(pcbFree_h, "dopo di alloc PRIMO pcbFree_h =>");
 	pcb_PTR p2 = allocPcb(); // parent
+	stampaLista(pcbFree_h, "dopo di alloc SECONDO pcbFree_h =>");
 	pcb_PTR p3 = allocPcb(); // second child
+	stampaLista(pcbFree_h, "dopo di alloc TERZO pcbFree_h =>");
 	pcb_PTR p4 = allocPcb(); // third child
+	stampaLista(pcbFree_h, "dopo di alloc QUARTO pcbFree_h =>");
 
 	printf("\np (child1) = %d p.id = %d", p, p->id);
 	printf("\np2 (parent) = %d p2.id = %d", p2, p2->id);
@@ -465,8 +469,6 @@ int main(){
 	printf("\npcbFree_h %d", pcbFree_h);
 	printf("\npcbFree_h->next %d", pcbFree_h->next);
 	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
-	printf("\nlist_next pcbFree_h->next->next ");
-	printf("\n%d", list_next(list_next(pcbFree_h)));
 	//mainListe();
 	mainAlberi();
 	return 0;

@@ -42,7 +42,7 @@ void stampaLista(struct list_head *head, char *stampa){
 	struct list_head *iter;	list_for_each(iter, head) {
 		if(iter != NULL) {
 			pcb_PTR current = container_of(iter, pcb_t, p_list);
-			printf("\n%s indice= %d PCB id= %d", stampa, i, current->id);
+			printf("\n%s puntatore = %d indice= %d PCB id= %d", stampa, iter, i, current->id);
 			i=i+1;
 		} else printf("head null");
 	}//*/
