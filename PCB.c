@@ -22,8 +22,7 @@ void initPcbs()
 {
 	LIST_HEAD(pcbFree);
 	pcbFree_h = &pcbFree;
-	for (int i = 0; i < MAXPROC; i++)
-	{
+	for (int i = 0; i < MAXPROC; i++){
 		pcbFree_table[i].id = i; //* DEBUG
 		//freePcb(&pcbFree_table[i]);
 		list_add(&pcbFree_table[i].p_list, pcbFree_h);
@@ -372,7 +371,7 @@ pcb_t *outChild(pcb_t *p)
 
 
 // ****** MAIN per DEBUG ******
-///*
+/*
 int mainListe(){
 	//stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
 	pcb_PTR p = allocPcb();
@@ -473,4 +472,4 @@ int main(){
 	mainAlberi();
 	return 0;
 }
-//*/
+*/

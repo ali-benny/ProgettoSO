@@ -19,16 +19,18 @@
 	return: void
 */
 void initASL(){
-	//inizializza la lista di semafori attivi
-	LIST_HEAD(semd);
-	asl_h = &semd;
 	//inizializza la lista di semafori liberi
 	LIST_HEAD(semdFree);
 	semdFree_h=&semdFree;
 	for (int i=0; i<MAXPROC; i++){
 		semd_table[i].id = i;	//* DEBUG
-		list_add( &semd_table[i].s_link, semdFree_h);
+		list_add(&semd_table[i].s_link, semdFree_h);
 	}
+	//inizializza la lista di semafori attivi
+	LIST_HEAD(semd);
+	asl_h = &semd;
+	printf("\nsemdFree_h %d", semdFree_h);
+    printf("\nsemdfree_h->next %d", semdFree_h->next);
 }
 
 /*	14
@@ -127,13 +129,14 @@ pcb_t* semAddBlocked(int *semAdd) {
 }
 
 // ****** MAIN per DEBUG ******
-/*
+///*
 int main() {
 	printf("\nInitializing ASL...");
 	initASL();
-	printf("\ninitASL done!");
+	printf("\n initASL done!");
 	printf("\nsemdFree_h %d", semdFree_h);
-    printf("\nsemdfree_h->next %d", list_next(list_next(semdFree_h)));
+    printf("\nsemdfree_h->next %d", semdFree_h->next);
+  //  printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
 	stampaLista(semdFree_h, "semdfree");	//! Segmentation Fault: cerco di usare il semdFree_h->next anche se è NULL
 	
 	//int insBlock = insertBlocked();
@@ -141,4 +144,4 @@ int main() {
 	printf("\n");
 	return 0;
 }
-*/
+//*/

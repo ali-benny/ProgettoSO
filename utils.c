@@ -20,7 +20,7 @@
 */
 void stampaLista(struct list_head *head, char *stampa){
 	printf("\ninterno di stampaLista");
-	/*
+	///*
 	int i = 0;
 	if(head->next != NULL) {
 		struct list_head *tmp = head->next;
@@ -31,19 +31,20 @@ void stampaLista(struct list_head *head, char *stampa){
 			printf("\n %s %d %d", stampa, i, tmp);
 			if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);	//* DEBUG
 			//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
-			printf("\ntmp->prev %d", tmp->prev);
-			tmp = tmp->next;printf("\nho fatto tmp = tmp->next");
+		//	printf("\ntmp->prev %d", tmp->prev);
+			tmp = tmp->next;printf("\nho fatto tmp = tmp->next %d", tmp->next);
 			i++;
 		}
 	} else printf("\nhead->next != NULL something get wrong!");
-	*/
-	 ///*
+	//*/
+	printf("\n**fine stampaLista!**");
+	 /*
 	int i=0;
 	struct list_head *iter;	list_for_each(iter, head) {
 		if(iter != NULL) {
 			pcb_PTR current = container_of(iter, pcb_t, p_list);
 			printf("\n%s puntatore = %d indice= %d PCB id= %d", stampa, iter, i, current->id);
 			i=i+1;
-		} else printf("head null");
-	}//*/
+		} else printf("\nhead null");
+	}*/
 }
