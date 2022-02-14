@@ -10,9 +10,6 @@
 
 #include "pcb.h"
 
-pcb_t pcbFree_table[MAXPROC];
-struct list_head *pcbFree_h = NULL;
-
 /* ****************************************************************************** */
 
 /*  1-funziona
@@ -375,7 +372,7 @@ pcb_t *outChild(pcb_t *p)
 
 
 // ****** MAIN per DEBUG ******
-/*
+///*
 int mainListe(){
 	//stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
 	pcb_PTR p = allocPcb();
@@ -426,6 +423,7 @@ int mainListe(){
 	return 0;
 }
 int mainAlberi(){
+	stampaLista(pcbFree_h, "prima di alloc pcbFree_h =");
 	pcb_PTR p = allocPcb();	 // child
 	pcb_PTR p2 = allocPcb(); // parent
 	pcb_PTR p3 = allocPcb(); // second child
@@ -465,10 +463,12 @@ int mainAlberi(){
 int main(){
 	initPcbs();	
 	printf("\npcbFree_h %d", pcbFree_h);
-	printf("\npcbFree_h->next %d", list_next(pcbFree_h));
-	printf("\npcbFree_h->next->next %d", list_next(list_next(pcbFree_h)));
+	printf("\npcbFree_h->next %d", pcbFree_h->next);
+	printf("\npcbFree_h->next->next %d", pcbFree_h->next->next);
+	printf("\nlist_next pcbFree_h->next->next ");
+	printf("\n%d", list_next(list_next(pcbFree_h)));
 	//mainListe();
 	mainAlberi();
 	return 0;
 }
-*/
+//*/

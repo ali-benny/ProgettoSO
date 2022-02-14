@@ -5,7 +5,8 @@
 #ifndef NULL
 #define NULL ((void *)0xFFFFFFFF)
 #endif
-typedef unsigned long intptr_t;
+//typedef unsigned long intptr_t;     //! DA COMMENTARE SU WINDOWS: su windows da errore perchè viene già dichiarata all'interno di MINGW (compilatore)
+typedef unsigned int size_tt;
 
 /*
     Macro che restituisce il puntatore all'istanza della struttura che contiene
@@ -45,7 +46,7 @@ typedef unsigned long intptr_t;
 
     return: offset in byte dall'inizio della struttura TYPE al campo MEMBER
 */
-#define offsetof(TYPE, MEMBER) ((intptr_t)(&((TYPE *)0)->MEMBER))
+#define offsetof(TYPE, MEMBER) ((size_tt)(&((TYPE *)0)->MEMBER))
 
 /*
     La struttura list_head e' una semplice coppia di puntatore, per implementare

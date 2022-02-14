@@ -5,10 +5,11 @@
 //#include "pandos_const.h"
 //#include "pandos_types.h"
 #include "utils.h"
+//#include "pcb.h"
 
-//semd_t semd_table[MAXPROC];
-//struct list_head* semdFree_h = NULL; //lista di semafori liberi
-//struct list_head* asl_h = NULL;	 //lista di semafori attivi, utilizzati in questo momento
+semd_t semd_table[MAXPROC];
+struct list_head* semdFree_h = NULL; //lista di semafori liberi
+struct list_head* asl_h = NULL;	 //lista di semafori attivi, utilizzati in questo momento
 
 int insertBlocked(int *semAdd, pcb_t *p);
 pcb_t* removeBlocked(int *semAdd);
