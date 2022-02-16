@@ -101,7 +101,35 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 	coda dei descrittori liberi (semdFree_h).
 */
 pcb_t* removeBlocked(int *semAdd) {
-    return NULL;
+    if (semAdd != NULL) {
+		//cercare il semAdd (key) nella ASL
+		struct list_head *iter;
+		list_for_each(iter, asl_h){
+			semd_PTR current = container_of(iter, semd_t, s_link);
+			if (current->s_key == semAdd){
+				// se è stato trovato nella ASL
+				if (&current->s_procq==current->s_procq.next){
+					// controllo per verificare se la lista dei processi bloccati nel semaforo è vuota
+					return NULL;
+				}
+				struct list_head *res = current->s_procq.next;
+				list_del(current->s_procq.next);
+				// reinserimento nella coda dei processi liberi
+				list_add(res, pcbFree_h);
+				if (&current->s_procq==current->s_procq.next){
+					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
+					list_del(&current->s_link);
+					// reinserimento nella coda dei semafori liberi
+					list_add(&current->s_link,semdFree_h)
+				}
+				return container_of(res, pcb_t, p_list);
+			}
+		}
+	}
+	else 
+		printf("\nERRORE removeBlocked(int *semAdd)! semAdd = NULL!");
+	// se semAdd = NULL oppure se non è stato trovato il semaforo con quello specifico semAdd
+    	return NULL;
 }
 
 /*	16
@@ -114,7 +142,44 @@ pcb_t* removeBlocked(int *semAdd) {
 	e lo inserisce nella coda dei descrittori liberi
 */
 pcb_t* outBlocked(pcb_t *p) {
-    return NULL;
+    if (p != NULL) {
+		//cercare il p->p_semAdd (key) nella ASL
+	    	int *semAdd = p->p_semAdd; 
+		struct list_head *iter;
+		list_for_each(iter, asl_h){
+			semd_PTR current = container_of(iter, semd_t, s_link);
+			if (current->s_key == semAdd){
+				// se è stato trovato nella ASL
+				if (&current->s_procq==current->s_procq.next){
+					// controllo per verificare se la lista dei processi bloccati nel semaforo è vuota
+					return NULL;
+				}
+				struct list_head *iterpcb;
+				list_for_each(iterpcb, &current->s_procq){
+					// scorro dentro la lista dei processi bloccati
+					if (&p->p_list==iterpcb){
+						// se ho trovato il pcb con stesso p_list di p allora lo rimuovo
+						list_del(iterpcb);
+						// reinserimento nella coda dei processi liberi
+						list_add(iterpcb, pcbFree_h);
+						return p;
+					}
+				}
+				if (&current->s_procq==current->s_procq.next){
+					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
+					list_del(&current->s_link);
+					// reinserimento nella coda dei semafori liberi
+					list_add(&current->s_link,semdFree_h)
+				}
+				//se p non compare nella lista dei processi  bloccati
+				return NULL;
+			}
+		}
+	}
+	else 
+		printf("\nERRORE insertProcQ(semAdd, p)! semAdd = NULL!");
+	// se p = NULL oppure se non è stato trovato il semaforo con quello specifico semAdd
+    	return NULL;
 }
 
 /*	17
@@ -125,7 +190,25 @@ pcb_t* outBlocked(pcb_t *p) {
 	coda dei processi è vuota.
 */
 pcb_t* semAddBlocked(int *semAdd) {
-	return NULL;
+	if (semAdd != NULL) {
+		//cercare il semAdd (key) nella ASL
+		struct list_head *iter;
+		list_for_each(iter, asl_h){
+			semd_PTR current = container_of(iter, semd_t, s_link);
+			if (current->s_key == semAdd){
+				// se è stato trovato nella ASL
+				if (&current->s_procq==current->s_procq.next){
+					// se la coda dei processi è vuota
+					return NULL;
+				}else 
+					return (current->s_procq.next);
+			}
+		}
+	}
+	else 
+		printf("\nERRORE semAddBlocked(int *semAdd)! semAdd = NULL!");
+	//se semAdd = NULL oppure se non è stato trovato il semaforo con quello specifico semAdd
+    	return NULL;
 }
 
 // ****** MAIN per DEBUG ******
