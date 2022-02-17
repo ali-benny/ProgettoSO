@@ -3,7 +3,7 @@
         {
             "type": "cppbuild",
             "label": "C/C++: gcc.exe compila il file attivo",
-            "command": "C:\\Strawberry\\c\\bin\\gcc.exe",
+            "command": "C:\\MinGW\\mingw32\\bin\\gcc.exe",
             "args": [
                 "-fdiagnostics-color=always",
                 "-g",

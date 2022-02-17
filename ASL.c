@@ -9,6 +9,7 @@
  * 
  */
 #include "ASL.h"
+#include "PCB.c"
 
 /*	18
 	Inizializza la lista dei semdFree in modo da contenere 
@@ -26,11 +27,10 @@ void initASL(){
 		semd_table[i].id = i;	//* DEBUG
 		list_add(&semd_table[i].s_link, semdFree_h);
 	}
-	//inizializza la lista di semafori attivi
-	LIST_HEAD(semd);
-	asl_h = &semd;
+	printf("\nasl_h = %d",asl_h);
+	printf("\nasl_h->next = %d",asl_h->next);
 	printf("\nsemdFree_h %d", semdFree_h);
-    printf("\nsemdfree_h->next %d", semdFree_h->next);
+    printf("\nsemdfree_h->next %d", semdFree_h->next);                                                                                                                                                                                  
 }
 
 /*	14
@@ -58,33 +58,38 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 			semd_PTR current = container_of(iter, semd_t, s_link);
 			if (current->s_key == semAdd){
 				found = 1;
+				p->p_semAdd=semAdd;
 				list_add(&p->p_list, &current->s_procq);
 				return 0;
 			}
 		}
+		semd_PTR new = NULL;
 		//se non è stato trovato nella ASL e la lista dei liberi non è vuota
 		if (found==0 && !list_empty(semdFree_h)) {
 			//alloca e inserisce
-			semd_PTR new = container_of(list_next(semdFree_h), semd_t, s_link);
+			new = container_of(semdFree_h->next, semd_t, s_link);
 			list_del(semdFree_h->next);
-
-			//setta i campi in maniera opportuna (cosa significa?)
+			
+			//setta i campi
+			p->p_semAdd=semAdd;
 			new->s_key = semAdd;
-			LIST_HEAD(sproc);
-			new->s_procq = sproc;
+			//LIST_HEAD(sproc);
+			//new->s_procq = sproc;
+			INIT_LIST_HEAD(&new->s_procq);
 			//new->s_link lo cambierà list_add() dopo.
-
+			printf("\n new->s_link %d", new->s_link);
+			printf("\n new->s_link.next %d", new->s_link.next);
 			//e poi inserisce in ASL
-			list_add(&new->s_link,asl_h);
+			list_add(&new->s_link, asl_h);
 			list_add(&p->p_list, &new->s_procq);
 			return 0;
 		} else return 1;
 	}
 	else {
 		if (semAdd == NULL)
-			printf("\nERRORE insertProcQ(semAdd, p)! semAdd = NULL!");
+			printf("\nERRORE insertBlocked(semAdd, p)! semAdd = NULL!");
 		if (p == NULL)
-			printf("\nERRORE insertProcQ(semAdd, p)! p = NULL!");
+			printf("\nERRORE insertBlocked(semAdd, p)! p = NULL!");
 	}
     return 0;
 }
@@ -108,19 +113,28 @@ pcb_t* removeBlocked(int *semAdd) {
 			semd_PTR current = container_of(iter, semd_t, s_link);
 			if (current->s_key == semAdd){
 				// se è stato trovato nella ASL
+				printf("\n !semaforo trovato");
 				if (&current->s_procq==current->s_procq.next){
 					// controllo per verificare se la lista dei processi bloccati nel semaforo è vuota
 					return NULL;
 				}
 				struct list_head *res = current->s_procq.next;
-				list_del(current->s_procq.next);
+				printf("\n current->s_procq.next = %d ",current->s_procq.next);
+				printf("\n current->s_procq.next->next = %d ",current->s_procq.next->next);
+				printf("\n current->s_procq.next->next->next = %d ",current->s_procq.next->next->next);
+				//list_del(current->s_procq.next);
+				current->s_procq.next->next->prev = current->s_procq.next->prev;
+    			current->s_procq.next->prev->next = current->s_procq.next->next;
+				printf("\n current->s_procq.next = %d ",current->s_procq.next);
+				printf("\n current->s_procq.next->next = %d ",current->s_procq.next->next);
+				printf("\n current->s_procq.next->next->next = %d ",current->s_procq.next->next->next);
 				// reinserimento nella coda dei processi liberi
 				list_add(res, pcbFree_h);
 				if (&current->s_procq==current->s_procq.next){
 					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
-					list_del(&current->s_link);
+					list_del(&current->s_link);printf("\n !semaforo cancellato?");
 					// reinserimento nella coda dei semafori liberi
-					list_add(&current->s_link,semdFree_h)
+					list_add(&current->s_link,semdFree_h);
 				}
 				return container_of(res, pcb_t, p_list);
 			}
@@ -144,7 +158,7 @@ pcb_t* removeBlocked(int *semAdd) {
 pcb_t* outBlocked(pcb_t *p) {
     if (p != NULL) {
 		//cercare il p->p_semAdd (key) nella ASL
-	    	int *semAdd = p->p_semAdd; 
+			int *semAdd = p->p_semAdd; 
 		struct list_head *iter;
 		list_for_each(iter, asl_h){
 			semd_PTR current = container_of(iter, semd_t, s_link);
@@ -169,7 +183,7 @@ pcb_t* outBlocked(pcb_t *p) {
 					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
 					list_del(&current->s_link);
 					// reinserimento nella coda dei semafori liberi
-					list_add(&current->s_link,semdFree_h)
+					list_add(&current->s_link,semdFree_h);
 				}
 				//se p non compare nella lista dei processi  bloccati
 				return NULL;
@@ -177,7 +191,7 @@ pcb_t* outBlocked(pcb_t *p) {
 		}
 	}
 	else 
-		printf("\nERRORE insertProcQ(semAdd, p)! semAdd = NULL!");
+		printf("\nERRORE outBlocked(p)! p = NULL!");
 	// se p = NULL oppure se non è stato trovato il semaforo con quello specifico semAdd
     	return NULL;
 }
@@ -214,16 +228,48 @@ pcb_t* semAddBlocked(int *semAdd) {
 // ****** MAIN per DEBUG ******
 ///*
 int main() {
-	printf("\nInitializing ASL...");
+	int sem[MAXPROC];
+	//TODO: DA SPOSTARE in initASL()
+	//inizializza la lista di semafori attivi
+	LIST_HEAD(semd);
+	asl_h = &semd;
+
+	printf("\nInitializing ASL and PCBs...");
+	initPcbs();
 	initASL();
-	printf("\n initASL done!");
+	printf("\n ...done!");
 	printf("\nsemdFree_h %d", semdFree_h);
     printf("\nsemdfree_h->next %d", semdFree_h->next);
-  //  printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
-	stampaLista(semdFree_h, "semdfree");	//! Segmentation Fault: cerco di usare il semdFree_h->next anche se è NULL
+    printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
+	printf("\ndopo init asl_h = %d",asl_h);
+	printf("\ndopo init asl_h->next = %d",asl_h->next);
+//	stampaLista(semdFree_h, "semdfree");	//! Segmentation Fault: cerco di usare il semdFree_h->next anche se è NULL
 	
-	//int insBlock = insertBlocked();
-	//printf("\ninsertBlocked done! %d", insBlock);
+	pcb_t *p;
+	printf("\np = %d",p);
+	printf("\npost alloc semdFree_h %d", semdFree_h);
+	printf("\npost alloc semdfree_h->next %d", semdFree_h->next);
+	printf("\npost alloc semdfree_h->next->next %d", semdFree_h->next->next);
+	printf("\npost alloc semdfree_h->next->next->next %d", semdFree_h->next->next->next);
+
+	printf("\n\n **Inserting...**");
+	int insBlock = insertBlocked(&sem[0], p);
+	printf("\n ...inserting done! %d", insBlock);
+	printf("\n");///*
+	printf("\nsemdFree_h %d", semdFree_h);
+    printf("\nsemdfree_h->next %d", semdFree_h->next);
+    printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
+	//*/
+	printf("\n\ndopo insert asl_h = %d",asl_h);
+	printf("\ndopo insert asl_h->next = %d",asl_h->next);
+	printf("\ndopo insert asl_h->next->next = %d",asl_h->next->next);
+	printf("\n\n Remove...");
+	p=removeBlocked(&sem[0]);
+	printf("\n p=%d",p);
+	printf("\n\n ...removing done");
+	printf("\ndopo insert asl_h = %d",asl_h);
+	printf("\ndopo insert asl_h->next = %d",asl_h->next);
+	printf("\ndopo insert asl_h->next->next = %d",asl_h->next->next);
 	printf("\n");
 	return 0;
 }

@@ -13,3 +13,4 @@ tempCodeRunnerFile.h
 *.out
 app
 c
+.vscode/tasks.json

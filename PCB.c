@@ -61,8 +61,7 @@ void freePcb(pcb_t *p)
 	pcbFree, inizializza tutti i campi (NULL/0) 
 	e restituisce l’elemento rimosso.
 */
-pcb_t *allocPcb()
-{
+pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
 	if (pcbFree_h!=pcbFree_h->next){
 		//	printf("\nstarted alloc...");	//* DEBUG
@@ -70,8 +69,8 @@ pcb_t *allocPcb()
 		//	printf("\nresPcb: %d",resPcb );	//* DEBUG
 
 		// rimuovi elemento resPcb da pcbFree_h
-		//list_del(&resPcb->p_list);	//? forse da togliere
 		list_del(pcbFree_h->next);
+		
 		//DOPO AVERLO RIMOSSO possiamo settare i campi
 		resPcb->p_list.next = NULL;
 		resPcb->p_list.prev = NULL;
