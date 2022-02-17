@@ -5,7 +5,11 @@
 //#include "pandos_const.h"
 //#include "pandos_types.h"
 #include "utils.h"
+
 //#include "pcb.h"
+
+extern pcb_t pcbFree_table[MAXPROC];
+extern struct list_head *pcbFree_h;
 
 semd_t semd_table[MAXPROC];
 struct list_head* semdFree_h; //lista di semafori liberi

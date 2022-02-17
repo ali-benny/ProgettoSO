@@ -1,6 +1,6 @@
 COMPILE = gcc -c
 header = pandos_const.h pandos_types.h listx.h utils.h
-OBJ = ASL.o PCB.o utils.o
+OBJ = PCB.o ASL.o utils.o
 
 all: app
 	./app
