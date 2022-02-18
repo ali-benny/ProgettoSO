@@ -1,21 +1,42 @@
-COMPILE = gcc -c
-header = pandos_const.h pandos_types.h listx.h utils.h
-OBJ = PCB.o ASL.o utils.o
+XT_PRG_PREFIX = mipsel-linux-gnu-
+CC = $(XT_PRG_PREFIX)gcc
+LD = $(XT_PRG_PREFIX)ld
 
-all: app
-	./app
 
-PCB.o: PCB.c pcb.h $(header)
-	$(COMPILE) PCB.c
+ifneq ($(wildcard /usr/bin/umps3),)
+	UMPS3_DIR_PREFIX = /usr
+else
+	UMPS3_DIR_PREFIX = /usr/local
+endif
 
-ASL.o: ASL.c ASL.h pcb.h $(header)
-	$(COMPILE) ASL.c
+UMPS3_DATA_DIR = $(UMPS3_DIR_PREFIX)/share/umps3
+UMPS3_INCLUDE_DIR = $(UMPS3_DIR_PREFIX)/include/umps3
+UMPS3_INCLUDE_DIR2 = $(UMPS3_DIR_PREFIX)/include/umps3/umps
+#UMPS3_INCLUDE_DIR3 = /usr/include
 
-utils.o: utils.c utils.h pcb.h $(header)
-	$(COMPILE) utils.c
+CFLAGS_LANG = -ffreestanding
+CFLAGS_MIPS = -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32
+CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS3_INCLUDE_DIR) -I$(UMPS3_INCLUDE_DIR2) -Wall -O0
 
-app: $(OBJ)
-	gcc $(OBJ) -o app
 
-clean:
-	rm *.o app
+LDFLAGS = -G 0 -nostdlib -T $(UMPS3_DATA_DIR)/umpscore.ldscript
+
+
+VPATH = $(UMPS3_DATA_DIR)
+
+.PHONY : all clean
+
+
+all : kernel.core.umps
+
+kernel.core.umps : kernel
+	umps3-elf2umps -k $<
+ 
+kernel : PCB.o ASL.o p1test.o crtso.o libumps.o
+	$(LD) -o $@ $^ $(LDFLAGS)
+
+clean :
+	-rm -f *.o kernel kernel.*.umps
+
+%.o : %.S
+	$(CC) $(CFLAGS) -c -o $@ $<

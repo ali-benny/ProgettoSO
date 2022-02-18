@@ -130,12 +130,14 @@ int main(void) {
 
     initPcbs();
     addokbuf("Initialized process control blocks   \n");
-
+	addokbuf("o sole mio\n");
     /* Check allocProc */
     for (i = 0; i < MAXPROC; i++) {
+    	addokbuf("x");
         if ((procp[i] = allocPcb()) == NULL)
             adderrbuf("allocPcb: unexpected NULL   ");
     }
+    addokbuf("finefor");
     if (allocPcb() != NULL) {
         adderrbuf("allocPcb: allocated more than MAXPROC entries   ");
     }

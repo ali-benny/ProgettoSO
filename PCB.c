@@ -24,7 +24,7 @@ void initPcbs(){
 	for (int i = 0; i < MAXPROC; i++){
 		pcbFree_table[i].id = i; //* DEBUG
 		//freePcb(&pcbFree_table[i]);
-		list_add(&pcbFree_table[i].p_list, pcbFree_h);
+		list_add(&(pcbFree_table[i].p_list), pcbFree_h);
 	}
 	/*printf("\npcbFree %d", &pcbFree);
 	printf("\npcbFree_h %d", pcbFree_h);
@@ -47,7 +47,7 @@ void freePcb(pcb_t *p){
 		p->p_list.prev  = pcbFree_h;		
 		pcbFree_h->next = &(p->p_list);
 		*/
-		list_add(&p->p_list, pcbFree_h);
+		list_add(&(p->p_list), pcbFree_h);
 	}
 	//else
 		//printf("\nERRORE freePcb! p = NULL!");
@@ -125,7 +125,7 @@ int emptyProcQ(struct list_head *head)
 void insertProcQ(struct list_head *head, pcb_t *p)
 {
 	if (head != NULL && p != NULL)
-		list_add_tail(&p->p_list, head);
+		list_add_tail(&(p->p_list), head);
 	/*else
 	{
 		if (p == NULL)
@@ -169,7 +169,7 @@ pcb_t *removeProcQ(struct list_head *head)
 		if (!list_empty(head))
 		{
 			res = container_of(head->next, pcb_t, p_list);
-			list_del(&res->p_list);
+			list_del(&(res->p_list));
 		}
 		return res;
 	}
@@ -199,7 +199,7 @@ pcb_t *outProcQ(struct list_head *head, pcb_t *p)
 				current = container_of(iter, pcb_t, p_list);
 				if (current == p)
 				{
-					list_del(&current->p_list);
+					list_del(&(current->p_list));
 					return current;
 				}
 			}
@@ -254,7 +254,7 @@ void insertChild(pcb_t *prnt, pcb_t *p)
 		p->p_parent = prnt;
 		if (prnt->p_child.next == NULL || prnt->p_child.prev == NULL)
 		{
-			INIT_LIST_HEAD(&prnt->p_child); // mette una sentinella a p_child
+			INIT_LIST_HEAD(&(prnt->p_child)); // mette una sentinella a p_child
 			/* DEBUG
 			printf("\n &p->p_sib doprimapo %d",&p->p_sib);	
 			printf("\n &prnt->p_child prima %d",&prnt->p_child);
@@ -266,7 +266,7 @@ void insertChild(pcb_t *prnt, pcb_t *p)
 		p->p_sib.prev  = &prnt->p_child;
 		prnt->p_child.next = &p->p_sib;*/
 
-		list_add_tail(&p->p_sib, &prnt->p_child);
+		list_add_tail(&(p->p_sib), &(prnt->p_child));
 		//* DEBUG
 		/*printf("\n\n &p->p_sib dopo %d",&p->p_sib);
 		printf("\n &prnt->p_child dopo %d",&prnt->p_child);
@@ -291,7 +291,7 @@ pcb_t *removeChild(pcb_t *p)
 {
 	if (p != NULL)
 	{
-		if (list_empty(&p->p_child))
+		if (list_empty(&(p->p_child)))
 			return NULL;
 		else
 		{
@@ -326,7 +326,7 @@ pcb_t *outChild(pcb_t *p)
 		if (daddy != NULL)
 		{
 			//cercare p nella lista dei figli di daddy (daddy->p_child)
-			struct list_head *child = &p->p_sib;
+			struct list_head *child = &(p->p_sib);
 			struct list_head *iteratore;
 			/*
 			struct list_head *tmp=daddy->p_child.next;
@@ -340,7 +340,7 @@ pcb_t *outChild(pcb_t *p)
 			}
 			*/
 			//scorro la lista dei figli
-			list_for_each(iteratore, &daddy->p_child)
+			list_for_each(iteratore, &(daddy->p_child))
 			{
 				if (iteratore == child)
 				{ //se ho trovato p
