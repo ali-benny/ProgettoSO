@@ -20,7 +20,7 @@
 */
 void initPcbs(){
 	LIST_HEAD(pcbFree);
-	pcbFree_h = &pcbFree;
+	pcbFree_h = &(pcbFree);
 	for (int i = 0; i < MAXPROC; i++){
 		pcbFree_table[i].id = i; //* DEBUG
 		//freePcb(&pcbFree_table[i]);

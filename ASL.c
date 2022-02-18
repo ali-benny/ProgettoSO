@@ -24,10 +24,10 @@
 void initASL(){
 	//inizializza la lista di semafori liberi
 	LIST_HEAD(semdFree);
-	semdFree_h=&semdFree;
+	semdFree_h=&(semdFree);
 	for (int i=0; i<MAXPROC; i++){
 		semd_table[i].id = i;	//* DEBUG
-		list_add(&semd_table[i].s_link, semdFree_h);
+		list_add(&(semd_table[i].s_link), semdFree_h);
 	}/*
 	printf("\nasl_h = %d",asl_h);
 	printf("\nasl_h->next = %d",asl_h->next);
@@ -52,7 +52,7 @@ void initASL(){
 	nota: ASL = Active Semaphore List => (semd_h) lista dei semafori attivi
 */
 int insertBlocked(int *semAdd, pcb_t *p) {
-	if (semAdd != NULL && p != NULL) {
+	if ((semAdd != NULL) && (p != NULL)) {
 		//cercare il semAdd (key) nella ASL
 		struct list_head *iter;
 		int found=0;
@@ -61,13 +61,13 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 			if (current->s_key == semAdd){
 				found = 1;
 				p->p_semAdd=semAdd;
-				list_add(&p->p_list, &current->s_procq);
+				list_add(&(p->p_list), &(current->s_procq));
 				return 0;
 			}
 		}
 		semd_PTR new = NULL;
 		//se non è stato trovato nella ASL e la lista dei liberi non è vuota
-		if (found==0 && !list_empty(semdFree_h)) {
+		if ((found==0) && !(list_empty(semdFree_h))) {
 			//alloca e inserisce
 			new = container_of(semdFree_h->next, semd_t, s_link);
 			list_del(semdFree_h->next);
@@ -76,13 +76,13 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 			new->s_key = semAdd;
 			//LIST_HEAD(sproc);
 			//new->s_procq = sproc;
-			INIT_LIST_HEAD(&new->s_procq);
+			INIT_LIST_HEAD(&(new->s_procq));
 			//new->s_link lo cambierà list_add() dopo.
 			//printf("\n new->s_link %d", new->s_link);
 			//printf("\n new->s_link.next %d", new->s_link.next);
 			//e poi inserisce in ASL
-			list_add(&new->s_link, asl_h);
-			list_add(&p->p_list, &new->s_procq);
+			list_add(&(new->s_link), asl_h);
+			list_add(&(p->p_list), &(new->s_procq));
 			return 0;
 		} else return 1;
 	}/*
@@ -114,7 +114,7 @@ pcb_t* removeBlocked(int *semAdd) {
 			semd_PTR current = container_of(iter, semd_t, s_link);
 			if (current->s_key == semAdd){
 				// se è stato trovato nella ASL
-				if (&current->s_procq==current->s_procq.next){
+				if (&(current->s_procq)==(current->s_procq.next)){
 					// controllo per verificare se la lista dei processi bloccati nel semaforo è vuota
 					return NULL;
 				}
@@ -126,11 +126,11 @@ pcb_t* removeBlocked(int *semAdd) {
 				
 				// reinserimento nella coda dei processi liberi
 				list_add(res, pcbFree_h);
-				if (&current->s_procq==current->s_procq.next){
+				if (&(current->s_procq)==(current->s_procq.next)){
 					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
-					list_del(&current->s_link);
+					list_del(&(current->s_link));
 					// reinserimento nella coda dei semafori liberi
-					list_add(&current->s_link,semdFree_h);
+					list_add(&(current->s_link,semdFree_h));
 				}
 				return container_of(res, pcb_t, p_list);
 			}
@@ -160,14 +160,14 @@ pcb_t* outBlocked(pcb_t *p) {
 			semd_PTR current = container_of(iter, semd_t, s_link);
 			if (current->s_key == semAdd){
 				// se è stato trovato nella ASL
-				if (&current->s_procq==current->s_procq.next){
+				if (&(current->s_procq)==(current->s_procq.next)){
 					// controllo per verificare se la lista dei processi bloccati nel semaforo è vuota
 					return NULL;
 				}
 				struct list_head *iterpcb;
-				list_for_each(iterpcb, &current->s_procq){
+				list_for_each(iterpcb, &(current->s_procq)){
 					// scorro dentro la lista dei processi bloccati
-					if (&p->p_list==iterpcb){
+					if (&(p->p_list)==iterpcb){
 						// se ho trovato il pcb con stesso p_list di p allora lo rimuovo
 						list_del(iterpcb);
 						// reinserimento nella coda dei processi liberi
@@ -175,11 +175,11 @@ pcb_t* outBlocked(pcb_t *p) {
 						return p;
 					}
 				}
-				if (&current->s_procq==current->s_procq.next){
+				if (&(current->s_procq)==(current->s_procq.next)){
 					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
-					list_del(&current->s_link);
+					list_del(&(current->s_link));
 					// reinserimento nella coda dei semafori liberi
-					list_add(&current->s_link,semdFree_h);
+					list_add(&(current->s_link),semdFree_h);
 				}
 				//se p non compare nella lista dei processi  bloccati
 				return NULL;
@@ -207,7 +207,7 @@ pcb_t* headBlocked(int *semAdd) {
 			semd_PTR current = container_of(iter, semd_t, s_link);
 			if (current->s_key == semAdd){
 				// se è stato trovato nella ASL
-				if (&current->s_procq==current->s_procq.next){
+				if (&(current->s_procq)==current->s_procq.next){
 					// se la coda dei processi è vuota
 					return NULL;
 				}else 
