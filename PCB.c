@@ -18,8 +18,7 @@
 	Questo metodo deve essere chiamato una volta sola in fase di 
 	inizializzazione della struttura dati
 */
-void initPcbs()
-{
+void initPcbs(){
 	LIST_HEAD(pcbFree);
 	pcbFree_h = &pcbFree;
 	for (int i = 0; i < MAXPROC; i++){
@@ -39,8 +38,7 @@ void initPcbs()
 	warning!
 	! anche se è list_add_tail lo aggiunge al primo elemento BOH
 */
-void freePcb(pcb_t *p)
-{
+void freePcb(pcb_t *p){
 	if (p != NULL)
 	{
 		/*

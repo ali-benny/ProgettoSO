@@ -19,10 +19,10 @@
 	return: void
 */
 void stampaLista(struct list_head *head, char *stampa){
-	printf("\ninterno di stampaLista");
+	printf("\n\n Interno di stampaLista");
 	///*
 	int i = 0;
-	if(head->next != NULL) {
+	if(head->next != NULL){
 		struct list_head *tmp = head->next;
 		//for(int i=0;list_is_last(tmp, head);i++)
 		while (tmp != head){	
@@ -32,7 +32,7 @@ void stampaLista(struct list_head *head, char *stampa){
 			if (tmp->next==NULL)printf("\ntmp->next NULL %d", tmp->next);	//* DEBUG
 			//printf("\np_list %d", &container_of(tmp, pcb_t, p_list)->p_list);
 		//	printf("\ntmp->prev %d", tmp->prev);
-			tmp = tmp->next;printf("\nho fatto tmp = tmp->next %d", tmp->next);
+			tmp = tmp->next;
 			i++;
 		}
 	} else printf("\nhead->next != NULL something get wrong!");

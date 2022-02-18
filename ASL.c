@@ -71,7 +71,6 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 			//alloca e inserisce
 			new = container_of(semdFree_h->next, semd_t, s_link);
 			list_del(semdFree_h->next);
-			
 			//setta i campi
 			p->p_semAdd=semAdd;
 			new->s_key = semAdd;
@@ -245,9 +244,10 @@ int main() {
     printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
 	printf("\ndopo init asl_h = %d",asl_h);
 	printf("\ndopo init asl_h->next = %d",asl_h->next);
-//	stampaLista(semdFree_h, "semdfree");	//! Segmentation Fault: cerco di usare il semdFree_h->next anche se è NULL
-	
+	stampaLista(semdFree_h, "semdfree");	
+
 	pcb_t *p;
+	pcb_t *p2;
 	printf("\np = %d",p);
 	printf("\npost alloc semdFree_h %d", semdFree_h);
 	printf("\npost alloc semdfree_h->next %d", semdFree_h->next);
@@ -257,10 +257,13 @@ int main() {
 	printf("\n\n **Inserting...**");
 	int insBlock = insertBlocked(&sem[0], p);
 	printf("\n ...inserting done! %d", insBlock);
+	printf("\n\n **Inserting...**");
+	int insBlock2 = insertBlocked(&sem[1], p2);
+	printf("\n ...inserting done! %d", insBlock);
 	printf("\n");///*
 	printf("\nsemdFree_h %d", semdFree_h);
     printf("\nsemdfree_h->next %d", semdFree_h->next);
-    printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
+   // printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
 	//*/
 	printf("\n\ndopo insert asl_h = %d",asl_h);
 	printf("\ndopo insert asl_h->next = %d",asl_h->next);
