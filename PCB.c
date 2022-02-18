@@ -60,19 +60,20 @@ void freePcb(pcb_t *p){
 	e restituisce l’elemento rimosso.
 */
 pcb_t *allocPcb(){
-	pcb_PTR resPcb = NULL;
-	if (!list_empty(pcbFree_h)){
-	if (pcbFree_h!=pcbFree_h->next){
-		//	printf("\nstarted alloc...");	//* DEBUG
+	pcb_t *resPcb = NULL;
+	if (pcbFree_h != pcbFree_h->next){
 		resPcb = container_of(pcbFree_h->next, pcb_t, p_list); //! warning container_of
-		//	printf("\nresPcb: %d",resPcb );	//* DEBUG
-
-		// rimuovi elemento resPcb da pcbFree_h
-		list_del(pcbFree_h->next);
 		
+		// rimuovi elemento resPcb da pcbFree_h
+	//	if (list_is_last(&(resPcb->p_list), pcbFree_h)==0)
+			list_del(list_next(pcbFree_h));
+	//	else {
+	//		pcbFree_h->next = pcbFree_h;
+	//		pcbFree_h->prev = pcbFree_h;	
+	//	}
 		//DOPO AVERLO RIMOSSO possiamo settare i campi
-		resPcb->p_list.next = NULL;
-		resPcb->p_list.prev = NULL;
+		resPcb->p_list.next = &(resPcb->p_list);
+		resPcb->p_list.prev = &(resPcb->p_list);
 		resPcb->p_parent = NULL;
 		resPcb->p_child.next = NULL;
 		resPcb->p_child.prev = NULL;
@@ -81,6 +82,7 @@ pcb_t *allocPcb(){
 		resPcb->p_semAdd = NULL;
 		// per test umps
 //#ifdef UMPS3
+/*
 		resPcb->p_s.entry_hi = 0;
 		resPcb->p_s.cause = 0;
 		resPcb->p_s.status = 0;
@@ -88,11 +90,13 @@ pcb_t *allocPcb(){
 		resPcb->p_s.gpr[STATE_GPR_LEN] = 0;
 		resPcb->p_s.hi = 0;
 		resPcb->p_s.lo = 0;
-
-		resPcb->p_time = 0;
+*/
+		//resPcb->p_s = 0;
+		//resPcb->p_time = 0;
 //#endif
-	}}
-	return resPcb;
+		return resPcb;
+	}
+	return NULL;
 }
 
 /*  4
