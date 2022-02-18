@@ -130,7 +130,7 @@ pcb_t* removeBlocked(int *semAdd) {
 					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
 					list_del(&(current->s_link));
 					// reinserimento nella coda dei semafori liberi
-					list_add(&(current->s_link,semdFree_h));
+					list_add(&(current->s_link),semdFree_h);
 				}
 				return container_of(res, pcb_t, p_list);
 			}
