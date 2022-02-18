@@ -49,8 +49,8 @@ void freePcb(pcb_t *p){
 		*/
 		list_add(&p->p_list, pcbFree_h);
 	}
-	else
-		printf("\nERRORE freePcb! p = NULL!");
+	//else
+		//printf("\nERRORE freePcb! p = NULL!");
 }
 
 /*  3-funziona!! su linux ma non su visual studio perchè WINDOWS FA SCHIFO! NOOO aLice si dissocia
@@ -101,8 +101,8 @@ void mkEmptyProcQ(struct list_head *head)
 {
 	if (head != NULL)
 		INIT_LIST_HEAD(head);
-	else
-		printf("\nERRORE emptyProcQ! head = NULL!");
+	//else
+		//printf("\nERRORE emptyProcQ! head = NULL!");
 }
 
 /*  5
@@ -114,7 +114,7 @@ int emptyProcQ(struct list_head *head)
 		return (list_empty(head));
 	else
 	{
-		printf("\nERRORE emptyProcQ! head = NULL!");
+		//printf("\nERRORE emptyProcQ! head = NULL!");
 		return 0;
 	}
 }
@@ -126,13 +126,13 @@ void insertProcQ(struct list_head *head, pcb_t *p)
 {
 	if (head != NULL && p != NULL)
 		list_add_tail(&p->p_list, head);
-	else
+	/*else
 	{
 		if (p == NULL)
 			printf("\nERRORE insertProcQ(head, p)! p = NULL!");
 		if (head == NULL)
 			printf("\nERRORE insertProcQ(head, p)! head = NULL!");
-	}
+	}*/
 }
 
 /*  7
@@ -150,7 +150,7 @@ pcb_t *headProcQ(struct list_head *head)
 	}
 	else
 	{
-		printf("\nERRORE headProcQ! head == NULL");
+		//printf("\nERRORE headProcQ! head == NULL");
 		return NULL;
 	}
 }
@@ -175,7 +175,7 @@ pcb_t *removeProcQ(struct list_head *head)
 	}
 	else
 	{
-		printf("\nErrore removeProcQ! head = NULL!");
+		//printf("\nErrore removeProcQ! head = NULL!");
 		return NULL;
 	}
 }
@@ -209,12 +209,12 @@ pcb_t *outProcQ(struct list_head *head, pcb_t *p)
 	}
 	else
 	{
-		if (head == NULL)
-			printf("\nErrore outProcQ! head = NULL!");
-		if (p == NULL)
-			printf("\nErrore outProcQ! p = NULL!");
+		//if (head == NULL)
+			//printf("\nErrore outProcQ! head = NULL!");
+		//if (p == NULL)
+			//printf("\nErrore outProcQ! p = NULL!");
 		return NULL;
-	}
+	}return NULL;
 }
 
 // ---- Alberi di PCB ----
@@ -233,7 +233,7 @@ int emptyChild(pcb_t *p)
 	}
 	else
 	{
-		printf("\nErrore emptyChild! p = NULL!");
+		//printf("\nErrore emptyChild! p = NULL!");
 		return 0;
 	}
 }
@@ -271,14 +271,14 @@ void insertChild(pcb_t *prnt, pcb_t *p)
 		/*printf("\n\n &p->p_sib dopo %d",&p->p_sib);
 		printf("\n &prnt->p_child dopo %d",&prnt->p_child);
 		printf("\n prnt->p_child.next dopo %d",prnt->p_child.next);*/
-	}
+	}/*
 	else
 	{
 		if (prnt == NULL)
 			printf("\nErrore insertChild! prnt = NULL!");
 		if (p == NULL)
 			printf("\nErrore insertChild! p = NULL!");
-	}
+	}*/
 }
 
 /*  12
@@ -297,13 +297,13 @@ pcb_t *removeChild(pcb_t *p)
 		{
 			pcb_t *res = container_of(p->p_child.next, pcb_t, p_sib);
 			list_del(p->p_child.next);
-			printf("\nres.id = %d", res->id);
+			//printf("\nres.id = %d", res->id);
 			return res;
 		}
 	}
 	else
 	{
-		printf("\nErrore removeChild! p = NULL!");
+		//printf("\nErrore removeChild! p = NULL!");
 		return NULL;
 	}
 }
@@ -346,22 +346,22 @@ pcb_t *outChild(pcb_t *p)
 				{ //se ho trovato p
 					pcb_t *res = container_of(iteratore, pcb_t, p_sib);
 					list_del(iteratore); //elimino p dalla lista
-					printf("\n res.id = %d", res->id);
+					//printf("\n res.id = %d", res->id);
 					return res; //e ritorno
 				}
 			}
-			printf("\n p non trovato");
+			//printf("\n p non trovato");
 			return NULL;
 		}
 		else
 		{
-			printf("\nErrore daddy = NULL");
+			//printf("\nErrore daddy = NULL");
 			return NULL;
 		}
 	}
 	else
 	{
-		printf("\nErrore outChild! p = NULL!");
+		//printf("\nErrore outChild! p = NULL!");
 		return NULL;
 	}
 }

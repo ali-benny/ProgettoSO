@@ -6,14 +6,14 @@
 //#include "pandos_types.h"
 #include "utils.h"
 
-//#include "pcb.h"
+#include "pcb.h"
 
-extern pcb_t pcbFree_table[MAXPROC];
-extern struct list_head *pcbFree_h;
+//extern pcb_t pcbFree_table[MAXPROC];
+//extern struct list_head *pcbFree_h;
 
-semd_t semd_table[MAXPROC];
-struct list_head* semdFree_h; //lista di semafori liberi
-struct list_head* asl_h;	 //lista di semafori attivi, utilizzati in questo momento
+HIDDEN semd_t semd_table[MAXPROC];
+HIDDEN struct list_head* semdFree_h; //lista di semafori liberi
+HIDDEN struct list_head* asl_h;	 //lista di semafori attivi, utilizzati in questo momento
 
 int insertBlocked(int *semAdd, pcb_t *p);
 pcb_t* removeBlocked(int *semAdd);
