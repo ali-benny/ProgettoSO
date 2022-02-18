@@ -61,6 +61,7 @@ void freePcb(pcb_t *p){
 */
 pcb_t *allocPcb(){
 	pcb_PTR resPcb = NULL;
+	if (!list_empty(pcbFree_h)){
 	if (pcbFree_h!=pcbFree_h->next){
 		//	printf("\nstarted alloc...");	//* DEBUG
 		resPcb = container_of(pcbFree_h->next, pcb_t, p_list); //! warning container_of
@@ -90,7 +91,7 @@ pcb_t *allocPcb(){
 
 		resPcb->p_time = 0;
 //#endif
-	}
+	}}
 	return resPcb;
 }
 
