@@ -8,9 +8,10 @@
  ****************************************************************************/
 
 //UMPS3 define in utils.h
-#ifdef UMPS3
-    #include <umps3/umps/types.h>
-#endif
+
+#include <umps3/umps/types.h>
+#include <umps3/umps/const.h>
+
 
 #include "pandos_const.h"
 #include "listx.h"

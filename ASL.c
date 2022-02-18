@@ -228,7 +228,20 @@ pcb_t* semAddBlocked(int *semAdd) {
 
 // ****** MAIN per DEBUG ******
 ///*
-int main() {
+int main1() {
+	int sem[MAXPROC]; //array di chiavi
+	LIST_HEAD(semd);
+	asl_h = &semd;
+	initPcbs();
+	initASL();
+	printf("prima di alloc");
+	//stampaLista(semdFree_h, "semd");
+	pcb_t *p;// = allocPcb();
+	int insertBlock = insertBlocked(&sem[0], p);
+	printf("\ninsertBlock = %d\n", insertBlock);
+	
+}
+int main2() {
 	int sem[MAXPROC];
 	//TODO: DA SPOSTARE in initASL()
 	//inizializza la lista di semafori attivi

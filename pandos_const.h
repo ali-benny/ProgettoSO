@@ -8,9 +8,9 @@
  ****************************************************************************/
 
 //UMPS3 define in utils.h
-#ifdef UMPS3
-	#include <umps3/umps/const.h>
-#endif // UMPS3
+//#ifdef UMPS3
+#include <umps3/umps/const.h>
+//#endif // UMPS3
 
 /* Hardware & software constants */
 #define PAGESIZE 4096 /* page size in bytes	*/

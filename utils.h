@@ -1,6 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#define UMPS3
+
 #include <stdio.h>
 
 #include "pandos_const.h"

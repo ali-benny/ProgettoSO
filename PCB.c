@@ -79,7 +79,7 @@ pcb_t *allocPcb(){
 		resPcb->p_sib.prev = NULL;
 		resPcb->p_semAdd = NULL;
 		// per test umps
-#ifdef UMPS3
+//#ifdef UMPS3
 		resPcb->p_s.entry_hi = 0;
 		resPcb->p_s.cause = 0;
 		resPcb->p_s.status = 0;
@@ -89,7 +89,7 @@ pcb_t *allocPcb(){
 		resPcb->p_s.lo = 0;
 
 		resPcb->p_time = 0;
-#endif
+//#endif
 	}
 	return resPcb;
 }
@@ -255,7 +255,7 @@ void insertChild(pcb_t *prnt, pcb_t *p)
 		if (prnt->p_child.next == NULL || prnt->p_child.prev == NULL)
 		{
 			INIT_LIST_HEAD(&prnt->p_child); // mette una sentinella a p_child
-			/*//* DEBUG
+			/* DEBUG
 			printf("\n &p->p_sib doprimapo %d",&p->p_sib);	
 			printf("\n &prnt->p_child prima %d",&prnt->p_child);
 			printf("\n prnt->p_child.next prima %d",prnt->p_child.next);*/
