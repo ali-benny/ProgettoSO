@@ -187,11 +187,7 @@ pcb_t *outProcQ(struct list_head *head, pcb_t *p){
 	p: pcb da controllare
 */
 int emptyChild(pcb_t *p){
-	if (p != NULL){
-		if (p->p_child.next != NULL)
-			return 1;
-	}
-	return 0;
+	return list_empty(&(p->p_child));
 }
 
 /*  11

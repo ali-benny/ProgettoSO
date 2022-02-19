@@ -282,8 +282,8 @@ int main(void) {
         procp[i] = allocPcb();
         if (insertBlocked(&sem[i], procp[i]))
             adderrbuf("insertBlocked(2): unexpected TRUE   ");
+    
     }
-
     /* check if semaphore descriptors are returned to free list */
     p = removeBlocked(&sem[11]);
     if (insertBlocked(&sem[11], p))
