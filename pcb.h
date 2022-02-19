@@ -1,6 +1,10 @@
 #ifndef PCB_H_INCLUDED
 #define PCB_H_INCLUDED
-#include "utils.h"
+//#include "utils.h"
+
+#include "pandos_const.h"
+#include "pandos_types.h"
+#include "listx.h"
 
 HIDDEN pcb_t pcbFree_table[MAXPROC];
 HIDDEN struct list_head *pcbFree_h = NULL;

@@ -124,7 +124,6 @@ void adderrbuf(char *strp) {
 }
 
 
-#define NULL ((void *)0xFFFFFFFF)
 int main(void) {
     int i;
     
@@ -132,19 +131,8 @@ int main(void) {
     addokbuf("Initialized process control blocks   \n");
     /* Check allocProc */
     for (i = 0; i < MAXPROC; i++) {
-    	addokbuf("x\n");
-    	procp[i] = allocPcb();
-        if ((procp[i]) == NULL)
+        if ((procp[i] = allocPcb()) == NULL)
             adderrbuf("allocPcb: unexpected NULL   ");
-        
-        if (i == MAXPROC-1)
-        	addokbuf("ultimo\n");
-        if (i == 10)
-        	addokbuf("11esimo--\n");
-    }
-    addokbuf("ho fatto for\n");
-    if (i==MAXPROC){
-    	addokbuf("i == MAXPROC \n");
     }
     if (allocPcb()!= NULL) {
         adderrbuf("allocPcb: allocated more than MAXPROC entries   ");

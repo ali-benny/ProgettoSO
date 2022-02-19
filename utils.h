@@ -3,7 +3,7 @@
 
 #define UMPS3
 
-#include <stdio.h>
+//#include <stdio.h>
 
 #include "pandos_const.h"
 #include "pandos_types.h"

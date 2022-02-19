@@ -32,10 +32,10 @@ typedef struct pcb_t {
     struct list_head p_sib;    /* sibling list  */
 
     /* process status information */
-#ifdef UMPS3
+//#ifdef UMPS3
     state_t p_s;    /* processor state */
     cpu_t   p_time; /* cpu time used by proc */
-#endif
+//#endif
 
     /* Pointer to the semaphore the process is currently blocked on */
     int *p_semAdd;

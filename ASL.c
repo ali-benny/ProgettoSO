@@ -10,9 +10,6 @@
  */
 #include "ASL.h"
 
-//#include "pcb.h"
-//#include "PCB.c"
-
 /*	18
 	Inizializza la lista dei semdFree in modo da contenere 
 	tutti gli elementi della semdTable. 
