@@ -2,15 +2,15 @@ Initialized process control blocks
 allocPcb ok   
 freed 10 entries   
 Inserting...   
-&qa != NULL
-&qa != NULL
-&qa != NULL
-&qa != NULL
-&qa != NULL
-&qa != NULL
-&qa != NULL
-&qa != NULL
-&qa != NULL
-&qa != NULL
+not empty!	not NULL!	diversi!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
+empty!	not NULL!	uguali!
 inserted 10 elements   
 emptyProcQ: unexpected TRUE

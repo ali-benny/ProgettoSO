@@ -175,10 +175,14 @@ int main(void) {
                 break;
         }
         insertProcQ(&qa, q);
-        if (&qa != NULL) addokbuf("&qa != NULL\n");
+        if (!emptyProcQ(&qa))addokbuf("not empty!\t");
+        else addokbuf("empty!\t");
+        if (&qa != NULL && q !=NULL)addokbuf("not NULL!\t");
+        else addokbuf("NULL!\t");
+        if (&qa == &q->p_list)addokbuf("uguali!\n");
+        else addokbuf("diversi!\n");
     }
     addokbuf("inserted 10 elements   \n");
-    int ciao = emptyProcQ(&qa);
     
     if (emptyProcQ(&qa))
         adderrbuf("emptyProcQ: unexpected TRUE");

@@ -1,6 +1,5 @@
 #ifndef PCB_H_INCLUDED
 #define PCB_H_INCLUDED
-//#include "utils.h"
 
 #include "pandos_const.h"
 #include "pandos_types.h"
@@ -23,8 +22,5 @@ int emptyChild(pcb_t *p);
 void insertChild(pcb_t *prnt, pcb_t *p);
 pcb_t* removeChild(pcb_t *p);
 pcb_t *outChild(pcb_t* p);
-
-//int mainListe();
-//int mainAlberi();
 
 #endif //PCB_H_INCLUDED

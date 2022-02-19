@@ -98,9 +98,12 @@ void mkEmptyProcQ(struct list_head *head){
 */
 int emptyProcQ(struct list_head *head){
 	//bp();
+	return list_empty(head);
+	/*
 	if (list_empty(head))
 		return 1;
 	return 0;
+	*/
 }
 
 /*  6
@@ -110,7 +113,8 @@ int emptyProcQ(struct list_head *head){
 	p: pcb da inserire in head
 */
 void insertProcQ(struct list_head *head, pcb_t *p){
-	if (head != NULL && p != NULL)
+	//bp();
+	if (!(head == NULL || p == NULL))
 		list_add_tail(&(p->p_list), head);
 }
 
