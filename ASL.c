@@ -23,7 +23,7 @@ void initASL(){
 	LIST_HEAD(semdFree);
 	semdFree_h=&(semdFree);
 	for (int i=0; i<MAXPROC; i++){
-		semd_table[i].id = i;	//* DEBUG
+	//	semd_table[i].id = i;	//* DEBUG
 		list_add(&(semd_table[i].s_link), semdFree_h);
 	}   
 	//inizializza la lista di semafori attivi
@@ -116,7 +116,7 @@ pcb_t* removeBlocked(int *semAdd) {
     			current->s_procq.next->prev->next = current->s_procq.next->next;
 				
 				// reinserimento nella coda dei processi liberi
-				list_add(res, pcbFree_h);
+				list_add(res, &(pcbFree_h));
 				if (&(current->s_procq)==(current->s_procq.next)){
 					// se la coda dei processi diventa vuota in seguito alla rimozione allora rimuovere semaforo dalla ASL
 					list_del(&(current->s_link));
@@ -162,7 +162,7 @@ pcb_t* outBlocked(pcb_t *p) {
 						// se ho trovato il pcb con stesso p_list di p allora lo rimuovo
 						list_del(iterpcb);
 						// reinserimento nella coda dei processi liberi
-						list_add(iterpcb, pcbFree_h);
+						list_add(iterpcb, &(pcbFree_h));
 						return p;
 					}
 				}

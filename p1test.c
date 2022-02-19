@@ -155,6 +155,10 @@ int main(void) {
 
     /* create a 10-element process queue */
     LIST_HEAD(qa);
+    //struct list_head qa;
+  // mkEmptyProcQ(&qa);
+  
+   // if (emptyProcQ(pcbFree_h)) addokbuf("pcbFree vuota\n");
     if (!emptyProcQ(&qa))
         adderrbuf("emptyProcQ: unexpected FALSE   ");
     addokbuf("Inserting...   \n");
@@ -174,6 +178,7 @@ int main(void) {
             default:
                 break;
         }
+        
         insertProcQ(&qa, q);
     }
     addokbuf("inserted 10 elements   \n");
@@ -188,6 +193,7 @@ int main(void) {
     q = outProcQ(&qa, firstproc);
     if (q == NULL || q != firstproc)
         adderrbuf("outProcQ failed on first entry   ");
+        
     freePcb(q);
     q = outProcQ(&qa, midproc);
     if (q == NULL || q != midproc)

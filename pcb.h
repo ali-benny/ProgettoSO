@@ -6,7 +6,7 @@
 #include "listx.h"
 
 HIDDEN pcb_t pcbFree_table[MAXPROC];
-HIDDEN struct list_head *pcbFree_h = NULL;
+HIDDEN struct list_head pcbFree_h;
 
 void initPcbs();
 void freePcb(pcb_t * p);
@@ -15,7 +15,7 @@ void mkEmptyProcQ(struct list_head *head);
 int emptyProcQ(struct list_head *head);
 
 //!! nota: pcb_t *p, dovrebbe essere cosi` ma non funziona
-void insertProcQ(struct list_head *head, pcb_t p); 
+void insertProcQ(struct list_head *head, pcb_t *p); 
 
 pcb_t* headProcQ(struct list_head* head);
 pcb_t* removeProcQ(struct list_head* head);

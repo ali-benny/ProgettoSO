@@ -21,14 +21,13 @@ void bp(){}
 */
 void initPcbs(){
 	// inizializzo pcbFree_h
-	LIST_HEAD(pcbFree);
-	pcbFree_h = &(pcbFree);
+	INIT_LIST_HEAD(&(pcbFree_h));
 	
 	// inserisco i pcb di pcbFree_table
 	for (int i = 0; i < MAXPROC; i++){
-		pcbFree_table[i].id = i; //* DEBUG
+		//pcbFree_table[i].id = i; //* DEBUG
 		freePcb(&pcbFree_table[i]);
-		//list_add(&(pcbFree_table[i].p_list), pcbFree_h);
+		//list_add_tail(&(pcbFree_table[i].p_list), pcbFree_h);
 	}
 }
 
@@ -38,8 +37,8 @@ void initPcbs(){
 	p: pcb da inserire in pcbFree_h
 */
 void freePcb(pcb_t *p){
-	if (p != NULL)
-		list_add(&(p->p_list), pcbFree_h);
+	//if (p != NULL)
+		list_add_tail(&(p->p_list), &(pcbFree_h));
 }
 
 /*  3-funziona davvero!!
@@ -51,12 +50,13 @@ void freePcb(pcb_t *p){
 	return: pcb rimosso da pcbFree_h, NULL altrimenti
 */
 pcb_t *allocPcb(){
-	if (!list_empty(pcbFree_h)){
+	if (list_empty(&(pcbFree_h)))return NULL;
+	else{
 		// salvo il pcb in resPcb
-		pcb_t *resPcb = container_of(list_next(pcbFree_h), pcb_t, p_list);
+		pcb_t *resPcb = container_of(pcbFree_h.next, pcb_t, p_list);
 		
 		// rimuovi elemento appena salvato da pcbFree_h
-		list_del(list_next(pcbFree_h));
+		list_del(pcbFree_h.next);
 		
 		//DOPO AVERLO RIMOSSO possiamo settare i campi
 		resPcb->p_parent = NULL;
@@ -70,14 +70,14 @@ pcb_t *allocPcb(){
 		resPcb->p_s.cause = 0;
 		resPcb->p_s.status = 0;
 		resPcb->p_s.pc_epc = 0;
-		resPcb->p_s.gpr[STATE_GPR_LEN] = 0;
+		resPcb->p_s.gpr[0] = 0;
 		resPcb->p_s.hi = 0;
 		resPcb->p_s.lo = 0;
 
 		resPcb->p_time = 0;
 		return resPcb;
 	}
-	return NULL;
+	
 }
 
 /*  4
@@ -86,7 +86,7 @@ pcb_t *allocPcb(){
 	head: lista da inizializzare
 */
 void mkEmptyProcQ(struct list_head *head){
-	if (head != NULL)
+	//if (head != NULL)
 		INIT_LIST_HEAD(head);
 }
 
@@ -97,13 +97,12 @@ void mkEmptyProcQ(struct list_head *head){
 	head: lista da controllare
 */
 int emptyProcQ(struct list_head *head){
-	//bp();
-	//return list_empty(head);
-	
+	return list_empty(head);
+	/*
 	if (list_empty(head))
 		return 1;
 	return 0;
-	
+	*/
 }
 
 /*  6
@@ -114,8 +113,8 @@ int emptyProcQ(struct list_head *head){
 	
 	!! nota: pcb_t *p, dovrebbe essere cosi` ma non funziona
 */
-void insertProcQ(struct list_head *head, pcb_t p){
-	list_add_tail(&p.p_list, head);
+void insertProcQ(struct list_head *head, pcb_t *p){
+	list_add_tail(&(p->p_list), head);
 }
 
 /*  7
@@ -126,11 +125,9 @@ void insertProcQ(struct list_head *head, pcb_t p){
 	head: lista dei pcb
 */
 pcb_t *headProcQ(struct list_head *head){
-	if (head != NULL){
-		if (!list_empty(head))
-			return container_of(list_next(head), pcb_t, p_list);
-	}
-	return NULL;
+	//if (head != NULL){
+	if (list_empty(head))return NULL;
+	return container_of(list_next(head), pcb_t, p_list);
 }
 
 /*  8
