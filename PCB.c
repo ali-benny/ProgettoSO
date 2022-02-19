@@ -98,7 +98,7 @@ void mkEmptyProcQ(struct list_head *head){
 */
 int emptyProcQ(struct list_head *head){
 	bp();
-	if (head == NULL || list_empty(head))
+	if (list_empty(head))
 		return 1;
 	return 0;
 }
