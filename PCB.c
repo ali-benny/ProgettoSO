@@ -97,7 +97,7 @@ void mkEmptyProcQ(struct list_head *head){
 	head: lista da controllare
 */
 int emptyProcQ(struct list_head *head){
-	bp();
+	//bp();
 	if (list_empty(head))
 		return 1;
 	return 0;
