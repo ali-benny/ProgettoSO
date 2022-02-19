@@ -122,7 +122,16 @@ void adderrbuf(char *strp) {
 
     PANIC();
 }
-
+/*! da togliere
+void stampp(struct list_head *head){
+	struct list_head *iter;	
+	if (!list_empty(head)){
+	list_for_each(iter, head) {
+		if(iter != NULL) {
+			addokbuf("x");
+		} else addokbuf("\nhead null\n");
+	}}
+}*/
 
 int main(void) {
     int i;
@@ -166,9 +175,11 @@ int main(void) {
                 break;
         }
         insertProcQ(&qa, q);
+        if (&qa != NULL) addokbuf("&qa != NULL\n");
     }
     addokbuf("inserted 10 elements   \n");
-
+    int ciao = emptyProcQ(&qa);
+    
     if (emptyProcQ(&qa))
         adderrbuf("emptyProcQ: unexpected TRUE");
 

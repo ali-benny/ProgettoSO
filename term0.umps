@@ -1,31 +1,16 @@
 Initialized process control blocks   
-x
-x
-x
-x
-x
-x
-x
-x
-x
-x
-x
-11esimo--
-x
-x
-x
-x
-x
-x
-x
-x
-19esimo---
-x
-ultimo
-ho fatto for
-i == MAXPROC 
 allocPcb ok   
 freed 10 entries   
 Inserting...   
+&qa != NULL
+&qa != NULL
+&qa != NULL
+&qa != NULL
+&qa != NULL
+&qa != NULL
+&qa != NULL
+&qa != NULL
+&qa != NULL
+&qa != NULL
 inserted 10 elements   
 emptyProcQ: unexpected TRUE

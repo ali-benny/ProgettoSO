@@ -25,11 +25,10 @@ void initASL(){
 	for (int i=0; i<MAXPROC; i++){
 		semd_table[i].id = i;	//* DEBUG
 		list_add(&(semd_table[i].s_link), semdFree_h);
-	}/*
-	printf("\nasl_h = %d",asl_h);
-	printf("\nasl_h->next = %d",asl_h->next);
-	printf("\nsemdFree_h %d", semdFree_h);
-    printf("\nsemdfree_h->next %d", semdFree_h->next); */                                                                                                                                                                                 
+	}   
+	//inizializza la lista di semafori attivi
+	LIST_HEAD(semd);
+	asl_h = &semd;
 }
 
 /*	14
@@ -74,21 +73,13 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 			//LIST_HEAD(sproc);
 			//new->s_procq = sproc;
 			INIT_LIST_HEAD(&(new->s_procq));
-			//new->s_link lo cambierà list_add() dopo.
-			//printf("\n new->s_link %d", new->s_link);
-			//printf("\n new->s_link.next %d", new->s_link.next);
+			
 			//e poi inserisce in ASL
 			list_add(&(new->s_link), asl_h);
 			list_add(&(p->p_list), &(new->s_procq));
 			return 0;
 		} else return 1;
-	}/*
-	else {
-		if (semAdd == NULL)
-			printf("\nERRORE insertBlocked(semAdd, p)! semAdd = NULL!");
-		if (p == NULL)
-			printf("\nERRORE insertBlocked(semAdd, p)! p = NULL!");
-	}*/
+	}
     return 0;
 }
 
@@ -102,6 +93,9 @@ int insertBlocked(int *semAdd, pcb_t *p) {
 	diventa vuota, rimuove il descrittore
 	corrispondente dalla ASL e lo inserisce nella
 	coda dei descrittori liberi (semdFree_h).
+	
+	return: primo pcb bloccato in asl_h con key = semAdd, NULL altrimenti
+	semAdd: chiave associata ad un semaforo di asl_h
 */
 pcb_t* removeBlocked(int *semAdd) {
     if (semAdd != NULL) {
@@ -133,10 +127,7 @@ pcb_t* removeBlocked(int *semAdd) {
 			}
 		}
 	}
-	//else 
-		//printf("\nERRORE removeBlocked(int *semAdd)! semAdd = NULL!");
-	// se semAdd = NULL oppure se non è stato trovato il semaforo con quello specifico semAdd
-    	return NULL;
+	return NULL;
 }
 
 /*	16
@@ -147,11 +138,14 @@ pcb_t* removeBlocked(int *semAdd) {
 	coda dei processi bloccati per il semaforo diventa
 	vuota, rimuove il descrittore corrispondente dalla ASL
 	e lo inserisce nella coda dei descrittori liberi
+	
+	return: pcb rimosso, NULL altrimenti
+	p: pcb bloccato in un semaforo asl_h
 */
 pcb_t* outBlocked(pcb_t *p) {
     if (p != NULL) {
 		//cercare il p->p_semAdd (key) nella ASL
-			int *semAdd = p->p_semAdd; 
+		int *semAdd = p->p_semAdd; 
 		struct list_head *iter;
 		list_for_each(iter, asl_h){
 			semd_PTR current = container_of(iter, semd_t, s_link);
@@ -183,10 +177,7 @@ pcb_t* outBlocked(pcb_t *p) {
 			}
 		}
 	}
-	//else 
-		//printf("\nERRORE outBlocked(p)! p = NULL!");
-	// se p = NULL oppure se non è stato trovato il semaforo con quello specifico semAdd
-    	return NULL;
+	return NULL;
 }
 
 /*	17
@@ -195,6 +186,9 @@ pcb_t* outBlocked(pcb_t *p) {
 	SEMD con chiave semAdd. Ritorna NULL se il SEMD
 	non compare nella ASL oppure se compare ma la sua
 	coda dei processi è vuota.
+	
+	return: pcb in testa ad asl_h con key = semAdd, NULL altrimenti
+	semAdd: chiave associata ad un semaforo di asl_h
 */
 pcb_t* headBlocked(int *semAdd) {
 	if (semAdd != NULL) {
@@ -212,75 +206,6 @@ pcb_t* headBlocked(int *semAdd) {
 			}
 		}
 	}
-	//else 
-		//printf("\nERRORE semAddBlocked(int *semAdd)! semAdd = NULL!");
-	//se semAdd = NULL oppure se non è stato trovato il semaforo con quello specifico semAdd
-    	return NULL;
+	return NULL;
 }
 
-// ****** MAIN per DEBUG ******
-///*
-int main1() {
-	int sem[MAXPROC]; //array di chiavi
-	LIST_HEAD(semd);
-	asl_h = &semd;
-	initPcbs();
-	initASL();
-	//printf("prima di alloc");
-	//stampaLista(semdFree_h, "semd");
-	pcb_t *p;// = allocPcb();
-	int insertBlock = insertBlocked(&sem[0], p);
-	//printf("\ninsertBlock = %d\n", insertBlock);
-	
-}/*
-int main2() {
-	int sem[MAXPROC];
-	//TODO: DA SPOSTARE in initASL()
-	//inizializza la lista di semafori attivi
-	LIST_HEAD(semd);
-	asl_h = &semd;
-
-	printf("\nInitializing ASL and PCBs...");
-	initPcbs();
-	initASL();
-	printf("\n ...done!");
-	printf("\nsemdFree_h %d", semdFree_h);
-    printf("\nsemdfree_h->next %d", semdFree_h->next);
-    printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
-	printf("\ndopo init asl_h = %d",asl_h);
-	printf("\ndopo init asl_h->next = %d",asl_h->next);
-	stampaLista(semdFree_h, "semdfree");	
-
-	pcb_t *p;
-	pcb_t *p2;
-	printf("\np = %d",p);
-	printf("\npost alloc semdFree_h %d", semdFree_h);
-	printf("\npost alloc semdfree_h->next %d", semdFree_h->next);
-	printf("\npost alloc semdfree_h->next->next %d", semdFree_h->next->next);
-	printf("\npost alloc semdfree_h->next->next->next %d", semdFree_h->next->next->next);
-
-	printf("\n\n **Inserting...**");
-	int insBlock = insertBlocked(&sem[0], p);
-	printf("\n ...inserting done! %d", insBlock);
-	printf("\n\n **Inserting...**");
-	int insBlock2 = insertBlocked(&sem[1], p2);
-	printf("\n ...inserting done! %d", insBlock);
-	printf("\n");///*
-	printf("\nsemdFree_h %d", semdFree_h);
-    printf("\nsemdfree_h->next %d", semdFree_h->next);
-   // printf("\nsemdfree_h->next->next %d", semdFree_h->next->next);
-	//*
-	printf("\n\ndopo insert asl_h = %d",asl_h);
-	printf("\ndopo insert asl_h->next = %d",asl_h->next);
-	printf("\ndopo insert asl_h->next->next = %d",asl_h->next->next);
-	printf("\n\n Remove...");
-	p=removeBlocked(&sem[0]);
-	printf("\n p=%d",p);
-	printf("\n\n ...removing done");
-	printf("\ndopo insert asl_h = %d",asl_h);
-	printf("\ndopo insert asl_h->next = %d",asl_h->next);
-	printf("\ndopo insert asl_h->next->next = %d",asl_h->next->next);
-	printf("\n");
-	return 0;
-}
-*/
