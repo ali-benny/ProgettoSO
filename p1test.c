@@ -20,7 +20,7 @@
 #include "pandos_types.h"
 
 #include "pcb.h"
-#include "ASL.h"
+#include "asl.h"
 
 
 #define MAXPROC 20
