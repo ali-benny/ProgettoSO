@@ -1,5 +1,5 @@
 /**
- * @file main.c
+ * @file exceptions.c
  * @author alice benatti, alberto scuderi, gerald manzano, libera longo
  *  
  * @version 0.1
@@ -9,7 +9,4 @@
  * 
  */
 
-#include "syscall.h"
-#include "scheduler.h"
-#include "asl.h"
-#include "pcb.h"
+#include "exceptions.h"
