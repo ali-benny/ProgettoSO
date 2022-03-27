@@ -10,6 +10,9 @@
 
 #include "pcb.h"
 
+HIDDEN pcb_t pcbFree_table[MAXPROC];
+HIDDEN struct list_head pcbFree_h;
+
 /* ****************************************************************************** */
 
 /*  1
@@ -122,7 +125,7 @@ pcb_t *headProcQ(struct list_head *head){
 	all’elemento rimosso dalla lista.
 	
 	return: puntatore dell'elemento rimosso, NULL altrimenti
-	head: lista da cui rimuovere il pcb (escludendo la sentinella)
+	head: lista da cui rimuovere il pcb dalla testa (escludendo la sentinella)
 */
 pcb_t *removeProcQ(struct list_head *head){
 	if (head != NULL){

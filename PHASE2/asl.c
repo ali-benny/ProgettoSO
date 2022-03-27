@@ -10,6 +10,10 @@
  */
 #include "asl.h"
 
+HIDDEN semd_t semd_table[MAXPROC];
+HIDDEN struct list_head semdFree_h; //lista di semafori liberi
+HIDDEN struct list_head asl_h;	 //lista di semafori attivi, utilizzati in questo momento
+
 /*	18
 	Inizializza la lista dei semdFree in modo da contenere 
 	tutti gli elementi della semdTable. 

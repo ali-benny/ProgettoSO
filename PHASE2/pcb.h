@@ -5,9 +5,6 @@
 #include "pandos_types.h"
 #include "listx.h"
 
-HIDDEN pcb_t pcbFree_table[MAXPROC];
-HIDDEN struct list_head pcbFree_h;
-
 void initPcbs();
 void freePcb(pcb_t *p);
 pcb_t *allocPcb();
