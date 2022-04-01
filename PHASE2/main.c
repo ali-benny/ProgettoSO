@@ -77,7 +77,7 @@ void main(){
     //(vedi paragraph 2.3 virtualsquare (pag 9))
     pcb->p_s.s_status = IMON | IEPON | TEBITON; //? 0b00001000000000001111111100000100;
 	// - the SP (stack pointer) set to RAMTOP
-	RAMTOP(pcb->p_s.s_reg[26]);
+	RAMTOP(pcb->p_s.gpr[26]);
     // - and its PC set to the address of test.
     pcb->p_s.s_pc = (memaddr) test;
     //set the remaining pcb fields as follow:

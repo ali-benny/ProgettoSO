@@ -68,7 +68,8 @@ pcb_t *allocPcb(){
 		resPcb->p_s.cause = 0;
 		resPcb->p_s.status = 0;
 		resPcb->p_s.pc_epc = 0;
-		resPcb->p_s.gpr[0] = 0;
+		for(int i = 0; i < STATE_GPR_LEN; i++)
+			resPcb->p_s.gpr[i] = 0;
 		resPcb->p_s.hi = 0;
 		resPcb->p_s.lo = 0;
 

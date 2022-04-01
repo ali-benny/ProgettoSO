@@ -41,7 +41,8 @@ void exception_handler() {
             passup_or_die(GENERALEXCEPT);
 			break;
 		default: 
-			//TODO: termprint? controllate se cè nel 2
+			//TODO: termprint?
+			klog_print("Unknown exception! You're in default case.\n");
 			break;
 	}
 }

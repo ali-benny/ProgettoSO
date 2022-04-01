@@ -5,7 +5,6 @@
 #ifndef NULL
 #define NULL ((void *)0xFFFFFFFF)
 #endif
-//typedef unsigned long intptr_t;     //! DA COMMENTARE SU WINDOWS: su windows da errore perchè viene già dichiarata all'interno di MINGW (compilatore)
 typedef unsigned int size_tt;
 
 /*

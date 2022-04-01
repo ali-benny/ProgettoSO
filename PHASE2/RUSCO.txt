@@ -1,0 +1,40 @@
+void getCpuTime(unsigned int a1, unsigned int a2, unsigned int a3);
+void createProcess(unsigned int a1, unsigned int a2, unsigned int a3);
+void terminateProcess(unsigned int a1);
+void verhogen(int * semaddr);
+void passeren(int * semaddr);
+void waitClock(void);
+void IOCommand(unsigned int a1, unsigned int a2, unsigned int a3);
+void setTutor(void);
+void specPassUp(unsigned int a1, unsigned int a2, unsigned int a3);
+void getPid(unsigned int a1, unsigned int a2);
+
+blablablaFunzione() {
+if a0 == NUMEROFUNZIONE
+
+#ifdef DEBUG
+//scrivi siamo dentro funzioneblalblbla
+#endif //DEBUG
+    unsigned int *user = (unsigned int *)a1;
+    unsigned int *kernel = (unsigned int *)a2;
+    unsigned int *wallclock = (unsigned int *)a3;
+    //robah
+    }
+else 
+//scrivi cose per capire che a0 è sbagliato
+}
+
+//in rikaya handler.c
+//registri a0-a3
+        unsigned int a0 = currentPcb->p_s.gpr[3];
+        unsigned int a1 = currentPcb->p_s.gpr[4];
+        unsigned int a2 = currentPcb->p_s.gpr[5];
+        unsigned int a3 = currentPcb->p_s.gpr[6];
+        
+        //int callScheduler = FALSE; //scelgo se chiamare lo scheduler
+        //verifica del tipo di syscall
+        switch (a0)
+        {
+        case GETCPUTIME:
+            getCpuTime(a1, a2, a3);
+            break;
