@@ -64,6 +64,7 @@ pcb_t *allocPcb(){
 		INIT_LIST_HEAD(&(resPcb->p_sib));
 		
 		// UMPS3
+		//phase 1
 		resPcb->p_s.entry_hi = 0;
 		resPcb->p_s.cause = 0;
 		resPcb->p_s.status = 0;
@@ -74,6 +75,13 @@ pcb_t *allocPcb(){
 		resPcb->p_s.lo = 0;
 
 		resPcb->p_time = 0;
+
+		//modifiche phase 2
+		resPcb->p_supportStruct = NULL;
+		resPcb->p_prio = 0;
+		resPcb->p_pid = 0;
+		//fine modifiche
+		
 		return resPcb;
 	}
 }

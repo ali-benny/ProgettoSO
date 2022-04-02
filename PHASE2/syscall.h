@@ -1,6 +1,7 @@
 #ifndef H_SYSCALL
 #define H_SYSCALL
 
+#include "pcb.h"
 void syscall_handler();
 
 //int SYSCALL(CREATEPROCESS, state_t *statep, int prio, support_t *supportp);
