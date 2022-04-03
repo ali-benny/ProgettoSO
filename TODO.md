@@ -9,3 +9,4 @@
 6. altro? aggiungilo qui 🔽
 
 7. completare alloc in pcb.c con i nuovi campi (vedi pandos_types.c)
+8. Controllare i cosi s_pc/pc_epc di state_t 

@@ -75,11 +75,11 @@ void main(){
     // - processor Local Timer enabled
     // - kernel mode on 
     //(vedi paragraph 2.3 virtualsquare (pag 9))
-    pcb->p_s.s_status = IMON | IEPON | TEBITON; //? 0b00001000000000001111111100000100;
+    pcb->p_s.status = IMON | IEPON | TEBITON; //? 0b00001000000000001111111100000100;
 	// - the SP (stack pointer) set to RAMTOP
 	RAMTOP(pcb->p_s.gpr[26]);
     // - and its PC set to the address of test.
-    pcb->p_s.s_pc = (memaddr) test;
+    pcb->p_s.pc_epc = (memaddr) test;
     //set the remaining pcb fields as follow:
 	//- set all the Process Tree fields to NULL
     pcb->p_child = NULL;

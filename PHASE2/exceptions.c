@@ -14,10 +14,11 @@
 //paragraph 3.4 pandos-chapter3.pdf (pag 8-9)
 //Exception Handling
 
-// Global Variables
+// Global Variables/Functions
 extern void syscall_handler();
 
 void exception_handler() {
+	state_t *state_reg = (state_t*)BIOSDATAPAGE; // register value: che tipo di syscall è?
 	//The cause of the exception is encoded in the .ExcCode field of the Cause
 	//registrer (Cause.ExcCode) in the saved exception state (vedi 3.3)
 	unsigned int cause = getCAUSE();
@@ -33,7 +34,7 @@ void exception_handler() {
 			break;
 		case 8: //SYSCALL
 			//Nucleus's SYSCALL exception handler (vedi 3.5)
-            syscall_handler();
+            syscall_handler(state_reg);
 			break;
 		case 4 ... 7: //Program Traps
         case 9 ... 12: //Program Traps
