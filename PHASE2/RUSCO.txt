@@ -38,3 +38,98 @@ else
         case GETCPUTIME:
             getCpuTime(a1, a2, a3);
             break;
+
+
+
+//*******RIKAYA DO_IO, LLibera
+//SYS7
+// Questa system call attiva una operazione di I/O
+//copiando parametro command nel campo comando
+//del registro del dispositivo indicato
+//come puntatore nel secondo argomento.
+// L’operazione è bloccante, quindi il chiamante
+//viene sospeso sino alla conclusione del comando.
+//Il valore ritornato è il contenuto del registro di
+//status del dispositivo.
+//int SYSCALL(IOCOMMAND, unsigned int command, unsigned int *IOregister, FALSE)
+void IOCommand(unsigned int a1, unsigned int a2, unsigned int a3)
+{
+#ifdef DEBUG
+    termprint("dentro a waitio\n", 0);
+#endif
+
+    unsigned int command = a1;
+    unsigned int *IOregister = (unsigned int *)a2;
+    int read = (int)a3;
+
+    unsigned int *commandAddress;
+
+    if (TERM0ADDR <= a2 && a2 < END_TERMINAL)
+    {
+        //terminale
+        //a3 false trasmissione, true ricezione
+        if (read)
+        {
+            //lettura
+            commandAddress = IOregister + 0x4;
+            *commandAddress = command;
+            //calcolo del semaforo corrispondente, magari da implmentare come funzione
+            passeren(&deviceSem[(a2 - DEV_REGS_START) / 16]);
+        }
+        else
+        {
+            //scrittura
+            commandAddress = IOregister + 0xc;
+            *commandAddress = command;
+            //calcolo del semaforo corrispondente + DEV_PER_INT
+            passeren(&deviceSem[((a2 - DEV_REGS_START) / 16) + DEV_PER_INT]);
+        }
+    }
+    else
+    { //devices
+        //accedo al campo registro di ioregister unsigned int *campoComando = (unsigned int*) (a2+4);
+        //il campo command è a base+0x4
+        commandAddress = IOregister + 0x4;
+        *commandAddress = command;
+        //blocco il processo con passeren
+        currentPcb->p_s.gpr[3] = *IOregister;
+        //calcolo del semaforo corrispondente
+        passeren(&deviceSem[(a2 - DEV_REGS_START) / 16]);
+    }
+    //scheduler();
+}
+//tempo kernel
+
+/*
+    0x1000.02D0 ultimo dispositivo della linea 7(fine)
+    0x1000.0250 primo dispositivo della linea 7(inizio)
+    
+    nella WAITCLOCK, come si fa a controllare che il dispositivo a cui si riferisce sia un terminale
+    bisogna veridficare se il dispositio in questione è un terminale 
+    in quel caso bisogna controllare l'ultimo paramentro per la lettura o scrittura(bool)    
+    */
+
+
+
+//GERALD DO_IO
+/**
+    * 0-7: DEVICE LINEA 3
+    * 8-15:DEVICE LINEA 4
+    * 16-23: DEVICE LINEA 5
+    * 24-31: DEVICE LINEA 6
+    * 32-47: DEVICE LINEA 7 (TERMINALI)
+    *      32-39: TERMINALI IN SCRITTURA=WRITE
+    *      40-47: TERMINALI IN LETTURA=READ
+    * 48: DEVICE INTERVAL TIMER
+    * 
+*/
+if (state_reg->reg_a1 == (int)NULL || state_reg->reg_a2 == (int)NULL) { sys_terminate(); }
+
+int intlNo = state_reg->reg_a1, dnum = state_reg->reg_a2;
+int dev_pos = (intlNo - 3) * 8 + dnum;
+
+if (state_reg->reg_a3 == 1) { dev_pos = dev_pos + 8; } //è un terminale in lettura = READ
+
+if (check_dev_installation(intlNo, dnum) != 1){ sys_terminate(); }
+
+sys_p(& devicesem[dev_pos]);  

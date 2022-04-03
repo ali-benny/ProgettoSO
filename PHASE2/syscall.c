@@ -13,7 +13,16 @@
 
 #define SYS_DEBUG //per debuggare le sistemcall
 
+//richiami delle variabili globali di main.c
+extern list_head high_priority_q;
+extern list_head low_priority_q;
+extern pcb_PTR current_process;
+extern int process_count;
+extern int soft_block_count; 
+extern pcb_PTR current_process;
+
 // *** Auxiliar Functions ***
+
 void auxiliary_terminate(pcb_PTR current);
 
 /*  Syscall -1: Create_Process
@@ -43,16 +52,21 @@ int Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			nuovo_pcb->p_s = *statep;
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
-
-			//?problema: nuovo_pcb ha subito alloc quindi cosa restituiamo come pid?
 			nuovo_pcb->p_pid = &nuovo_pcb;
-			
-			nuovo_pcb->p_next = insertProcQ(head, nuovo_pcb);
+			if (prio == PROCESS_PRIO_HIGH)
+				insertProcQ(high_priority_q, nuovo_pcb);
+			else if(prio == PROCESS_PRIO_LOW)
+				insertProcQ(low_priority_q, nuovo_pcb);
+			else klog_print("prio non e' Low o High\n");
+			//! un po' troppo: PANIC();
 			insertChild(current_process, nuovo_pcb);// aggiungo al current un figlio del nuovo pcb (=chiamante)
 			
 			nuovo_pcb->p_time = 0;
 			nuovo_pcb->p_semAdd = NULL;
 
+			//aggiornare i contatori
+			process_count++;
+			
 			return nuovo_pcb->p_pid;
 		} else
 			return -1;	
@@ -79,47 +93,49 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 #endif
 		int pid = (int) a1;
 		if (pid == 0){ //devo eliminare current process
-			auxiliary_terminate(current_process);			
+			auxiliary_terminate(current_process);
 		} else { //elimino il processo con pid indicato
 			//cerco pid nella lista di non so cosa
 			pcb_PTR trovato = NULL;
 			pcb_PTR iter;
 			list_for_each(iter, high_priority_q) {
 				if(iter->p_pid == pid)
-					//trovato = processo con pid=pid(=a1)
-					trovato = iter;
+					trovato = iter;		//trovato = processo con pid=pid(=a1)
 			}
 			if (trovato == NULL){
 				list_for_each(iter, low_priority_q) {
 					if(iter->p_pid == pid)
-						trovato = iter; //trovato = processo con pid=pid(=a1)
+						trovato = iter;	//trovato = processo con pid=pid(=a1)
 				}
 			}
-			if(trovato == NULL)
+			if(trovato != NULL)
 				auxiliary_terminate(trovato);
 		}		
-		
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Terminate_Process ERROR: a0 != TERMPROCESS\n");
 }
-
 /*	Auxiliar Function of Terminate_Process	*
 	Elimina i current_process eliminando i figli e i figli dei figli.
 
-	current: puntetore processo corrente
+	current: puntatore processo corrente
 	return: void
 */
 void auxiliary_terminate(pcb_PTR current){
 	pcb_PTR removed_child;
-	//caso ricorsivo: current ha figli
 	if (current != NULL) {
+		//se ha figli caso ricorsivo
 		while (emptyChild(current)==0) {
 			removed_child = removeChild(current);
 			auxiliary_terminate(removed_child);
+		}
 		//caso base
-		} freePcb(current);
+		outProcQ(high_priority_q, current);
+		outProcQ(low_priority_q, current);
+		freePcb(current);
+		//aggiornamento dei contatori
+		process_count--;	
 	}
 }
 
@@ -127,7 +143,7 @@ void auxiliary_terminate(pcb_PTR current){
 	- Operazione di richiesta di semaforo binario.
 	Il valore del semaforo è memorizzato nella variabile di tipo
 	intero passata per indirizzo.
-	L'indirizzo della variabile agisce da identificatore per il semaforo.
+	L'indirizzo della variabile agisce da identificatore per il semaforo.	
 */
 //void SYSCALL(PASSEREN, int* semaddr, 0, 0)
 void Passeren(int a0, unsigned int a1) {
@@ -137,14 +153,20 @@ void Passeren(int a0, unsigned int a1) {
 #endif
 
 		int *semaddr = (int *) a1;
-    	//TODO
-		
+    	int result = insertBlocked(semaddr, current_process);
+		//aggiornare i contatori
+		if(result == 0) // insertBlocked avvenuta con successo
+			soft_block_count++;
+		else {
+			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
+			//! un po' troppo: PANIC();
+		}
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Passeren ERROR: a0 != PASSEREN\n");
-	
 }
+
 /* Syscall -4: Verhogen
 	– Operazione di rilascio su un semaforo binario.
 	Il valore del semaforo è memorizzato nella variabile
@@ -160,20 +182,33 @@ void Verhogen(int a0, unsigned int a1) {
 #endif
 
 	int * semaddr = (int *) a1;
-	//TODO
+	pcb_PTR released_proc = removeBlocked(semaddr);
+	if(released_proc->p_prio  == PROCESS_PRIO_HIGH) {
+		insertProcQ(high_priority_q, released_proc);
+		soft_block_count--;		
+	}
+	else if(released_proc->p_prio  == PROCESS_PRIO_LOW) {
+		insertProcQ(low_priority_q, released_proc);
+		soft_block_count--;
+	} else {
+		klog_print("Verhogen ADVICE: released process have no good priority\n");
+		//! un po' troppo: PANIC();
+	}
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Verhogen ERROR: a0 != VERHOGEN\n");
-	
 }
-/* Syscall -5: DO_IO
-– Effettua un’operazione di I/O scrivendo il comando cmdValue nel registro cmdAddr, e mette in 
-pausa il processo chiamante fino a quando non si e’ conclusa.
-– L’operazione è bloccante, quindi il chiamante viene sospeso sino alla conclusione del comando. 
-Il valore ritornato deve essere il contenuto del registro di status
-del dispositivo
+
+/*	Syscall -5: DO_IO
+	– Effettua un’operazione di I/O scrivendo il comando cmdValue nel registro cmdAddr, e mette in 
+	pausa il processo chiamante fino a quando non si e’ conclusa.
+	– L’operazione è bloccante, quindi il chiamante viene sospeso sino alla conclusione del comando. 
+	Il valore ritornato deve essere il contenuto del registro di status
+	del dispositivo
+
+	return:
 */
 //int SYSCALL(DOIO, int *cmdAddr, int cmdValue, 0)
 int DO_IO(int a0, unsigned int a1, unsigned int a2) {
@@ -184,7 +219,8 @@ int DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	
 	int *cmdAddr = (int *) a1;
 	int cmdValue = (int) a2;
-	//TODO
+	
+	
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
@@ -193,11 +229,13 @@ int DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	
 }
 
-/* Syscall -6: Get_CPU_Time
-– Quando invocata, la NSYS6 restituisce il tempo di esecuzione (in microsecondi) 
-del processo che l’ha chiamata fino a quel momento.
-– Questa System call implica la registrazione del tempo passato durante l’esecuzione di un
-processo
+/*	Syscall -6: Get_CPU_Time
+	– Quando invocata, la NSYS6 restituisce il tempo di esecuzione (in microsecondi) 
+	del processo che l’ha chiamata fino a quel momento.
+	– Questa System call implica la registrazione del tempo passato durante l’esecuzione di un
+	processo
+
+	return:
 */
 //int SYSCALL(GETTIME, 0, 0, 0)
 int Get_CPU_Time(int a0) {
@@ -206,7 +244,8 @@ int Get_CPU_Time(int a0) {
 		klog_print("Get_CPU_Time ...");
 #endif
 
-	//TODO
+	//TODO: controllare se vuole il tempo in ... e fare eventuali conversioni
+	return current_process->p_time;
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
@@ -242,13 +281,12 @@ pcb_t
 */
 //support_t* SYSCALL(GETSUPPORT, 0, 0, 0) 
 support_t* Get_Support_Data(int a0) {
-	if (a0 == GETSUPPORT) {
+	if (a0 == GETSUPPORTPTR) {
 #ifdef SYS_DEBUG
 		klog_print("Get_Support_Data ...");
 #endif
 
-    return current_process->p_supportStruct;
-	
+    return current_process->p_supportStruct;	
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
@@ -256,9 +294,10 @@ support_t* Get_Support_Data(int a0) {
 	} else klog_print("Get_Support_Data ERROR: a0 != GETSUPPORT\n");
 	return NULL;
 }
-/*syscall -9: Get_Process_Id
-– Restituisce l’identificatore del processo invocante se parent == 0, 
-quello del genitore del processo invocante altrimenti
+
+/*	Syscall -9: Get_Process_Id
+	– Restituisce l’identificatore del processo invocante se parent == 0, 
+	quello del genitore del processo invocante altrimenti
 */
 //int SYSCALL(GETPROCESSID, int parent, 0, 0) 
 int Get_Process_Id(int a0, unsigned int a1) {
@@ -278,11 +317,14 @@ int Get_Process_Id(int a0, unsigned int a1) {
 #endif
 	} else klog_print("Get_Process_Id ERROR: a0 != GETPROCESSID\n");
 }
-/*syscall -10: Yield
-– Un processo che invoca questa system call viene sospeso 
-e messo in fondo alla coda corrispondente dei processi ready.
-– Il processo che si e’ autosospeso, anche se rimane “ready”,
-non puo’ ripartire immediatamente
+
+/*	 Syscall -10: Yield
+	– Un processo che invoca questa system call viene sospeso 
+	e messo in fondo alla coda corrispondente dei processi ready.
+	– Il processo che si è autosospeso, anche se rimane “ready”,
+	non può ripartire immediatamente
+
+	return:
 */
 //int SYSCALL(YIELD, 0, 0, 0) 
 int Yield(int a0) {
@@ -290,8 +332,19 @@ int Yield(int a0) {
 #ifdef SYS_DEBUG
 		klog_print("Yield ...");
 #endif
-
-    //TODO
+    
+	//TODO: come chiamare un low priority se la high priority è vuota?
+	//TODO: e se anche la low priority è vuota come chiamare il processo corrente?
+	if(current_process->p_prio  == PROCESS_PRIO_HIGH) {
+		//se è high priority e la lista è vuota non devo richiamare lui ma un altro
+		insertProcQ(high_priority_q, current_process);
+	}
+	else if(current_proc->p_prio  == PROCESS_PRIO_LOW) {
+		insertProcQ(low_priority_q, current_process);
+	} else {
+		klog_print("Yield ADVICE: current have no good priority\n");
+		//! un po' troppo: PANIC();
+	}
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
