@@ -11,7 +11,7 @@
 
 #include "syscall.h"
 
-#define SYS_DEBUG //per debuggare le sistemcall
+#define SYS_DEBUG //per debuggare le systemcall
 
 //richiami delle variabili globali di main.c
 extern list_head high_priority_q;
@@ -21,7 +21,8 @@ extern int process_count;
 extern int soft_block_count; 
 extern pcb_PTR current_process;
 
-// *** Auxiliar Functions ***
+
+// *** Auxiliar Functions *** //
 
 void auxiliary_terminate(pcb_PTR current); //terminate
 void P_operation(int *semaddr);	//Passeren, Wait for clock
