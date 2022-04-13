@@ -63,9 +63,6 @@ void main(){
         device_sem[i] = 0;
 	}
     
-	//5. Load Interval Timer with 100 milliseconds (vedi 3.6.3)
-    LDIT(100000);
-
     //6. Instantiate a single low priority process
     pcb_PTR pcb = allocPcb(); //pcb
     pcb->p_prio = 0;
@@ -89,6 +86,9 @@ void main(){
 	pcb->p_semAdd = NULL; //- semaforo bloccante a NULL
 	pcb->p_supportStruct = NULL; //- Struttura di supporto a NULL
     insertProcQ(&low_priority_q, pcb);
+    
+    //5. Load Interval Timer with 100 milliseconds (vedi 3.6.3)
+    LDIT(100000); //! spostato, per il pdf dovrebbe essere prima del 6, ma farlo prima toglie del tempo al processo.
 
     //7. Call the Scheduler
     scheduler();

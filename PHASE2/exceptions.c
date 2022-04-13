@@ -28,9 +28,14 @@ extern passupvector_t *passupvector;
 // * Auxiliar Functions * //
 void PLT_Interrupt();
 void Interval_Timer_Interrupt();
-void Device_interrupt();
+void Device_interrupt(unsigned int ip);
 
 
+/**
+ * Handles an exception.
+ *
+ * @returns None
+ */
 void exception_handler() {
 	state_t *state_reg = (state_t*)BIOSDATAPAGE; // register value: che tipo di syscall è?
 	//The cause of the exception is encoded in the .ExcCode field of the Cause
@@ -62,6 +67,11 @@ void exception_handler() {
 }
 
 //paragrafo 3.6 pandos-chapter 3 (pag 17-18)
+/**
+ * Handles the interrupt handler.
+ *
+ * @returns None
+ */
 void interrupt_handler(){
 	unsigned int cause = getCAUSE();
 	unsigned int ip = (cause & 0x0000FF00) >> 8;  // tutti a 0 tranne 8-15 (IP) e >> (= saltiamo i primi 8 bit)
@@ -80,16 +90,50 @@ void interrupt_handler(){
 
 		ip >> 1;
 		if (ip % 2 != 0){ //Devices, Non-Timer Interrupts
-			Device_Interrupt();
+			Device_Interrupt(unsigned int ip);
 		}
 	}
 }
 
+
 void passup_or_die(int type_of_exception){
+	//a. if the Current Process's p_supportScruct is NULL,
+	//then the exception should be handled as a NSYS2:
+	//The Current Process and all its progeny are terminated.
+	//this is the "DIE" portion of PassUp or Die.
 	
+	if(current_process->p_supportStruct == NULL){
+		Terminate_Process(-2,current_process);
+	} else {
+		//- If the Current Process's p_supportStruct is non-NULL
+		//then handling of the exception is "PASSED UP"		
+		//- the location, in this case, is fixed; 
+		// a given location in the BIOS data page (For Processor 0, this is 0x0FFF.F000) [Section 3.2.2-pop]
+		//- the address (and stack pointer) for the handler to pass control to was seed by the Nucleus,
+		//during Nucleus initialization, in the appriopriate location of the Pass Up Vector. (Section 3.1)
+		//- TLB exceptions (i.e. page faults): The Support Level TLB exception handler
+		//- all other exceptions: The Support Level general exception handler
+
+		//b. Copy the saved exception state from the Bios Data Page to the correct
+		//sup_exceptState field of the Current Process.
+		//The Curren Process's pcb should point to a non-null support_t.
+		current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
+		unsigned int context = current_process->p_supportStruct->sup_exceptContext[type_of_exception];
+		
+		//c. Perform a LDCXT using the fields from the correct sup exceptContext
+		//field of the Current Process. [Section 7.3.4-pops]
+		LDCXT(context.stackPtr, context.state, context.pc);
+	}
 }
 
 //paragrafo 3.6.2 pandos-chapter3.pdf (pag 19)
+/**
+ * This function is called when the user presses the interrupt button.
+ * It is responsible for setting the state of the current process to
+ * the state of the process that was interrupted.
+ *
+ * @returns None
+ */
 void PLT_Interrupt(){ //(PLT = Processor Local Timer)
 	//Aknowledge the PLT interrupt by loading the timer with a new value
 	setTIMER(5000);
@@ -122,12 +166,12 @@ void Interval_Timer_Interrupt(){
 	device_sem[48] = 0;
 	//4. Return control to the Current Process: Perform a LDST on the saved exception state(...)
 	if (current_process == NULL) scheduler();
-	else LDST((state_t*)BIOSDATAPAGE);
+	else LDST((state_t*) BIOSDATAPAGE);
 }
 
 
 //paragrafo 3.6.1 pandos-chapter3.pdf (pag 18) Non-Timer Interrups
-void Device_interrupt() {
+void Device_interrupt(unsigned int ip) {
 	//paragrafo 3.6.1 pandos-chapter3.pdf(pag 18) Non-Timer-Interrupts			
 	//1. Calculate the address for this device's device register [5.1 pops].
 	//   [from 5.1 pops] devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10) // num di linea 3-7
@@ -148,29 +192,77 @@ void Device_interrupt() {
 			case 5: base += 0x08; break;
 			case 6: base += 0x0C; break;
 			case 7: base += 0x10; break;
-			default: break; //messaggio di errore?
+			default: break;
 		}
 		for (int i = 0; i < DevNo; i++) mask = mask*2;
 		if (((base & mask) >> DevNo) > 0) found = 1;
 		else DevNo++;
 	}
-
-	devreg_t* devAddrBase = (devreg_t*)(0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10));
-
-	//2. Save off the status code from the device's device register.
 	
-	//3. Aknlowledge the outstanding interrup.
-	//   This is accomplished by writing the Aknowledge command code in the interrupting device's device register
-	//   Alternatively, writing a new command in the interrupting device's device register will also aknowledge the interrupt
+	// address of the device's device register
+	// NOTA: con devreg abbiamo -> dtp e term 
+	devreg_t* devAddrBase = (devreg_t*)(0x1000.0054 + ((IntLineNo - 3) * 0x80) + (DevNo * 0x10));
+	int device_position = (IntLineNo - 3) + DevNo;
+	unsigned int statusCode;
+	int * semAddr;
+	pcb_PTR pcb; 
+	if (IntLineNo != 7){ //it is a terminal?
+		//it is NOT a terminal
+		statusCode = devAddrBase->dtp.status;
+		devAddrBase->dtp.command = ACK;
+	} else { //it is a terminal
+		//scrittura:
+		if (devAddrBase->term.recv_status != READY && devAddrBase->term.recv_status != BUSY){
+			//2. Save off the status code from the device's device register.
+			statusCode = devAddrBase->term.recv_status;
+			//3. Aknlowledge the outstanding interrupt.
+			devAddrBase->term.recv_command = ACK; //? term.recv_command se è un terminale?
+			//4. Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
+			//semAddr = dev_sem[device_position];
+			//pcb = V_operation(semAddr);
+			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
+			//pcb->p_s.reg_v0 = statusCode;
+			//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
+			//   from the "blocked" state to the "ready" state
+			//?domanda: non lo fa già la V_operation? dobbiamo togliere questa parte
+		}
+		//lettura:
+		if (devAddrBase->term.transm_status != READY && devAddrBase->term.transm_status != BUSY){
+			//2. Save off the status code from the device's device register.
+			statusCode = devAddrBase->term.transm_status;
+			//3. Aknlowledge the outstanding interrupt.
+			devAddrBase->term.transm_command = ACK;
+			//4. Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
+			device_position += 8;
+		//	semAddr = dev_sem[device_position];
+		//	//pcb = V_operation(semAddr);
+			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
+			//pcb->p_s.reg_v0 = statusCode;
+			//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
+			//   from the "blocked" state to the "ready" state
+			//?domanda: non lo fa già la V_operation? dobbiamo togliere questa parte
+		}
+	}
 	//4. Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
-	//   Thid operation should unblock the process (pcb) wich initiates this I/O operation
+	//   This operation should unblock the process (pcb) wich initiates this I/O operation
 	//   and then requested to wait its completion via a NSYS5 operation
+	semAddr = dev_sem[device_position];
+	pcb = V_operation(semAddr);
 	//5. Place the stored off status code in the newly unblocked pcb's v0 register.
+	pcb->p_s.reg_v0 = statusCode;	
 	//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
 	//   from the "blocked" state to the "ready" state
+	//?domanda: non lo fa già la V_operation? dobbiamo togliere questa parte
 	//7. Return controll to the Current Process: Perform a LDST on the saved exception state
 	//   (located at the start of the BIOS Data Page [section 3.4])
+	LDST((state_t*)BIOSDATAPAGE);
 	
+	// *********************************************************************** //
+	//NOTA: (cosa dice il pdf, il codice e' sopra (diviso tra lettura e scrittura ))
+	//2. Save off the status code from the device's device register.
 	
-	
+	//3. Aknlowledge the outstanding interrupt.
+	//   This is accomplished by writing the Aknowledge command code in the interrupting device's device register
+	//   Alternatively, writing a new command in the interrupting device's device register will also aknowledge the interrupt
+
 }

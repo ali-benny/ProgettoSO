@@ -16,7 +16,6 @@
 //richiami delle variabili globali di main.c
 extern list_head high_priority_q;
 extern list_head low_priority_q;
-extern pcb_PTR current_process;
 extern int process_count;
 extern int soft_block_count; 
 extern pcb_PTR current_process;
@@ -26,9 +25,17 @@ extern pcb_PTR current_process;
 
 void auxiliary_terminate(pcb_PTR current); //terminate
 void P_operation(int *semaddr);	//Passeren, Wait for clock
+pcb_PTR V_opreation(int *semaddr); //Veroghen
 
 state_t* state_reg;
 
+/**
+ * Handles system calls.
+ *
+ * @param state The state of the current process.
+ *
+ * @returns None
+ */
 void syscall_handler(state_t* state){
 	state_reg = state;
 	state_reg->pc_epc += 4; //incrementiamo il pc
@@ -66,22 +73,25 @@ void syscall_handler(state_t* state){
 			break;
 		case: -10:
 			Yield(a0);
-			break;	
+			break;
+		default: 
+			passup_or_die(GENERALEXCEPT);
 	}
 }
 
-/*  Syscall -1: Create_Process
+/**  Syscall -1: Create_Process
     Questa system call crea un nuovo processo come figlio del chiamante.
 	Il primo parametro contiene lo stato che deve avere il processo.
 	Se la systemcall, ha sucesso il valore di ritorno è l'id del processo creato, altrimenti -1.
-	
-	- prio: indica se si tratta di un processo ad alta priorità
-	- supportp: è un puntatore alla struttura di supporto del processo
-	- return: il pid del processo
 
- *  @pdf pandos-Chapter3 >> 3.5.1
- int SYSCALL(CREATEPROCESS, state_t *statep, int prio, support_t *supportp)
-*/
+ * @param statep puntatore dello stato del processo
+ * @param prio priorità del processo
+ * @param supportp è un puntatore alla struttura di supporto del processo
+ *
+ * @returns The PID of the new process.
+ * int SYSCALL(CREATEPROCESS, state_t *statep, int prio, support_t *supportp)
+ *  *  @pdf pandos-Chapter3 >> 3.5.1
+ */
 void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 	if(a0 == CREATEPROCESS) {
 #ifdef SYS_DEBUG
@@ -98,13 +108,16 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
 			nuovo_pcb->p_pid = &nuovo_pcb;
+			//scelgo in che coda metterlo in base alla sua priority
 			if (prio == PROCESS_PRIO_HIGH)
 				insertProcQ(high_priority_q, nuovo_pcb);
 			else if(prio == PROCESS_PRIO_LOW)
 				insertProcQ(low_priority_q, nuovo_pcb);
 			else klog_print("prio non e' Low o High\n");
 			//! un po' troppo: PANIC();
-			insertChild(current_process, nuovo_pcb);// aggiungo al current un figlio del nuovo pcb (=chiamante)
+			
+			// aggiungo al current un figlio del nuovo pcb (=chiamante)
+			insertChild(current_process, nuovo_pcb);
 			
 			nuovo_pcb->p_time = 0;
 			nuovo_pcb->p_semAdd = NULL;
@@ -120,6 +133,8 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Create_Process ERROR: a0 != CREATEPROCESS\n");
+	
+	LDST(state_reg);
 }
 
 /* Syscall -2: Terminate_Process
@@ -139,20 +154,20 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 		if (pid == 0){ //devo eliminare current process
 			auxiliary_terminate(current_process);
 		} else { //elimino il processo con pid indicato
-			//cerco pid nella lista di non so cosa
+			//cerco pid nelle varie liste
 			pcb_PTR trovato = NULL;
 			pcb_PTR iter;
-			list_for_each(iter, high_priority_q) {
+			list_for_each(iter, high_priority_q) { //lo cerco nella high priority coda
 				if(iter->p_pid == pid)
 					trovato = iter;		//trovato = processo con pid=pid(=a1)
 			}
 			if (trovato == NULL){
-				list_for_each(iter, low_priority_q) {
+				list_for_each(iter, low_priority_q) { //lo cerco nella low priority
 					if(iter->p_pid == pid)
 						trovato = iter;	//trovato = processo con pid=pid(=a1)
 				}
 			}
-			if(trovato != NULL)
+			if(trovato != NULL) //se l'ho trovato
 				auxiliary_terminate(trovato);
 		}		
 #ifdef SYS_DEBUG
@@ -210,7 +225,7 @@ void Passeren(int a0, unsigned int a1) {
 	
 	semaddr: a1
 */
-void P_operation(int *semaddr) {
+pcb_PTR P_operation(int *semaddr) {
 	int result = insertBlocked(semaddr, current_process);
 	//aggiornare i contatori
 	if(result == 0) // insertBlocked avvenuta con successo
@@ -236,32 +251,45 @@ void Verhogen(int a0, unsigned int a1) {
 		klog_print("Verhogen ...");
 #endif
 
-	int * semaddr = (int *) a1;
-	pcb_PTR released_proc = removeBlocked(semaddr);
-	if(released_proc->p_prio  == PROCESS_PRIO_HIGH) {
-		insertProcQ(high_priority_q, released_proc);
-		soft_block_count--;		
-	}
-	else if(released_proc->p_prio  == PROCESS_PRIO_LOW) {
-		insertProcQ(low_priority_q, released_proc);
-		soft_block_count--;
-	} else {
-		klog_print("Verhogen ADVICE: released process have no good priority\n");
-		//! un po' troppo: PANIC();
-	}
+	int *semaddr = (int *) a1;
+	V_operation(semaddr);
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Verhogen ERROR: a0 != VERHOGEN\n");
+	
+	LDST(state_reg);
+}
+/**	Auxiliar Function of Veroghen	*
+	
+	semAddr
+ *	@return released_proc 
+ */
+pcb_PTR V_operation(int *semaddr){
+	pcb_PTR released_proc = removeBlocked(semaddr);
+	if(released_proc->p_prio  == PROCESS_PRIO_HIGH) {
+		insertProcQ(high_priority_q, released_proc);
+		soft_block_count--;	
+		return	released_proc;
+	}
+	else if(released_proc->p_prio  == PROCESS_PRIO_LOW) {
+		insertProcQ(low_priority_q, released_proc);
+		soft_block_count--;
+		return released_proc;
+	}
+	return NULL;
 }
 
-/*	Syscall -5: DO_IO
+/**	Syscall -5: DO_IO
 	– Effettua un’operazione di I/O scrivendo il comando cmdValue nel registro cmdAddr, e mette in 
 	pausa il processo chiamante fino a quando non si e’ conclusa.
 	– L’operazione è bloccante, quindi il chiamante viene sospeso sino alla conclusione del comando. 
-	Il valore ritornato deve essere il contenuto del registro di status
-	del dispositivo
+	Il valore ritornato deve essere il contenuto del registro di status	del dispositivo
+
+	@param commandAddr è il puntatore al registro di comando del dispositivo corrispondente, 
+	@param commandValue è il valore da scriverci. 
+	Potete capire linea e istanza cercando commandAddr tra i registri di tutti i device noti
 
 int SYSCALL(DOIO, int *cmdAddr, int cmdValue, 0)
 */
@@ -271,16 +299,54 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 		klog_print("Do_Io ...");
 #endif
 	
-	int *cmdAddr = (int *) a1;
+	unsigned int *cmdAddr = (unsigned int *) a1;
 	int cmdValue = (int) a2;
-	//TODO
+	//initializes found boolean, intLineNumber and Device Number to 0 for the whiles.
+	int found = 0, IntLine = 0, DevNo = 0;
+	
+	while (IntLine < 5 && !found){
+		while (DevNo < 8 && !found){
+			//calculate the devAddrBase
+			devreg_t* devAddrBase = (devreg_t*)(0x1000.0054 + ((IntLine - 3) * 0x80) + (DevNo * 0x10));
+			int device_position = (IntLine - 3) + DevNo;
+			//check if we find it
+			if (&(devAddrBase->dtp.command) == cmdAddr){ //if we find it
+				//if them are not terminals
+				if (device_position < 31) {
+					devAddrBase->dtp.command = cmdValue;
+					state_reg->reg_v0 = devAddrBase->dtp.status;
+				}					
+				else if (device_position < 38 ) { //if them are terminals and writing terminals
+					devAddrBase->term.recv_command = cmdValue;
+					state_reg->reg_v0 = devAddrBase->term.recv_status;	
+				}				
+				else if (device_position < 47 ) { //if them are terminals and reading terminals 
+					devAddrBase->term.transm_command = cmdValue;
+					state_reg->reg_v0 = devAddrBase->term.transm_status;
+				}
+				else {//if i am not supposed to be hear (device position = 48 or 49 or other stuff)				
+					klog_print("DO_IO ERROR: out of bounds\n");
+				}
+				//if we are supposed to be hear (non da 48 in su)
+				if (device_position < 47) {
+					P_operation(&device_sem[device_position]);
+				}
+				found = 1;
+			}else{ //if we not found it yet
+				DevNo++;
+			}
+		}
+		IntLine++;
+	}
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
+	//
 	scheduler();
-	} else klog_print("Do_Io ERROR: a0 != DOIO\n");
-	
+
+	} else
+		klog_print("Do_Io ERROR: a0 != DOIO\n");	
 }
 
 /*	Syscall -6: Get_CPU_Time
@@ -297,13 +363,15 @@ void Get_CPU_Time(int a0) {
 		klog_print("Get_CPU_Time ...");
 #endif
 
-	//TODO: controllare se vuole il tempo in ... e fare eventuali conversioni
+	//? controllare se vuole il tempo in ... e fare eventuali conversioni?
 	state_reg->reg_v0 = current_process->p_time;
+
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Get_CPU_Time ERROR: a0 != GETTIME\n");
 	
+	LDST(state_reg);
 }
 
 /* Syscall -7: Wait_For_Clock
@@ -347,7 +415,8 @@ void Get_Support_Data(int a0) {
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Get_Support_Data ERROR: a0 != GETSUPPORT\n");
-	return NULL;
+	
+	LDST(state_reg);
 }
 
 /*	Syscall -9: Get_Process_Id
@@ -368,6 +437,7 @@ void Get_Process_Id(int a0, unsigned int a1) {
 	else
 		state_reg->reg_v0 = current_process->p_parent->p_pid;
 	
+	LDST(state_reg);
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
@@ -390,18 +460,33 @@ void Yield(int a0) {
     
 	//TODO: come chiamare un low priority se la high priority è vuota?
 	//TODO: e se anche la low priority è vuota come chiamare il processo corrente?
+	pcb_PTR next_process = NULL; //next process to be started
+	
+	//controllo quale altro processo potrebbe andare avanti
+	if(emptyProcQ(&high_priority_q)==0)//se la lista ad alta priorità non è vuota		
+		next_process = removeProcQ(&high_priority_q);
+	else if(emptyProcQ(&low_priority_q)==0) //se la alta è vuota ma la bassa no
+		next_process = removeProcQ(&low_priority_q);
+	else //se sono entrambe vuote faccio partire il processo corrente
+		next_process = current_process;
+	
+	//e successivamente inserisco il processo corrente nella sua coda
 	if(current_process->p_prio  == PROCESS_PRIO_HIGH) {
 		//se è high priority e la lista è vuota non devo richiamare lui ma un altro
 		insertProcQ(high_priority_q, current_process);
 	}
-	else if(current_proc->p_prio  == PROCESS_PRIO_LOW) {
+	else if(current_process->p_prio  == PROCESS_PRIO_LOW) {
 		insertProcQ(low_priority_q, current_process);
 	} else {
 		klog_print("Yield ADVICE: current have no good priority\n");
 		//! un po' troppo: PANIC();
 	}
-	//TODO: faccio partire il processo che voglio senza chiamare lo scheduler
-	//setTimer(...); //LDST(...)
+	//poi avvio il next_process
+	// faccio partire il processo che voglio senza chiamare lo scheduler
+	current_process = next_process;
+	setTIMER(5000);
+	LDST(state_reg);
+
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
