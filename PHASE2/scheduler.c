@@ -12,8 +12,8 @@
 #include "scheduler.h"
 
 //richiami delle variabili globali di main.c
-extern list_head high_priority_q;
-extern list_head low_priority_q;
+extern struct list_head high_priority_q;
+extern struct list_head low_priority_q;
 extern int process_count;
 extern int soft_block_count;
 extern pcb_PTR current_process;

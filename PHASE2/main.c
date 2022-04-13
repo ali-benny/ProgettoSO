@@ -21,16 +21,21 @@ int soft_block_count; //Soft-block Count: numero di processi partiti e bloccati 
 //list_head ready_q; //Ready Queue: puntatore alla coda dei pcb che sono nello stato "ready"
 pcb_PTR current_process; //Current Process: processo corrente in stato "ready"
 int device_sem[49]; //Device Semaphores: 
-list_head high_priority_q;// alta priorità
-list_head low_priority_q;
-passupvector_t *passupvector;
+struct list_head high_priority_q;// alta priorità
+struct list_head low_priority_q;
+struct passupvector_t *passupvector;
 
 //paragraph 3.3 pando-chapter3.pdf
+/**
+ * Sets the TLB entry to the given virtual address.
+ *
+ * @returns None
+ */
 void uTLB_RefillHandler() { 
 	setENTRYHI(0x80000000); 
 	setENTRYLO(0x00000000); 
 	TLBWR(); 
-	LDST ((state_PTR) 0x0FFFF000);
+	LDST ((state_t *) 0x0FFFF000);
 }
 
 extern void test(); 
@@ -44,7 +49,7 @@ void main(){
     passupvector->tlb_refill_stackPtr = 0x2000.1000;
     //- set the Nucleus exception handler address
     //all'indirizzo della vostra funzine del nucleo
-	passupvector->exception_handler = (memaddr) exceptin_handler();
+	passupvector->exception_handler = (memaddr) exception_handler();
     //- set the Stack Pointer for the Nucleus exception handler
 	passupvector->exception_stackPtr = 0x2000.1000;
 	

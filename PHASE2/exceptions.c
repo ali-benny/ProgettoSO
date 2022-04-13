@@ -18,12 +18,12 @@
 extern void syscall_handler();
 extern int process_count; //Process Count: numero di processi partiti ma non terminati
 extern int soft_block_count; //Soft-block Count: numero di processi partiti e bloccati ma non terminati
-//list_head ready_q; //Ready Queue: puntatore alla coda dei pcb che sono nello stato "ready"
+//struct list_head ready_q; //Ready Queue: puntatore alla coda dei pcb che sono nello stato "ready"
 extern pcb_PTR current_process; //Current Process: processo corrente in stato "ready"
 extern int device_sem[49]; //Device Semaphores: 
-extern list_head high_priority_q;// alta priorità
-extern list_head low_priority_q;
-extern passupvector_t *passupvector;
+extern struct list_head high_priority_q;// alta priorità
+extern struct list_head low_priority_q;
+extern struct passupvector_t *passupvector;
 
 // * Auxiliar Functions * //
 void PLT_Interrupt();
@@ -96,6 +96,13 @@ void interrupt_handler(){
 }
 
 
+/**
+ * Passes up an exception to the parent process.
+ *
+ * @param type_of_exception The type of exception to pass up.
+ *
+ * @returns None
+ */
 void passup_or_die(int type_of_exception){
 	//a. if the Current Process's p_supportScruct is NULL,
 	//then the exception should be handled as a NSYS2:
@@ -150,6 +157,11 @@ void PLT_Interrupt(){ //(PLT = Processor Local Timer)
 
 //paragrafo 3.6.3 pandos-chapter3.pdf (pag 20)
 //The System-wide Interval Timer and the Pseud-clock
+/**
+ * Interrupt handler for the interval timer.
+ *
+ * @returns None
+ */
 void Interval_Timer_Interrupt(){
 	//1. Aknnowledge the interrupt by loading the Interval Timer with a new value (100 milliseconds)
 	LDIT(100000);
@@ -171,6 +183,13 @@ void Interval_Timer_Interrupt(){
 
 
 //paragrafo 3.6.1 pandos-chapter3.pdf (pag 18) Non-Timer Interrups
+/**
+ * Interrupts the device.
+ *
+ * @param ip The interrupt number.
+ *
+ * @returns None
+ */
 void Device_interrupt(unsigned int ip) {
 	//paragrafo 3.6.1 pandos-chapter3.pdf(pag 18) Non-Timer-Interrupts			
 	//1. Calculate the address for this device's device register [5.1 pops].
