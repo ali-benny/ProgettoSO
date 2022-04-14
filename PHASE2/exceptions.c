@@ -5,8 +5,6 @@
  * @version 0.1
  * @date 2022-03-23
  * 
- * @copyright Copyright (c) 2022
- * 
  */
 
 #include "exceptions.h"
@@ -40,8 +38,7 @@ state_t* state_reg;
  *
  * @returns None
  */
-void syscall_handler(state_t* state){
-	state_reg = state;
+void syscall_handler(){
 	state_reg->pc_epc += 4; //incrementiamo il pc
 	unsigned int a0 = state_reg->reg_a0;
 	unsigned int a1 = state_reg->reg_a1;
@@ -78,10 +75,16 @@ void syscall_handler(state_t* state){
 		case YIELD:
 			Yield(a0);
 			break;
-		default: 
+		default:
+			//paragrafo 3.5.11 (Syscall in Usermode)
+			//we are simulating a Program Trap exception
+			//Cause.ExeCode = RI [= Reserved Instruction]
+			//11111111.11111111.11111111.00000011 = 0xFF.FF.FF.03 (e i . sono per leggibilità!)
+			state_reg->cause = (state_reg->cause & 0xFFFFFF03) + 0x28;  //! sarebbe + 0b101000;
 			passup_or_die(GENERALEXCEPT);
 	}
 }
+
 
 /**
  * Handles an exception.
@@ -105,7 +108,7 @@ void exception_handler() {
 			break;
 		case 8: //SYSCALL
 			//Nucleus's SYSCALL exception handler (vedi 3.5)
-            syscall_handler(state_reg);
+            syscall_handler();
 			break;
 		case 4 ... 7: //Program Traps
         case 9 ... 12: //Program Traps

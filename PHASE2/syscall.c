@@ -21,13 +21,34 @@ extern int soft_block_count;
 extern pcb_PTR current_process;
 extern int device_sem[49]; //Device Semaphores: 
 
+extern state_t* state_reg;
+
+
 // *** Auxiliar Functions *** //
 
 void auxiliary_terminate(pcb_PTR current); //terminate
 //void P_operation(int *semaddr);	//Passeren, Wait for clock
 //pcb_PTR V_operation(int *semaddr); //Veroghen
 
-extern state_t* state_reg;
+void Blocking_Syscall(){
+	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
+	//   to avoid an infinite loop of SYSCALLs.
+	//a. The saved processor state (located at the start of the BIOS Data Page [state_reg] [Section 3.4]) 
+	//	must be copied into the Current Process’s pcb (p_s).
+	current_process->p_s = *state_reg;
+
+	//b. Update the accumulated CPU time for the Current Process. [Section 3.8]
+	int time = STCK(time);
+	current_process->p_time += time;
+	
+	//c. The Current Process is blocked on the ASL (insertBlocked), transitioning 
+	//	the process from the “running” state, to the “blocked” state.
+	// già fatto nelle relative syscall con P_operation
+	//d. Call the Scheduler
+	scheduler();
+}
+
+
 
 /**  Syscall -1: Create_Process
     Questa system call crea un nuovo processo come figlio del chiamante.
@@ -170,7 +191,7 @@ void Passeren(int a0, unsigned int a1) {
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		scheduler();
+		Blocking_Syscall();
 	} else klog_print("Passeren ERROR: a0 != PASSEREN\n");
 }
 /*	Auxiliar Function of Passeren	*
@@ -294,9 +315,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-	//
-	scheduler();
-
+		Blocking_Syscall();
 	} else
 		klog_print("Do_Io ERROR: a0 != DOIO\n");	
 }
@@ -315,8 +334,8 @@ void Get_CPU_Time(int a0) {
 		klog_print("Get_CPU_Time ...");
 #endif
 
-	//? controllare se vuole il tempo in ... e fare eventuali conversioni?
-	state_reg->reg_v0 = current_process->p_time;
+	int time = STCK(time);
+	state_reg->reg_v0 = current_process->p_time + time;
 
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
@@ -340,11 +359,10 @@ void Wait_For_Clock(int a0) {
 
     P_operation(&device_sem[48]);
 	
-	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-	scheduler();
+		Blocking_Syscall();
 	} else klog_print("Wait_For_Clock ERROR: a0 != CLOCKWAIT\n");
 }
 
