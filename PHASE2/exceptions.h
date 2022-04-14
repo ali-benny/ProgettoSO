@@ -9,7 +9,7 @@
 #include "klog/klog.h"
 #include "umps_utils/memcpy.h"
 
-void syscall_handler(state_t* state);
+void syscall_handler();
 
 void exception_handler();
 void interrupt_handler();

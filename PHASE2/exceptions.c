@@ -13,7 +13,6 @@
 //Exception Handling
 
 // Global Variables/Functions
-extern void syscall_handler();
 extern int process_count; //Process Count: numero di processi partiti ma non terminati
 extern int soft_block_count; //Soft-block Count: numero di processi partiti e bloccati ma non terminati
 //struct list_head ready_q; //Ready Queue: puntatore alla coda dei pcb che sono nello stato "ready"
@@ -92,7 +91,7 @@ void syscall_handler(){
  * @returns None
  */
 void exception_handler() {
-	state_t *state_reg = (state_t*)BIOSDATAPAGE; // register value: che tipo di syscall è?
+	state_reg = (state_t*) BIOSDATAPAGE; // register value: che tipo di syscall è?
 	//The cause of the exception is encoded in the .ExcCode field of the Cause
 	//registrer (Cause.ExcCode) in the saved exception state (vedi 3.3)
 	unsigned int cause = getCAUSE();
