@@ -6,6 +6,8 @@
 #include "exceptions.h"
 #include "asl.h"
 #include "pcb.h"
+#include "../utils/types.h"
+#include <umps3/umps/const.h>
 
 void uTLB_RefillHandler();
 void main();

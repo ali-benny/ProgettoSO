@@ -2,7 +2,9 @@
 #define H_SYSCALL
 
 #include "pcb.h"
-void syscall_handler(state_t* state);
+
+void P_operation(int *semaddr);	//Passeren, Wait for clock
+pcb_PTR V_operation(int *semaddr); //Veroghen
 
 void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3);
 void Terminate_Process(int a0, unsigned int a1);

@@ -18,6 +18,13 @@ extern int process_count;
 extern int soft_block_count;
 extern pcb_PTR current_process;
 
+// Umps3 function not founded
+extern void setTIMER();
+extern void LDST();
+extern void HALT();
+extern void setSTATUS();
+extern void WAIT();
+extern void PANIC();
 
 //paragraph 3.2 pandos-chapter3.pdf (pag 7-8)
 //Scheduler
@@ -28,7 +35,7 @@ extern pcb_PTR current_process;
  */
 void scheduler(){
     //- if the queue of high priority is not empty
-    if (!list_empty(high_priority_q)){
+    if (!list_empty(&high_priority_q)){
         //1. Remove the pcb from the head of the high priority Ready Queue
         //and store the pointer to the pointer to the pcb in the Current Process field
         current_process = removeProcQ(&high_priority_q);
@@ -37,7 +44,7 @@ void scheduler(){
         //stored in pcb of the Current Process (p_s)
         LDST(&(current_process->p_s));
     //- otherwise
-    }else if (!list_empty(low_priority_q)){
+    }else if (!list_empty(&low_priority_q)){
         //1. Remove the pcb from the head of the low priority Ready Queue
         //and store the pointer to the pcb in the Current Process field
         current_process = removeProcQ(&low_priority_q);

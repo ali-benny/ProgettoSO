@@ -19,65 +19,18 @@ extern struct list_head low_priority_q;
 extern int process_count;
 extern int soft_block_count; 
 extern pcb_PTR current_process;
-
+extern int device_sem[49]; //Device Semaphores: 
 
 // *** Auxiliar Functions *** //
 
 void auxiliary_terminate(pcb_PTR current); //terminate
-void P_operation(int *semaddr);	//Passeren, Wait for clock
-pcb_PTR V_opreation(int *semaddr); //Veroghen
+//void P_operation(int *semaddr);	//Passeren, Wait for clock
+//pcb_PTR V_operation(int *semaddr); //Veroghen
 
-state_t* state_reg;
+// Umps3 Function not founded
+extern void klog_print(char *str);
 
-/**
- * Handles system calls.
- *
- * @param state The state of the current process.
- *
- * @returns None
- */
-void syscall_handler(state_t* state){
-	state_reg = state;
-	state_reg->pc_epc += 4; //incrementiamo il pc
-	unsigned int a0 = state_reg->reg_a0;
-	unsigned int a1 = state_reg->reg_a1;
-	unsigned int a2 = state_reg->reg_a2; 
-	unsigned int a3 = state_reg->reg_a3;
-	switch(state_reg->reg_a0){
-		case -1:
-			Create_Process(a0,a1,a2,a3);
-			break;
-		case: -2:
-			Terminate_Process(a0,a1);
-			break;
-		case: -3:
-			Passeren(a0,a1);
-			break;
-		case: -4:
-			Verhogen(a0,a1);
-			break;
-		case: -5:
-			DO_IO(a0,a1,a2);
-			break;
-		case: -6:
-			Get_CPU_Time(a0);
-			break;
-		case: -7:
-			Wait_For_Clock(a0);
-			break;
-		case: -8:
-			Get_Support_Data(a0);
-			break;
-		case: -9:
-			Get_Process_Id(a0,a1);
-			break;
-		case: -10:
-			Yield(a0);
-			break;
-		default: 
-			passup_or_die(GENERALEXCEPT);
-	}
-}
+extern state_t* state_reg;
 
 /**  Syscall -1: Create_Process
     Questa system call crea un nuovo processo come figlio del chiamante.
@@ -110,9 +63,9 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			nuovo_pcb->p_pid = &nuovo_pcb;
 			//scelgo in che coda metterlo in base alla sua priority
 			if (prio == PROCESS_PRIO_HIGH)
-				insertProcQ(high_priority_q, nuovo_pcb);
+				insertProcQ(&high_priority_q, nuovo_pcb);
 			else if(prio == PROCESS_PRIO_LOW)
-				insertProcQ(low_priority_q, nuovo_pcb);
+				insertProcQ(&low_priority_q, nuovo_pcb);
 			else klog_print("prio non e' Low o High\n");
 			//! un po' troppo: PANIC();
 			
@@ -156,14 +109,16 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 		} else { //elimino il processo con pid indicato
 			//cerco pid nelle varie liste
 			pcb_PTR trovato = NULL;
-			pcb_PTR iter;
-			list_for_each(iter, high_priority_q) { //lo cerco nella high priority coda
-				if(iter->p_pid == pid)
+			struct list_head *iter;
+			list_for_each(iter, &high_priority_q) { //lo cerco nella high priority coda
+				pcb_PTR iter_pcb = container_of(iter, pcb_t, p_list);
+				if(iter_pcb->p_pid == pid)
 					trovato = iter;		//trovato = processo con pid=pid(=a1)
 			}
 			if (trovato == NULL){
-				list_for_each(iter, low_priority_q) { //lo cerco nella low priority
-					if(iter->p_pid == pid)
+				list_for_each(iter, &low_priority_q) { //lo cerco nella low priority
+					pcb_PTR iter_pcb = container_of(iter, pcb_t, p_list);
+					if(iter_pcb->p_pid == pid)
 						trovato = iter;	//trovato = processo con pid=pid(=a1)
 				}
 			}
@@ -190,8 +145,8 @@ void auxiliary_terminate(pcb_PTR current){
 			auxiliary_terminate(removed_child);
 		}
 		//caso base
-		outProcQ(high_priority_q, current);
-		outProcQ(low_priority_q, current);
+		outProcQ(&high_priority_q, current);
+		outProcQ(&low_priority_q, current);
 		freePcb(current);
 		//aggiornamento dei contatori
 		process_count--;	
@@ -225,7 +180,7 @@ void Passeren(int a0, unsigned int a1) {
 	
 	semaddr: a1
 */
-pcb_PTR P_operation(int *semaddr) {
+void P_operation(int *semaddr) {
 	int result = insertBlocked(semaddr, current_process);
 	//aggiornare i contatori
 	if(result == 0) // insertBlocked avvenuta con successo
@@ -269,12 +224,12 @@ void Verhogen(int a0, unsigned int a1) {
 pcb_PTR V_operation(int *semaddr){
 	pcb_PTR released_proc = removeBlocked(semaddr);
 	if(released_proc->p_prio  == PROCESS_PRIO_HIGH) {
-		insertProcQ(high_priority_q, released_proc);
+		insertProcQ(&high_priority_q, released_proc);
 		soft_block_count--;	
 		return	released_proc;
 	}
 	else if(released_proc->p_prio  == PROCESS_PRIO_LOW) {
-		insertProcQ(low_priority_q, released_proc);
+		insertProcQ(&low_priority_q, released_proc);
 		soft_block_count--;
 		return released_proc;
 	}
@@ -307,7 +262,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	while (IntLine < 5 && !found){
 		while (DevNo < 8 && !found){
 			//calculate the devAddrBase
-			devreg_t* devAddrBase = (devreg_t*)(0x1000.0054 + ((IntLine - 3) * 0x80) + (DevNo * 0x10));
+			devreg_t* devAddrBase = (devreg_t*)(0x10000054 + ((IntLine - 3) * 0x80) + (DevNo * 0x10));
 			int device_position = (IntLine - 3) + DevNo;
 			//check if we find it
 			if (&(devAddrBase->dtp.command) == cmdAddr){ //if we find it
@@ -473,10 +428,10 @@ void Yield(int a0) {
 	//e successivamente inserisco il processo corrente nella sua coda
 	if(current_process->p_prio  == PROCESS_PRIO_HIGH) {
 		//se è high priority e la lista è vuota non devo richiamare lui ma un altro
-		insertProcQ(high_priority_q, current_process);
+		insertProcQ(&high_priority_q, current_process);
 	}
 	else if(current_process->p_prio  == PROCESS_PRIO_LOW) {
-		insertProcQ(low_priority_q, current_process);
+		insertProcQ(&low_priority_q, current_process);
 	} else {
 		klog_print("Yield ADVICE: current have no good priority\n");
 		//! un po' troppo: PANIC();

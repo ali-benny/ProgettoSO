@@ -9,7 +9,6 @@
  * 
  */
 
-
 #include "main.h"
 
 //paragraph 3.1 pandos-chapter3.pdf (pag 5-6)
@@ -23,7 +22,13 @@ pcb_PTR current_process; //Current Process: processo corrente in stato "ready"
 int device_sem[49]; //Device Semaphores: 
 struct list_head high_priority_q;// alta priorità
 struct list_head low_priority_q;
-struct passupvector_t *passupvector;
+passupvector_t passupvector;
+
+// Umps3 Function not founded
+extern void LDST();
+extern void TLBWR();
+extern void setENTRYLO();
+extern void setENTRYHI();
 
 //paragraph 3.3 pando-chapter3.pdf
 /**
@@ -44,18 +49,18 @@ void main(){
     //paragraph 3.1 pandos-chapter3.pdf (pag 5-6)
 	//2. popolare il passupvector.
     //- set the Nucleus TLB_Refill event andler address
-    passupvector->tlb_refll_handler = (memaddr) uTLB_RefillHandler;
+    passupvector.tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     //- set the Stack Pointer for the nucleus TLB_Refill event handler
-    passupvector->tlb_refill_stackPtr = 0x2000.1000;
+    passupvector.tlb_refill_stackPtr = 0x20001000;
     //- set the Nucleus exception handler address
     //all'indirizzo della vostra funzine del nucleo
-	passupvector->exception_handler = (memaddr) exception_handler();
+	passupvector.exception_handler = (memaddr) exception_handler;
     //- set the Stack Pointer for the Nucleus exception handler
-	passupvector->exception_stackPtr = 0x2000.1000;
+	passupvector.exception_stackPtr = 0x20001000;
 	
     //3. inizializza le strutture di fase 1
     initPcbs();
-    initSemd(); 
+    initASL(); 
 
     //4. Inizializza tutte le variabili mantenute a 0
     process_count = 0;
@@ -84,9 +89,11 @@ void main(){
     pcb->p_s.pc_epc = (memaddr) test;
     //set the remaining pcb fields as follow:
 	//- set all the Process Tree fields to NULL
-    pcb->p_child = NULL;
+    pcb->p_child.next = NULL;
+    pcb->p_child.prev = NULL;
     pcb->p_parent = NULL;
-	pcb->p_sib = NULL;
+	pcb->p_sib.next = NULL;
+	pcb->p_sib.prev = NULL;
 	pcb->p_time = 0; //- accumulated time field to 0
 	pcb->p_semAdd = NULL; //- semaforo bloccante a NULL
 	pcb->p_supportStruct = NULL; //- Struttura di supporto a NULL

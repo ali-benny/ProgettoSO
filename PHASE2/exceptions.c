@@ -25,11 +25,70 @@ extern struct list_head high_priority_q;// alta priorità
 extern struct list_head low_priority_q;
 extern struct passupvector_t *passupvector;
 
+// Umps3 Function not founded
+extern unsigned int getCAUSE();
+extern void klog_print(char *str);
+extern void LDCXT();
+extern void LDST();
+extern void setTIMER();
+
 // * Auxiliar Functions * //
 void PLT_Interrupt();
 void Interval_Timer_Interrupt();
-void Device_interrupt(unsigned int ip);
+void Device_Interrupt(unsigned int ip);
 
+// global var
+state_t* state_reg;
+
+/**
+ * Handles system calls.
+ *
+ * @param state The state of the current process.
+ *
+ * @returns None
+ */
+void syscall_handler(state_t* state){
+	state_reg = state;
+	state_reg->pc_epc += 4; //incrementiamo il pc
+	unsigned int a0 = state_reg->reg_a0;
+	unsigned int a1 = state_reg->reg_a1;
+	unsigned int a2 = state_reg->reg_a2; 
+	unsigned int a3 = state_reg->reg_a3;
+	switch(state_reg->reg_a0){
+		case CREATEPROCESS: //-1
+			Create_Process(a0,a1,a2,a3);
+			break;
+		case TERMPROCESS: //-2
+			Terminate_Process(a0,a1);
+			break;
+		case PASSEREN:
+			Passeren(a0,a1);
+			break;
+		case VERHOGEN:
+			Verhogen(a0,a1);
+			break;
+		case DOIO:
+			DO_IO(a0,a1,a2);
+			break;
+		case GETTIME:
+			Get_CPU_Time(a0);
+			break;
+		case CLOCKWAIT:
+			Wait_For_Clock(a0);
+			break;
+		case GETSUPPORTPTR:
+			Get_Support_Data(a0);
+			break;
+		case GETPROCESSID:
+			Get_Process_Id(a0,a1);
+			break;
+		case YIELD:
+			Yield(a0);
+			break;
+		default: 
+			passup_or_die(GENERALEXCEPT);
+	}
+}
 
 /**
  * Handles an exception.
@@ -90,7 +149,7 @@ void interrupt_handler(){
 
 		ip >> 1;
 		if (ip % 2 != 0){ //Devices, Non-Timer Interrupts
-			Device_Interrupt(unsigned int ip);
+			Device_Interrupt(ip);
 		}
 	}
 }
@@ -110,7 +169,7 @@ void passup_or_die(int type_of_exception){
 	//this is the "DIE" portion of PassUp or Die.
 	
 	if(current_process->p_supportStruct == NULL){
-		Terminate_Process(-2,current_process);
+		Terminate_Process(TERMPROCESS,(unsigned int) current_process); //! modificato con casting per prova fix error
 	} else {
 		//- If the Current Process's p_supportStruct is non-NULL
 		//then handling of the exception is "PASSED UP"		
@@ -125,11 +184,11 @@ void passup_or_die(int type_of_exception){
 		//sup_exceptState field of the Current Process.
 		//The Curren Process's pcb should point to a non-null support_t.
 		current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
-		unsigned int context = current_process->p_supportStruct->sup_exceptContext[type_of_exception];
+		context_t context = current_process->p_supportStruct->sup_exceptContext[type_of_exception]; //! modificato con context_t invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
 		//field of the Current Process. [Section 7.3.4-pops]
-		LDCXT(context.stackPtr, context.state, context.pc);
+		LDCXT(context.stackPtr, context.status, context.pc);
 	}
 }
 
@@ -190,7 +249,7 @@ void Interval_Timer_Interrupt(){
  *
  * @returns None
  */
-void Device_interrupt(unsigned int ip) {
+void Device_Interrupt(unsigned int ip) {
 	//paragrafo 3.6.1 pandos-chapter3.pdf(pag 18) Non-Timer-Interrupts			
 	//1. Calculate the address for this device's device register [5.1 pops].
 	//   [from 5.1 pops] devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10) // num di linea 3-7
@@ -203,7 +262,7 @@ void Device_interrupt(unsigned int ip) {
 	int DevNo = 0; // numero device
 	int found = 0;
 	while (DevNo <= 7 && !found) {
-		unsigned int base = 0x1000.0040 , mask = 1;
+		unsigned int base = 0x10000040 , mask = 1;
 		switch(IntLineNo) {
 			//Table 5.4 pop
 			case 3: break; //base rimane base e mi va bene
@@ -220,10 +279,10 @@ void Device_interrupt(unsigned int ip) {
 	
 	// address of the device's device register
 	// NOTA: con devreg abbiamo -> dtp e term 
-	devreg_t* devAddrBase = (devreg_t*)(0x1000.0054 + ((IntLineNo - 3) * 0x80) + (DevNo * 0x10));
+	devreg_t* devAddrBase = (devreg_t*)(0x10000054 + ((IntLineNo - 3) * 0x80) + (DevNo * 0x10));
 	int device_position = (IntLineNo - 3) + DevNo;
 	unsigned int statusCode;
-	int * semAddr;
+	int *semAddr;
 	pcb_PTR pcb; 
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
@@ -265,7 +324,7 @@ void Device_interrupt(unsigned int ip) {
 	//4. Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
 	//   This operation should unblock the process (pcb) wich initiates this I/O operation
 	//   and then requested to wait its completion via a NSYS5 operation
-	semAddr = dev_sem[device_position];
+	semAddr = (int *) device_sem[device_position];
 	pcb = V_operation(semAddr);
 	//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 	pcb->p_s.reg_v0 = statusCode;	
