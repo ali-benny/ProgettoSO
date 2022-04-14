@@ -18,14 +18,6 @@ extern int process_count;
 extern int soft_block_count;
 extern pcb_PTR current_process;
 
-// Umps3 function not founded
-extern void setTIMER();
-extern void LDST();
-extern void HALT();
-extern void setSTATUS();
-extern void WAIT();
-extern void PANIC();
-
 //paragraph 3.2 pandos-chapter3.pdf (pag 7-8)
 //Scheduler
 /**

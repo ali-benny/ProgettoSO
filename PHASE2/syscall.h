@@ -3,6 +3,8 @@
 
 #include "pcb.h"
 #include "scheduler.h"
+#include <umps3/umps/libumps.h>
+#include "../klog/klog.h"
 
 void P_operation(int *semaddr);	//Passeren, Wait for clock
 pcb_PTR V_operation(int *semaddr); //Veroghen

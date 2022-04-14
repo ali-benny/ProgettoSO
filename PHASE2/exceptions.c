@@ -25,13 +25,6 @@ extern struct list_head high_priority_q;// alta priorità
 extern struct list_head low_priority_q;
 extern struct passupvector_t *passupvector;
 
-// Umps3 Function not founded
-extern unsigned int getCAUSE();
-extern void klog_print(char *str);
-extern void LDCXT();
-extern void LDST();
-extern void setTIMER();
-
 // * Auxiliar Functions * //
 void PLT_Interrupt();
 void Interval_Timer_Interrupt();

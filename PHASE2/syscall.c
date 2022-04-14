@@ -27,11 +27,6 @@ void auxiliary_terminate(pcb_PTR current); //terminate
 //void P_operation(int *semaddr);	//Passeren, Wait for clock
 //pcb_PTR V_operation(int *semaddr); //Veroghen
 
-// Umps3 Function not founded
-extern void klog_print(char *str);
-extern void LDST();
-extern void setTIMER();
-
 extern state_t* state_reg;
 
 /**  Syscall -1: Create_Process

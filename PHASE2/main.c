@@ -24,12 +24,6 @@ struct list_head high_priority_q;// alta priorità
 struct list_head low_priority_q;
 passupvector_t passupvector;
 
-// Umps3 Function not founded
-extern void LDST();
-extern void TLBWR();
-extern void setENTRYLO();
-extern void setENTRYHI();
-
 //paragraph 3.3 pando-chapter3.pdf
 /**
  * Sets the TLB entry to the given virtual address.
