@@ -29,6 +29,8 @@ void auxiliary_terminate(pcb_PTR current); //terminate
 
 // Umps3 Function not founded
 extern void klog_print(char *str);
+extern void LDST();
+extern void setTIMER();
 
 extern state_t* state_reg;
 
@@ -60,7 +62,7 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			nuovo_pcb->p_s = *statep;
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
-			nuovo_pcb->p_pid = &nuovo_pcb;
+			nuovo_pcb->p_pid = (memaddr) nuovo_pcb;
 			//scelgo in che coda metterlo in base alla sua priority
 			if (prio == PROCESS_PRIO_HIGH)
 				insertProcQ(&high_priority_q, nuovo_pcb);
@@ -113,13 +115,13 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 			list_for_each(iter, &high_priority_q) { //lo cerco nella high priority coda
 				pcb_PTR iter_pcb = container_of(iter, pcb_t, p_list);
 				if(iter_pcb->p_pid == pid)
-					trovato = iter;		//trovato = processo con pid=pid(=a1)
+					trovato = iter_pcb;		//trovato = processo con pid=pid(=a1)
 			}
 			if (trovato == NULL){
 				list_for_each(iter, &low_priority_q) { //lo cerco nella low priority
 					pcb_PTR iter_pcb = container_of(iter, pcb_t, p_list);
 					if(iter_pcb->p_pid == pid)
-						trovato = iter;	//trovato = processo con pid=pid(=a1)
+						trovato = iter_pcb;	//trovato = processo con pid=pid(=a1)
 				}
 			}
 			if(trovato != NULL) //se l'ho trovato
@@ -364,8 +366,8 @@ void Get_Support_Data(int a0) {
 		klog_print("Get_Support_Data ...");
 #endif
 
-	state_reg->reg_v0 = current_process->p_supportStruct;	
-	
+	state_reg->reg_v0 = (unsigned int) current_process->p_supportStruct; //! modificato per fix error con cast
+
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
