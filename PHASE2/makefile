@@ -32,7 +32,7 @@ all : kernel.core.umps
 kernel.core.umps : kernel
 	umps3-elf2umps -k $<
  
-kernel : main.o syscall.o exceptions.o scheduler.o pcb.o asl.o p2test.o crtso.o libumps.o
+kernel : main.o syscall.o exceptions.o scheduler.o pcb.o asl.o p2test.o crtso.o libumps.o klog/klog.o
 	$(LD) -o $@ $^ $(LDFLAGS)
 
 clean :

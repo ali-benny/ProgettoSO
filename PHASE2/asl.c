@@ -188,7 +188,7 @@ pcb_t* headBlocked(int *semAdd) {
 					// se la coda dei processi è vuota
 					return NULL;
 				}else 
-					return (current->s_procq.next);
+					return (container_of(current->s_procq.next, pcb_t, p_list));
 			}
 		}
 	}

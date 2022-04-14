@@ -128,19 +128,19 @@ void interrupt_handler(){
 	unsigned int cause = getCAUSE();
 	unsigned int ip = (cause & 0x0000FF00) >> 8;  // tutti a 0 tranne 8-15 (IP) e >> (= saltiamo i primi 8 bit)
 	
-	ip >> 1; // tranne 1
+	ip = ip >> 1; // tranne 1
 	if (ip == 0) return; // non ci sono interrupt 
 	else{
 		if (ip % 2 != 0){ //PLT
 			PLT_Interrupt();
 		} 
 
-		ip >> 1;
+		ip = ip >> 1;
 		if (ip % 2 != 0){ //Interval Timer
 			Interval_Timer_Interrupt();
 		}
 
-		ip >> 1;
+		ip = ip >> 1;
 		if (ip % 2 != 0){ //Devices, Non-Timer Interrupts
 			Device_Interrupt(ip);
 		}
@@ -177,11 +177,11 @@ void passup_or_die(int type_of_exception){
 		//sup_exceptState field of the Current Process.
 		//The Curren Process's pcb should point to a non-null support_t.
 		current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
-		context_t context = current_process->p_supportStruct->sup_exceptContext[type_of_exception]; //! modificato con context_t invece di unsigned int per prova fix error
+		context_t *context = &current_process->p_supportStruct->sup_exceptContext[type_of_exception]; //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
 		//field of the Current Process. [Section 7.3.4-pops]
-		LDCXT(context.stackPtr, context.status, context.pc);
+		LDCXT(context->stackPtr, context->status, context->pc);
 	}
 }
 
@@ -199,6 +199,8 @@ void PLT_Interrupt(){ //(PLT = Processor Local Timer)
 	//Copy the processor state at the time of the exception (..) into the Current process's pcb
 	state_t *state_reg = (state_t *) BIOSDATAPAGE;
 	current_process->p_s = *state_reg; // copy process state at the time of the exception
+	//memcpy(
+	
 	//Place the Current Process on the Ready Queue; transitioning the Current Process
 	//from the "running" state to the "ready" state.
 	if (current_process->p_prio == 1) insertProcQ(&high_priority_q, current_process);
@@ -249,7 +251,7 @@ void Device_Interrupt(unsigned int ip) {
 	
 	int IntLineNo = 3; // numero di linea
 	while (ip % 2 == 0) { // trova il primo bit che è a 1
-		ip >> 1;
+		ip = ip >> 1;
 		IntLineNo++;
 	}	
 	int DevNo = 0; // numero device

@@ -6,7 +6,7 @@
 #include "listx.h"
 #include "main.h"
 #include <umps3/umps/libumps.h>
-#include "../klog/klog.h"
+#include "klog/klog.h"
 
 void scheduler();
 

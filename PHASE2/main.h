@@ -9,7 +9,7 @@
 #include <umps3/umps/types.h>
 #include <umps3/umps/const.h>
 #include <umps3/umps/libumps.h>
-#include "../klog/klog.h"
+#include "klog/klog.h"
 
 void uTLB_RefillHandler();
 void main();
