@@ -35,8 +35,10 @@ void Blocking_Syscall(){
 	//   to avoid an infinite loop of SYSCALLs.
 	//a. The saved processor state (located at the start of the BIOS Data Page [state_reg] [Section 3.4]) 
 	//	must be copied into the Current Process’s pcb (p_s).
-	current_process->p_s = *state_reg;
-
+	//current_process->p_s = *state_reg;
+	memcpy((void *) &current_process->p_s, (void *) state_reg, sizeof(state_reg)); 
+	//memcpy(current_process, state_reg); //memcpy nostra
+	
 	//b. Update the accumulated CPU time for the Current Process. [Section 3.8]
 	int time = STCK(time);
 	current_process->p_time += time;
@@ -75,7 +77,10 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 		
 		pcb_PTR nuovo_pcb = allocPcb();// creo un pcb
 		if (nuovo_pcb != NULL){
-			nuovo_pcb->p_s = *statep;
+			//nuovo_pcb->p_s = *statep;
+			//memcpy(nuovo_pcb, statep);
+			memcpy((void *) &nuovo_pcb->p_s, (void *) statep, sizeof(statep));
+			
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
 			nuovo_pcb->p_pid = (memaddr) nuovo_pcb;

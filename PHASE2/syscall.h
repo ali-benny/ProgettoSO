@@ -6,6 +6,8 @@
 #include <umps3/umps/libumps.h>
 #include "klog/klog.h"
 
+#include "umps_utils/memcpy.h"
+
 void P_operation(int *semaddr);	//Passeren, Wait for clock
 pcb_PTR V_operation(int *semaddr); //Veroghen
 

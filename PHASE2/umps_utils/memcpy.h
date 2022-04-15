@@ -1,9 +1,17 @@
 #ifndef MEMCPY_H
 #define MEMCPY_H
 
-//void memcpy1(void *dest, void *src, size_t n);
+#include "../pandos_types.h"
+#include "../pandos_const.h"
 
-void *memcpy(void* dst, const void* src, unsigned int cnt);
+//void memcpy(state_t to, state_t *from);
+
+void memcpy(void* to, void* from, size_tt n);
+
+//void memcpy(void *dest, void *src, unsigned long n);
+
+//void memcpy(pcb_t* current_process, state_t *state_reg); // nostra proposta
+
 
 #endif //MEMCPY_H
 

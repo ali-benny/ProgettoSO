@@ -178,7 +178,22 @@ void passup_or_die(int type_of_exception){
 		//b. Copy the saved exception state from the Bios Data Page to the correct
 		//sup_exceptState field of the Current Process.
 		//The Curren Process's pcb should point to a non-null support_t.
-		current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
+		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
+		state_t * src = ((state_t*) BIOSDATAPAGE);
+		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
+		
+		memcpy(&dest, src, sizeof(dest));
+		/*
+		dest.entry_hi = src->entry_hi;
+		dest.cause = src->cause;
+		dest.status = src->status;
+		dest.pc_epc = src->pc_epc;
+		dest.hi = src->hi;
+		dest.lo = src->lo;
+		for (int i=0; i < STATE_GPR_LEN; i++) {
+			dest.gpr[i] = src->gpr[i];
+		}
+		*/
 		context_t *context = &current_process->p_supportStruct->sup_exceptContext[type_of_exception]; //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
