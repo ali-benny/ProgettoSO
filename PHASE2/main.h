@@ -12,7 +12,7 @@
 #include "klog/klog.h"
 
 //void uTLB_RefillHandler();
-void main();
+int main();
 
 #endif // MAIN_H
 

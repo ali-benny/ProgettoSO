@@ -40,23 +40,24 @@ passupvector_t passupvector;
 extern void uTLB_RefillHandler();
 extern void test(); 
 
-void main(){
+int main(){
+	klog_print("Benvenuto nel main di Phase2!\n");
     //paragraph 3.1 pandos-chapter3.pdf (pag 5-6)
 	//2. popolare il passupvector.
     //- set the Nucleus TLB_Refill event andler address
     passupvector.tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     //- set the Stack Pointer for the nucleus TLB_Refill event handler
-    passupvector.tlb_refill_stackPtr = 0x20001000;
+    passupvector.tlb_refill_stackPtr = KERNELSTACK;
     //- set the Nucleus exception handler address
     //all'indirizzo della vostra funzine del nucleo
 	passupvector.exception_handler = (memaddr) exception_handler;
     //- set the Stack Pointer for the Nucleus exception handler
-	passupvector.exception_stackPtr = 0x20001000;
+	passupvector.exception_stackPtr = KERNELSTACK;
 	
     //3. inizializza le strutture di fase 1
     initPcbs();
     initASL(); 
-
+    
     //4. Inizializza tutte le variabili mantenute a 0
     process_count = 0;
     soft_block_count = 0;
@@ -64,13 +65,13 @@ void main(){
     mkEmptyProcQ(&high_priority_q);
     current_process = NULL;
 
-    for (int i = 0; i<=49; i++){
+    for (int i = 0; i<49; i++){
         device_sem[i] = 0;
 	}
-    
+	
     //6. Instantiate a single low priority process
     pcb_PTR pcb = allocPcb(); //pcb
-    pcb->p_prio = 0;
+    pcb->p_prio = PROCESS_PRIO_LOW;
     process_count++;
 	//this process needs to have:
     // - interrupts enabled
@@ -79,9 +80,10 @@ void main(){
     //(vedi paragraph 2.3 virtualsquare (pag 9))
     pcb->p_s.status = IMON | IEPON | TEBITON; //? 0b00001000000000001111111100000100;
 	// - the SP (stack pointer) set to RAMTOP
-	RAMTOP(pcb->p_s.gpr[26]);
+	RAMTOP(pcb->p_s.reg_sp);
     // - and its PC set to the address of test.
     pcb->p_s.pc_epc = (memaddr) test;
+    pcb->p_s.reg_t9 = (memaddr) test;
     //set the remaining pcb fields as follow:
 	//- set all the Process Tree fields to NULL
     pcb->p_child.next = NULL;
@@ -96,7 +98,8 @@ void main(){
     
     //5. Load Interval Timer with 100 milliseconds (vedi 3.6.3)
     LDIT(100000); //! spostato, per il pdf dovrebbe essere prima del 6, ma farlo prima toglie del tempo al processo.
-
+	
     //7. Call the Scheduler
     scheduler();
+    return 0;
 }

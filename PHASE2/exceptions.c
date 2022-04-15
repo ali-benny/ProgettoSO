@@ -241,7 +241,7 @@ void Interval_Timer_Interrupt(){
 	while(headBlocked(&device_sem[48]) != NULL){
 		pcb_PTR pcb = removeBlocked(&device_sem[48]);
 		pcb->p_semAdd = NULL;
-		if (pcb->p_prio == 1) insertProcQ(&high_priority_q, pcb);
+		if (pcb->p_prio == PROCESS_PRIO_HIGH) insertProcQ(&high_priority_q, pcb);
 		else insertProcQ(&low_priority_q, pcb);
 	}
 	//3. Reset the Pseudo-clock semaphore to zero.
