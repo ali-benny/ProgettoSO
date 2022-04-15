@@ -5,7 +5,7 @@
 #include "scheduler.h"
 #include <umps3/umps/libumps.h>
 #include "klog/klog.h"
-
+#include <umps3/umps/arch.h>
 #include "umps_utils/memcpy.h"
 
 void P_operation(int *semaddr);	//Passeren, Wait for clock

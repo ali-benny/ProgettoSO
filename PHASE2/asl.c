@@ -14,8 +14,9 @@ HIDDEN semd_t semd_table[MAXPROC];
 HIDDEN struct list_head semdFree_h; //lista di semafori liberi
 HIDDEN struct list_head asl_h;	 //lista di semafori attivi, utilizzati in questo momento
 
-/*	Ricerca Semafori dato un certo semAdd in asl_h
-* @return 1 se e` vuota, 0 se ha qualcosa
+/**	Ricerca Semafori dato un certo semAdd in asl_h
+
+ * @return 1 se e` vuota, 0 se ha qualcosa
 */
 int FindAsl(int *semAdd){
 //cercare il semAdd (key) nella ASL
@@ -24,9 +25,10 @@ int FindAsl(int *semAdd){
 		semd_PTR current = container_of(iter, semd_t, s_link);
 		if (current->s_key == semAdd){
 			if (emptyProcQ(&current->s_procq)==1) return 1;
+			else return 0;
 		}
 	}
-	return 0;
+	return 1;
 }
 
 /*	18

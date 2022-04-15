@@ -196,7 +196,6 @@ void Passeren(int a0, unsigned int a1) {
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		Blocking_Syscall();
 	} else klog_print("Passeren ERROR: a0 != PASSEREN\n");
 }
 /*	Auxiliar Function of Passeren	*
@@ -205,7 +204,7 @@ void Passeren(int a0, unsigned int a1) {
 */
 void P_operation(int *semaddr) {
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
-		int result = insertBlocked(semaddr, current_process);
+		int result = insertBlocked(semaddr, current_process);	
 		//aggiornare i contatori
 		if(result == 0) // insertBlocked avvenuta con successo
 			soft_block_count++;
@@ -213,8 +212,10 @@ void P_operation(int *semaddr) {
 			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
 			//! un po' troppo: PANIC();
 		}
+		Blocking_Syscall();
 	}else if(FindAsl(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
+		if (pcb == NULL) klog_print(".NULL..");
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
@@ -273,8 +274,7 @@ pcb_PTR V_operation(int *semaddr){
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
 			return	pcb;
-		}
-		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 			return pcb;
@@ -306,46 +306,61 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	int cmdValue = (int) a2;
 	//initializes found boolean, intLineNumber and Device Number to 0 for the whiles.
 	int found = 0, IntLine = 0, DevNo = 0;
+	if (cmdAddr - 3 == 0x10000254)
+		klog_print("yay");
+	if (cmdAddr - 3*WS == 0x10000254)
+		klog_print("u.u");
+	else klog_print("nope");
 	
 	while (IntLine < 5 && !found){
+	klog_print(".0.");
+		DevNo = 0;
 		while (DevNo < 8 && !found){
+		klog_print(".T.");
 			//calculate the devAddrBase
-			devreg_t* devAddrBase = (devreg_t*)(0x10000054 + ((IntLine - 3) * 0x80) + (DevNo * 0x10));
-			int device_position = (IntLine - 3) + DevNo;
-			//check if we find it
-			if (&(devAddrBase->dtp.command) == cmdAddr){ //if we find it
-				//if them are not terminals
-				if (device_position < 31) {
+			devreg_t* devAddrBase = (devreg_t*)(0x10000054 + (IntLine * 0x80) + (DevNo * 0x10));
+			int device_position = (IntLine * 8) + DevNo;
+			
+			if ((devAddrBase+0x4) ==  (devreg_t*)(0x10000054 + 0x80 +0x10 +0x4))
+				klog_print("siiii.");
+				
+			if (devAddrBase->term.transm_status != READY)
+				device_position += 8;
+			//if them are not terminals
+			if (device_position <= 31) {
+				if (&(devAddrBase->dtp.command) == cmdAddr){ //if we find it
 					devAddrBase->dtp.command = cmdValue;
 					state_reg->reg_v0 = devAddrBase->dtp.status;
-				}					
-				else if (device_position < 38 ) { //if them are terminals and writing terminals
-					devAddrBase->term.recv_command = cmdValue;
-					state_reg->reg_v0 = devAddrBase->term.recv_status;	
-				}				
-				else if (device_position < 47 ) { //if them are terminals and reading terminals 
-					devAddrBase->term.transm_command = cmdValue;
-					state_reg->reg_v0 = devAddrBase->term.transm_status;
-				}
-				else {//if i am not supposed to be hear (device position = 48 or 49 or other stuff)				
-					klog_print("DO_IO ERROR: out of bounds\n");
-				}
-				//if we are supposed to be hear (non da 48 in su)
-				if (device_position < 47) {
+					found = 1;
 					P_operation(&device_sem[device_position]);
 				}
-				found = 1;
-			}else{ //if we not found it yet
-				DevNo++;
+			}else if (device_position <= 39 ) { //if them are terminals and writing terminals
+				if (&(devAddrBase->term.recv_command) == cmdAddr){ //if we find it
+					devAddrBase->term.recv_command = cmdValue;
+					state_reg->reg_v0 = devAddrBase->term.recv_status;	
+					found = 1;
+					P_operation(&device_sem[device_position]);
+				}
+			}else if (device_position <= 47 ) { //if them are terminals and reading terminals 
+				if (&(devAddrBase->term.transm_command) == cmdAddr){ //if we find it
+					devAddrBase->term.transm_command = cmdValue;
+					state_reg->reg_v0 = devAddrBase->term.transm_status;
+					found = 1;
+					P_operation(&device_sem[device_position]);
+				}
+			}else {//if i am not supposed to be here (device position = 48 or 49 or other stuff)				
+				klog_print("DO_IO ERROR: out of bounds\n");
 			}
+		 //if we not found it yet
+			DevNo++;
 		}
 		IntLine++;
 	}
-	
+	if (found == 1) klog_print(".found!..");
+	else klog_print(".NOTfound!..");
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		Blocking_Syscall();
 	} else
 		klog_print("Do_Io ERROR: a0 != DOIO\n");	
 }
