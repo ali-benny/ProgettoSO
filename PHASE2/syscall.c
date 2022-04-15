@@ -204,16 +204,28 @@ void Passeren(int a0, unsigned int a1) {
 	semaddr: a1
 */
 void P_operation(int *semaddr) {
-	int result = insertBlocked(semaddr, current_process);
-	//aggiornare i contatori
-	if(result == 0) // insertBlocked avvenuta con successo
-		soft_block_count++;
-	else {
-		klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
-		//! un po' troppo: PANIC();
-	}
+	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
+		int result = insertBlocked(semaddr, current_process);
+		//aggiornare i contatori
+		if(result == 0) // insertBlocked avvenuta con successo
+			soft_block_count++;
+		else {
+			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
+			//! un po' troppo: PANIC();
+		}
+	}else if(FindAsl(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
+		pcb_t* pcb = removeBlocked(semaddr);
+		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
+			insertProcQ(&high_priority_q, pcb);
+			soft_block_count--;	
+		}
+		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+			insertProcQ(&low_priority_q, pcb);
+			soft_block_count--;
+		}
+	}else
+		(*semaddr)--;
 }
-
 /* Syscall -4: Verhogen
 	– Operazione di rilascio su un semaforo binario.
 	Il valore del semaforo è memorizzato nella variabile
@@ -245,17 +257,30 @@ void Verhogen(int a0, unsigned int a1) {
  *	@return released_proc 
  */
 pcb_PTR V_operation(int *semaddr){
-	pcb_PTR released_proc = removeBlocked(semaddr);
-	if(released_proc->p_prio  == PROCESS_PRIO_HIGH) {
-		insertProcQ(&high_priority_q, released_proc);
-		soft_block_count--;	
-		return	released_proc;
-	}
-	else if(released_proc->p_prio  == PROCESS_PRIO_LOW) {
-		insertProcQ(&low_priority_q, released_proc);
-		soft_block_count--;
-		return released_proc;
-	}
+	if (*semaddr == 1) { // se e` 0 ci metto qualcosa e blocco un processo
+		int result = insertBlocked(semaddr, current_process);
+		//aggiornare i contatori
+		if(result == 0) // insertBlocked avvenuta con successo
+			soft_block_count++;
+		else {
+			klog_print("Verhogen ADVICE: inserimento fallito miseramente\n");
+			//! un po' troppo: PANIC();
+		}
+		Blocking_Syscall();
+	}else if(FindAsl(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
+		pcb_t* pcb = removeBlocked(semaddr);
+		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
+			insertProcQ(&high_priority_q, pcb);
+			soft_block_count--;	
+			return	pcb;
+		}
+		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+			insertProcQ(&low_priority_q, pcb);
+			soft_block_count--;
+			return pcb;
+		}
+	}else
+		(*semaddr)++;
 	return NULL;
 }
 

@@ -38,12 +38,13 @@ state_t* state_reg;
  * @returns None
  */
 void syscall_handler(){
+klog_print("Syscall Handler...\n");
 	state_reg->pc_epc += 4; //incrementiamo il pc
-	unsigned int a0 = state_reg->reg_a0;
+	int a0 = (int) state_reg->reg_a0;
 	unsigned int a1 = state_reg->reg_a1;
 	unsigned int a2 = state_reg->reg_a2; 
 	unsigned int a3 = state_reg->reg_a3;
-	switch(state_reg->reg_a0){
+	switch(a0){
 		case CREATEPROCESS: //-1
 			Create_Process(a0,a1,a2,a3);
 			break;
@@ -75,11 +76,12 @@ void syscall_handler(){
 			Yield(a0);
 			break;
 		default:
+		klog_print("default case");
 			//paragrafo 3.5.11 (Syscall in Usermode)
 			//we are simulating a Program Trap exception
 			//Cause.ExeCode = RI [= Reserved Instruction]
 			//11111111.11111111.11111111.00000011 = 0xFF.FF.FF.03 (e i . sono per leggibilità!)
-			state_reg->cause = (state_reg->cause & 0xFFFFFF03) + 0x28;  //! sarebbe + 0b101000;
+		//	state_reg->cause = (state_reg->cause & 0xFFFFFF03) + 0x28;  //! sarebbe + 0b101000;
 			passup_or_die(GENERALEXCEPT);
 	}
 }
@@ -91,17 +93,18 @@ void syscall_handler(){
  * @returns None
  */
 void exception_handler() {
+klog_print("\n*Exception Handler...");
 	state_reg = (state_t*) BIOSDATAPAGE; // register value: che tipo di syscall è?
 	//The cause of the exception is encoded in the .ExcCode field of the Cause
-	//registrer (Cause.ExcCode) in the saved exception state (vedi 3.3)
+	//registrer (Cause.ExcCode) in the saved exception state (vedi 3.3-pop)
 	unsigned int cause = getCAUSE();
-	unsigned int excCode = cause & GETEXECCODE;
+	unsigned int excCode = CAUSE_GET_EXCCODE(cause); 
 	switch (excCode) { //for exception code ... :processing should be pased logn to your ...
 		case 0: //Interrupts
 			//Nucleus's device intterrupt handler (vedi 3.6)
 			interrupt_handler();
 			break;
-		case 1 ... 3: //TLB exceptions
+		case 1: case 2: case 3: //TLB exceptions
 			//Nucleus's TLB exception handler (vedi 3.7.3)
 			passup_or_die(PGFAULTEXCEPT);
 			break;
@@ -109,15 +112,15 @@ void exception_handler() {
 			//Nucleus's SYSCALL exception handler (vedi 3.5)
             syscall_handler();
 			break;
-		case 4 ... 7: //Program Traps
-        case 9 ... 12: //Program Traps
+		case 4: case 5: case 6: case 7: //Program Traps
+        case 9: case 10: case 11: case 12: //Program Traps
 			//Nucleus's Program Traps exception handler (vedi 3.7.2)
             passup_or_die(GENERALEXCEPT);
 			break;
 		default: 
 			klog_print("Unknown exception! You're in default case.\n");
 			break;
-	}
+	}klog_print("done!\n");
 }
 
 //paragrafo 3.6 pandos-chapter 3 (pag 17-18)
@@ -127,6 +130,7 @@ void exception_handler() {
  * @returns None
  */
 void interrupt_handler(){
+klog_print("Interrupt Handler...\n");
 	unsigned int cause = getCAUSE();
 	unsigned int ip = (cause & 0x0000FF00) >> 8;  // tutti a 0 tranne 8-15 (IP) e >> (= saltiamo i primi 8 bit)
 	
@@ -158,6 +162,7 @@ void interrupt_handler(){
  * @returns None
  */
 void passup_or_die(int type_of_exception){
+klog_print("Passup Or Die...\n");
 	//a. if the Current Process's p_supportScruct is NULL,
 	//then the exception should be handled as a NSYS2:
 	//The Current Process and all its progeny are terminated.
@@ -211,8 +216,9 @@ void passup_or_die(int type_of_exception){
  * @returns None
  */
 void PLT_Interrupt(){ //(PLT = Processor Local Timer)
+klog_print("PLT Interrupt...\n");
 	//Aknowledge the PLT interrupt by loading the timer with a new value
-	setTIMER(5000);
+	setTIMER(TIMESLICE);
 	//Copy the processor state at the time of the exception (..) into the Current process's pcb
 	state_t *state_reg = (state_t *) BIOSDATAPAGE;
 	current_process->p_s = *state_reg; // copy process state at the time of the exception
@@ -234,8 +240,9 @@ void PLT_Interrupt(){ //(PLT = Processor Local Timer)
  * @returns None
  */
 void Interval_Timer_Interrupt(){
+klog_print("Interval Timer Interrupt...\n");
 	//1. Aknnowledge the interrupt by loading the Interval Timer with a new value (100 milliseconds)
-	LDIT(100000);
+	LDIT(PSECOND);
 	//2. Unblock ALL pcbs blocked on the Pseudo-clock semaphore.
 	//Hence the semantics of this semaphore are a bit different than traditional synchronization semaphores.
 	while(headBlocked(&device_sem[48]) != NULL){
@@ -262,6 +269,7 @@ void Interval_Timer_Interrupt(){
  * @returns None
  */
 void Device_Interrupt(unsigned int ip) {
+klog_print("Device Interrupt...\n");
 	//paragrafo 3.6.1 pandos-chapter3.pdf(pag 18) Non-Timer-Interrupts			
 	//1. Calculate the address for this device's device register [5.1 pops].
 	//   [from 5.1 pops] devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10) // num di linea 3-7

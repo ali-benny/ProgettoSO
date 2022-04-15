@@ -22,7 +22,7 @@ pcb_PTR current_process; //Current Process: processo corrente in stato "ready"
 int device_sem[49]; //Device Semaphores: 
 struct list_head high_priority_q;// alta priorità
 struct list_head low_priority_q;
-passupvector_t passupvector;
+passupvector_t *passupvector = (passupvector_t*) PASSUPVECTOR;
 
 //paragraph 3.3 pando-chapter3.pdf
 /**
@@ -41,18 +41,18 @@ extern void uTLB_RefillHandler();
 extern void test(); 
 
 int main(){
-	klog_print("Benvenuto nel main di Phase2!\n");
+	//klog_print("Benvenuto nel main di Phase2!\n");
     //paragraph 3.1 pandos-chapter3.pdf (pag 5-6)
 	//2. popolare il passupvector.
     //- set the Nucleus TLB_Refill event andler address
-    passupvector.tlb_refill_handler = (memaddr) uTLB_RefillHandler;
+    passupvector->tlb_refill_handler = (memaddr) uTLB_RefillHandler;
     //- set the Stack Pointer for the nucleus TLB_Refill event handler
-    passupvector.tlb_refill_stackPtr = KERNELSTACK;
+    passupvector->tlb_refill_stackPtr =  KERNELSTACK;
     //- set the Nucleus exception handler address
     //all'indirizzo della vostra funzine del nucleo
-	passupvector.exception_handler = (memaddr) exception_handler;
+	passupvector->exception_handler = (memaddr) exception_handler;
     //- set the Stack Pointer for the Nucleus exception handler
-	passupvector.exception_stackPtr = KERNELSTACK;
+	passupvector->exception_stackPtr = KERNELSTACK;
 	
     //3. inizializza le strutture di fase 1
     initPcbs();
@@ -79,6 +79,7 @@ int main(){
     // - kernel mode on 
     //(vedi paragraph 2.3 virtualsquare (pag 9))
     pcb->p_s.status = IMON | IEPON | TEBITON; //? 0b00001000000000001111111100000100;
+    //pcb->p_s.status = 0b00001000000000001111111100000100;
 	// - the SP (stack pointer) set to RAMTOP
 	RAMTOP(pcb->p_s.reg_sp);
     // - and its PC set to the address of test.
@@ -97,7 +98,7 @@ int main(){
     insertProcQ(&low_priority_q, pcb);
     
     //5. Load Interval Timer with 100 milliseconds (vedi 3.6.3)
-    LDIT(100000); //! spostato, per il pdf dovrebbe essere prima del 6, ma farlo prima toglie del tempo al processo.
+    LDIT(PSECOND); //! spostato, per il pdf dovrebbe essere prima del 6, ma farlo prima toglie del tempo al processo.
 	
     //7. Call the Scheduler
     scheduler();

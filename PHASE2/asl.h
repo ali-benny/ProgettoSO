@@ -3,6 +3,8 @@
 
 #include "pcb.h"
 
+int FindAsl(int *semAddr);
+
 int insertBlocked(int *semAdd, pcb_t *p);
 pcb_t* removeBlocked(int *semAdd);
 pcb_t* outBlocked(pcb_t *p);
@@ -11,3 +13,4 @@ void initASL();
 
 
 #endif //ASL_H
+

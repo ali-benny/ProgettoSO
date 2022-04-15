@@ -134,13 +134,13 @@ void uTLB_RefillHandler() {
     LDST((state_t *)0x0FFFF000);
 }
 
-
+#include "klog/klog.h"
 /*********************************************************************/
 /*                                                                   */
 /*                 p1 -- the root process                            */
 /*                                                                   */
 void test() {
-	print("\n**Che il test inizi!**\n");
+	//klog_print("\n**Che il test inizi!**\n");
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
     print("p1 v(sem_testsem)\n");

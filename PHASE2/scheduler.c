@@ -26,13 +26,13 @@ extern pcb_PTR current_process;
  * @returns None
  */
 void scheduler(){
-klog_print("Scheduler...\n");
+//klog_print("Scheduler...\n");
     //- if the queue of high priority is not empty
     if (emptyProcQ(&high_priority_q)==0){
         //1. Remove the pcb from the head of the high priority Ready Queue
         //and store the pointer to the pointer to the pcb in the Current Process field
         current_process = removeProcQ(&high_priority_q);
-        setTIMER(5000); //! non c'è sul pdf ma ha senso farlo anche qui
+        setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR))); //! non c'è sul pdf ma ha senso farlo anche qui
         
         //2. Perform a Load Processor State (LDST) on the processor state
         //stored in pcb of the Current Process (p_s)
@@ -43,12 +43,12 @@ klog_print("Scheduler...\n");
         //and store the pointer to the pcb in the Current Process field
         current_process = removeProcQ(&low_priority_q);
         //2. Load 5 milliseconds on the PLT (vedi 4.1.4)
-        setTIMER(5000); 
+        setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR)));
         //3. Perform a Load Processor State (LDST) on the processor state
         //stored in pcb of the Current Process (p_s)
         LDST(&(current_process->p_s));
     }
-klog_print("SCHEDULER advice: prio q maybe empty!\n");
+//klog_print("SCHEDULER advice\n");
     //if the Process Count is zero
     if (process_count == 0){
         //invoke the HALT BIOS service/instructions (vedi 7.3.7)
@@ -61,7 +61,7 @@ klog_print("SCHEDULER advice: prio q maybe empty!\n");
     //Deadlock for Pandos is defined as when
     //the Process Count > 0 and the Soft-block Count is zero
     }else if (process_count>0 && soft_block_count==0){
-    klog_print("SCHEDULER ERROR: siamo in panic\n");
+   // klog_print("SCHEDULER ERROR: siamo in panic\n");
         //invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
         PANIC();
     }

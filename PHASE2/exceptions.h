@@ -8,6 +8,7 @@
 #include <umps3/umps/libumps.h>
 #include "klog/klog.h"
 #include "umps_utils/memcpy.h"
+#include <umps3/umps/cp0.h>
 
 void syscall_handler();
 
