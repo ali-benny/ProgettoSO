@@ -203,6 +203,7 @@ void Passeren(int a0, unsigned int a1) {
 	semaddr: a1
 */
 void P_operation(int *semaddr) {
+klog_print("[P]");
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);	
 		//aggiornare i contatori
@@ -305,13 +306,102 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	unsigned int *cmdAddr = (unsigned int *) a1;
 	int cmdValue = (int) a2;
 	//initializes found boolean, intLineNumber and Device Number to 0 for the whiles.
-	int found = 0, IntLine = 0, DevNo = 0;
-	if (cmdAddr - 3 == 0x10000254)
-		klog_print("yay");
-	if (cmdAddr - 3*WS == 0x10000254)
-		klog_print("u.u");
-	else klog_print("nope");
+	int found = 0, IntLineNo = 0, DevNo = 0, isRecv = 0, device_position;
 	
+	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+	const int base = 0x10000054;
+	devreg_t *devAddr;
+	klog_print_hex((unsigned int)base);
+	// parto con line = 0 e dev = 0
+	while (DevNo < 8 && !found){
+		IntLineNo = 4; // per lettura e scrittura
+		devAddr = (devreg_t*) base + ((IntLineNo) * 0x80) + (DevNo * 0x10); // lo fa la macro
+		klog_print("\ncmdAddr: ");
+		klog_print_hex((unsigned int)cmdAddr);
+		klog_print("\n&&->: ");
+		klog_print_hex((unsigned int)&(devAddr->term.transm_command));
+		klog_print("\n&&: ");
+		klog_print_hex((unsigned int)&(devReg->devreg[IntLineNo][DevNo].term.transm_command));
+		//terminali di lettura
+		if(&(devReg->devreg[IntLineNo][DevNo].term.transm_command) == (memaddr*) cmdAddr){ 
+			klog_print("\nS.");
+            devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
+            state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
+            found = 1;
+            klog_print("term read");
+        }
+        
+        //terminali di scrittura
+        if(&(devReg->devreg[IntLineNo][DevNo].term.recv_command) == (memaddr*) cmdAddr){ 
+            isRecv = 1;
+            //devAddr = (devreg_t*) DEV_REG_ADDR(IntLineNo, DevNo);
+            devAddr->term.recv_command = cmdValue;
+			state_reg->reg_v0 = devAddr->term.recv_status;
+            found = 1;
+            klog_print("term write");
+        }
+        klog_print(".t.");
+		IntLineNo = 0;
+		while (IntLineNo < 4 && !found){
+			devAddr = (devreg_t*) base + ((IntLineNo) * 0x80) + (DevNo * 0x10); // lo fa la macro
+			if(&(devReg->devreg[IntLineNo][DevNo].dtp.command) == (memaddr*) cmdAddr){
+				devAddr->dtp.command = cmdValue;
+				state_reg->reg_v0 = devAddr->dtp.status;
+				found = 1;
+				klog_print("device");
+			}
+			IntLineNo++;
+		}
+		DevNo++;
+		klog_print("\nSline: ");
+		klog_print_hex((unsigned int)IntLineNo);
+		klog_print("\nSdev: ");
+		klog_print_hex((unsigned int)DevNo);
+	}
+	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
+    else device_position = IntLineNo*8 + DevNo;
+    
+    P_operation(&device_sem[device_position]);
+	
+	
+	
+	/*
+	// Codice di Nikolas /
+	devregarea_t* deviceRegs = (devregarea_t*) RAMBASEADDR;
+	dtpreg_t* dev; termreg_t* terminal;
+	
+	int isRecvTerm = 0;
+	
+	for(int j = 0; j < 8; j++){
+        //terminali su linea 4
+        if(&(deviceRegs->devreg[4][j].term.transm_command) == (memaddr*) cmdAddr){
+            line = 4; numDevice = j;
+            terminal = (termreg_t*) (0x10000054 + (4 * 0x80) + (numDevice * 0x10));
+            terminal->transm_command = cmdValue;
+            found = 1;
+        }
+        if(&(deviceRegs->devreg[4][j].term.recv_command) == (memaddr*) cmdAddr){
+            line = 4; numDevice = j; isRecvTerm = 1;
+            terminal = (termreg_t*) (0x10000054 + (4 * 0x80) + (numDevice * 0x10));
+            terminal->recv_command = cmdValue;found = 1;
+        }
+        //gli altri device fanno parte dello stesso gruppo
+        for(int i = 0; i < 4; i++){
+            if(&(deviceRegs->devreg[i][j].dtp.command) == (memaddr*) cmdAddr){
+                line = i; numDevice = j; 
+                dev = (dtpreg_t*) (0x10000054 + (line * 0x80) + (numDevice* 0x10));
+                dev->command = cmdValue;found = 1;
+            }
+        }
+    }//se è di ricezione siamo su linea 4, ma andiamo avanti di 8
+    //perche abbiamo 16 device, i primi 8 di trasmissione
+    if(isRecvTerm == 1) semIndex = line*8 + numDevice + 8;
+    else semIndex = line*8 + numDevice;
+    
+    P_operation(&device_sem[semIndex]);
+	///fine prove
+	*/
+	/*
 	while (IntLine < 5 && !found){
 	klog_print(".0.");
 		DevNo = 0;
@@ -319,6 +409,8 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 		klog_print(".T.");
 			//calculate the devAddrBase
 			devreg_t* devAddrBase = (devreg_t*)(0x10000054 + (IntLine * 0x80) + (DevNo * 0x10));
+		// devAddrBase = DEV_REG_START + DevNo * DEV_REG_SIZE;
+		// devAddr = DEV_REG_ADDR(IntLineNo, DevNo);
 			int device_position = (IntLine * 8) + DevNo;
 			
 			if ((devAddrBase+0x4) ==  (devreg_t*)(0x10000054 + 0x80 +0x10 +0x4))
@@ -355,9 +447,11 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 			DevNo++;
 		}
 		IntLine++;
-	}
+	}*/
+	
 	if (found == 1) klog_print(".found!..");
 	else klog_print(".NOTfound!..");
+	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif

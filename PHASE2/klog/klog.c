@@ -35,7 +35,7 @@ void klog_print(char *str) {
 }
 
 
-// Princ a number in hexadecimal format (best for addresses)
+// Print a number in hexadecimal format (best for addresses)
 void klog_print_hex(unsigned int num) {
     const char digits[] = "0123456789ABCDEF";
 

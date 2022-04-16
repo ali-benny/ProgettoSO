@@ -26,7 +26,7 @@ extern pcb_PTR current_process;
  * @returns None
  */
 void scheduler(){
-//klog_print("Scheduler...\n");
+klog_print("Scheduler...\n");
     //- if the queue of high priority is not empty
     if (emptyProcQ(&high_priority_q)==0){
         //1. Remove the pcb from the head of the high priority Ready Queue
@@ -55,9 +55,13 @@ void scheduler(){
         HALT();
     //if the Process Count > 0 and the Soft-block Count > 0
     }else if (process_count>0 && soft_block_count>0){
-        //enter a Wait State (vedi 7.2.2)
-        setSTATUS(IMON);
+        //enter a Wait State (vedi 7.2.2-pop)
+        setSTATUS(STATUS_IEc | STATUS_IM_MASK);
+      // ovvero:	setSTATUS(0b00010000000000001111111100000001);
+        klog_print("->");
         WAIT();
+        klog_print("waited");
+        setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
     //Deadlock for Pandos is defined as when
     //the Process Count > 0 and the Soft-block Count is zero
     }else if (process_count>0 && soft_block_count==0){

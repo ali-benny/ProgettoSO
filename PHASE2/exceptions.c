@@ -76,7 +76,7 @@ klog_print("Syscall Handler...\n");
 			Yield(a0);
 			break;
 		default:
-		klog_print("default case");
+			klog_print("default case");
 			//paragrafo 3.5.11 (Syscall in Usermode)
 			//we are simulating a Program Trap exception
 			//Cause.ExeCode = RI [= Reserved Instruction]
@@ -132,7 +132,7 @@ klog_print("\n*Exception Handler...");
 void interrupt_handler(){
 klog_print("Interrupt Handler...\n");
 	unsigned int cause = getCAUSE();
-	unsigned int ip = (cause & 0x0000FF00) >> 8;  // tutti a 0 tranne 8-15 (IP) e >> (= saltiamo i primi 8 bit)
+	unsigned int ip = (cause & 0x0000FF00) >> 8;  // tutti a 0 tranne 8-15 (IP) e >> (= saltiamo i primi 8 bit) 
 	
 	ip = ip >> 1; // tranne 1
 	if (ip == 0) return; // non ci sono interrupt 
@@ -147,9 +147,10 @@ klog_print("Interrupt Handler...\n");
 		}
 
 		ip = ip >> 1;
-		if (ip % 2 != 0){ //Devices, Non-Timer Interrupts
-			Device_Interrupt(ip);
-		}
+		//Devices, Non-Timer Interrupts
+		Device_Interrupt(ip);
+		
+		klog_print(" niente ");
 	}
 }
 
@@ -220,9 +221,8 @@ klog_print("PLT Interrupt...\n");
 	//Aknowledge the PLT interrupt by loading the timer with a new value
 	setTIMER(TIMESLICE);
 	//Copy the processor state at the time of the exception (..) into the Current process's pcb
-	state_t *state_reg = (state_t *) BIOSDATAPAGE;
-	current_process->p_s = *state_reg; // copy process state at the time of the exception
-	//memcpy(
+	//state_reg = (state_t *) BIOSDATAPAGE;
+	current_process->p_s = *(state_t *) BIOSDATAPAGE; // copy process state at the time of the exception
 	
 	//Place the Current Process on the Ready Queue; transitioning the Current Process
 	//from the "running" state to the "ready" state.
@@ -257,6 +257,7 @@ klog_print("Interval Timer Interrupt...\n");
 	//4. Return control to the Current Process: Perform a LDST on the saved exception state(...)
 	if (current_process == NULL) scheduler();
 	else LDST((state_t*) BIOSDATAPAGE);
+	//	LDST((state_t*)&current_process->p_s); //?
 }
 
 
@@ -292,68 +293,106 @@ klog_print("Device Interrupt...\n");
 			case 7: base += 0x10; break;
 			default: break;
 		}
-		for (int i = 0; i < DevNo; i++) mask = mask*2;
+		for (int i = 0; i < DevNo; i++) 
+			mask = mask*2;
 		if (((base & mask) >> DevNo) > 0) found = 1;
 		else DevNo++;
 	}
 	
 	// address of the device's device register
 	// NOTA: con devreg abbiamo -> dtp e term 
-	devreg_t* devAddrBase = (devreg_t*)(0x10000054 + ((IntLineNo - 3) * 0x80) + (DevNo * 0x10));
+	
+	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[IntLineNo][DevNo];
 	int device_position = (IntLineNo - 3) + DevNo;
 	unsigned int statusCode;
 	int *semAddr;
 	pcb_PTR pcb; 
+	klog_print("\nline: ");
+		klog_print_hex((unsigned int)IntLineNo);
+		klog_print("\ndev: ");
+		klog_print_hex((unsigned int)DevNo);
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
-		statusCode = devAddrBase->dtp.status;
-		devAddrBase->dtp.command = ACK;
+		//4.
+		klog_print("dev");
+		semAddr = (int *) device_sem[device_position];
+		pcb = V_operation(semAddr);
+		if (pcb != NULL) {
+			//2. Save off the status code from the device's device register.
+			statusCode = devAddrBase->dtp.status;
+			devAddrBase->dtp.command = ACK;
+			devAddrBase->dtp.status = READY; //? term.recv_command se è un terminale?
+			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
+			pcb->p_s.reg_v0 = statusCode;
+			if(pcb->p_prio == PROCESS_PRIO_HIGH) {
+				insertProcQ(&high_priority_q, pcb);
+				soft_block_count--;	
+			} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+				insertProcQ(&low_priority_q, pcb);
+				soft_block_count--;
+			}
+		}
 	} else { //it is a terminal
 		//scrittura:
-		if (devAddrBase->term.recv_status != READY && devAddrBase->term.recv_status != BUSY){
-			//2. Save off the status code from the device's device register.
-			statusCode = devAddrBase->term.recv_status;
-			//3. Aknlowledge the outstanding interrupt.
-			devAddrBase->term.recv_command = ACK; //? term.recv_command se è un terminale?
-			//4. Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
-			//semAddr = dev_sem[device_position];
-			//pcb = V_operation(semAddr);
-			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
-			//pcb->p_s.reg_v0 = statusCode;
-			//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
-			//   from the "blocked" state to the "ready" state
-			//?domanda: non lo fa già la V_operation? dobbiamo togliere questa parte
-		}
-		//lettura:
-		if (devAddrBase->term.transm_status != READY && devAddrBase->term.transm_status != BUSY){
-			//2. Save off the status code from the device's device register.
-			statusCode = devAddrBase->term.transm_status;
-			//3. Aknlowledge the outstanding interrupt.
-			devAddrBase->term.transm_command = ACK;
-			//4. Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
+		klog_print("term ");
+		if (devAddrBase->term.recv_status != READY && devAddrBase->term.recv_status != BUSY ){
+			//4.
+			klog_print("dev scrittura");
+			semAddr = (int *) device_sem[device_position];
+			pcb = V_operation(semAddr);
+			if (pcb != NULL) {
+				//2. Save off the status code from the device's device register.
+				statusCode = devAddrBase->term.recv_status;
+				//3. Aknlowledge the outstanding interrupt.
+				devAddrBase->term.recv_command = ACK; //? term.recv_command se è un terminale?
+				devAddrBase->term.recv_status = READY; //? term.recv_command se è un terminale?
+				//5. Place the stored off status code in the newly unblocked pcb's v0 register.
+				pcb->p_s.reg_v0 = statusCode;
+				if(pcb->p_prio == PROCESS_PRIO_HIGH) {
+					insertProcQ(&high_priority_q, pcb);
+					soft_block_count--;	
+				} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+					insertProcQ(&low_priority_q, pcb);
+					soft_block_count--;
+				}
+			}
+		}//lettura:
+		if (devAddrBase->term.transm_status != READY && devAddrBase->term.transm_status != BUSY ){
+			//4. 
+			klog_print("dev lettura");
 			device_position += 8;
-		//	semAddr = dev_sem[device_position];
-		//	//pcb = V_operation(semAddr);
-			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
-			//pcb->p_s.reg_v0 = statusCode;
-			//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
-			//   from the "blocked" state to the "ready" state
-			//?domanda: non lo fa già la V_operation? dobbiamo togliere questa parte
+			semAddr = (int *) device_sem[device_position];
+			//5.
+			pcb = V_operation(semAddr);
+			if (pcb != NULL) {
+				//2. Save off the status code from the device's device register.
+				statusCode = devAddrBase->term.transm_status;
+				//3. Aknlowledge the outstanding interrupt.
+				devAddrBase->term.transm_command = ACK;
+				devAddrBase->term.transm_status = READY; //? term.recv_command se è un terminale?
+				//5.
+				pcb->p_s.reg_v0 = statusCode;
+				if(pcb->p_prio == PROCESS_PRIO_HIGH) {
+					insertProcQ(&high_priority_q, pcb);
+					soft_block_count--;	
+				} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+					insertProcQ(&low_priority_q, pcb);
+					soft_block_count--;
+				}
+			}
 		}
 	}
-	//4. Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
-	//   This operation should unblock the process (pcb) wich initiates this I/O operation
-	//   and then requested to wait its completion via a NSYS5 operation
-	semAddr = (int *) device_sem[device_position];
-	pcb = V_operation(semAddr);
-	//5. Place the stored off status code in the newly unblocked pcb's v0 register.
-	pcb->p_s.reg_v0 = statusCode;	
+	
+	
 	//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
 	//   from the "blocked" state to the "ready" state
 	//?domanda: non lo fa già la V_operation? dobbiamo togliere questa parte
 	//7. Return controll to the Current Process: Perform a LDST on the saved exception state
 	//   (located at the start of the BIOS Data Page [section 3.4])
-	LDST((state_t*)BIOSDATAPAGE);
+	if (current_process == NULL)
+		 scheduler();
+	else LDST((state_t*)BIOSDATAPAGE);
 	
 	// *********************************************************************** //
 	//NOTA: (cosa dice il pdf, il codice e' sopra (diviso tra lettura e scrittura ))
@@ -362,5 +401,9 @@ klog_print("Device Interrupt...\n");
 	//3. Aknlowledge the outstanding interrupt.
 	//   This is accomplished by writing the Aknowledge command code in the interrupting device's device register
 	//   Alternatively, writing a new command in the interrupting device's device register will also aknowledge the interrupt
+	
+	//4 Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
+			//   This operation should unblock the process (pcb) wich initiates this I/O operation
+			//   and then requested to wait its completion via a NSYS5 operation
 
 }
