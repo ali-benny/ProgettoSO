@@ -282,8 +282,19 @@ klog_print("Device Interrupt...\n");
 	}	
 	int DevNo = 0; // numero device
 	int found = 0;
+	unsigned int BitMap = CDEV_BITMAP_ADDR(IntLineNo);
+	
+	while (DevNo < 8 && !found){
+		if (BitMap % 2 != 0) {
+			found = 1;
+		}
+		DevNo ++;
+		BitMap = BitMap >> 1;
+	}
+	klog_print_hex(found);
+	/*
 	while (DevNo <= 7 && !found) {
-		unsigned int base = 0x10000040 , mask = 1;
+		unsigned int base = 0x10000040 , mask = 1; 
 		switch(IntLineNo) {
 			//Table 5.4 pop
 			case 3: break; //base rimane base e mi va bene
@@ -298,26 +309,25 @@ klog_print("Device Interrupt...\n");
 		if (((base & mask) >> DevNo) > 0) found = 1;
 		else DevNo++;
 	}
-	
+	*/
 	// address of the device's device register
-	// NOTA: con devreg abbiamo -> dtp e term 
-	
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[IntLineNo][DevNo];
 	int device_position = (IntLineNo - 3) + DevNo;
 	unsigned int statusCode;
 	int *semAddr;
 	pcb_PTR pcb; 
-	klog_print("\nline: ");
-		klog_print_hex((unsigned int)IntLineNo);
-		klog_print("\ndev: ");
-		klog_print_hex((unsigned int)DevNo);
+	klog_print("; line: ");
+	klog_print_hex((unsigned int)IntLineNo);
+	klog_print("; dev: ");
+	klog_print_hex((unsigned int)DevNo);
+	
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
 		//4.
 		klog_print("dev");
 		semAddr = (int *) device_sem[device_position];
-		pcb = V_operation(semAddr);
+		pcb = V_operation(semAddr); // sblocchiamo il processo
 		if (pcb != NULL) {
 			//2. Save off the status code from the device's device register.
 			statusCode = devAddrBase->dtp.status;
@@ -334,19 +344,26 @@ klog_print("Device Interrupt...\n");
 			}
 		}
 	} else { //it is a terminal
+			klog_print("; devAddrEXE recv  ");
+			klog_print_hex((unsigned int)devAddrBase->term.recv_status);
+			
+			klog_print("; devAddrEXE transm ");
+			klog_print_hex((unsigned int)devAddrBase->term.transm_status);
+			
 		//scrittura:
 		klog_print("term ");
 		if (devAddrBase->term.recv_status != READY && devAddrBase->term.recv_status != BUSY ){
 			//4.
-			klog_print("dev scrittura");
+			klog_print(" dev scrittura");
+			
 			semAddr = (int *) device_sem[device_position];
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.recv_status;
 				//3. Aknlowledge the outstanding interrupt.
-				devAddrBase->term.recv_command = ACK; //? term.recv_command se è un terminale?
-				devAddrBase->term.recv_status = READY; //? term.recv_command se è un terminale?
+				devAddrBase->term.recv_command = ACK; 
+				devAddrBase->term.recv_status = READY; 
 				//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 				pcb->p_s.reg_v0 = statusCode;
 				if(pcb->p_prio == PROCESS_PRIO_HIGH) {
@@ -357,7 +374,8 @@ klog_print("Device Interrupt...\n");
 					soft_block_count--;
 				}
 			}
-		}//lettura:
+		}
+		//lettura:
 		if (devAddrBase->term.transm_status != READY && devAddrBase->term.transm_status != BUSY ){
 			//4. 
 			klog_print("dev lettura");
@@ -370,7 +388,7 @@ klog_print("Device Interrupt...\n");
 				statusCode = devAddrBase->term.transm_status;
 				//3. Aknlowledge the outstanding interrupt.
 				devAddrBase->term.transm_command = ACK;
-				devAddrBase->term.transm_status = READY; //? term.recv_command se è un terminale?
+				devAddrBase->term.transm_status = READY; 
 				//5.
 				pcb->p_s.reg_v0 = statusCode;
 				if(pcb->p_prio == PROCESS_PRIO_HIGH) {
@@ -384,16 +402,16 @@ klog_print("Device Interrupt...\n");
 		}
 	}
 	
-	
 	//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
 	//   from the "blocked" state to the "ready" state
-	//?domanda: non lo fa già la V_operation? dobbiamo togliere questa parte
+	
 	//7. Return controll to the Current Process: Perform a LDST on the saved exception state
 	//   (located at the start of the BIOS Data Page [section 3.4])
 	if (current_process == NULL)
-		 scheduler();
-	else LDST((state_t*)BIOSDATAPAGE);
-	
+		scheduler();
+	else 
+		LDST((state_t*)BIOSDATAPAGE);
+		
 	// *********************************************************************** //
 	//NOTA: (cosa dice il pdf, il codice e' sopra (diviso tra lettura e scrittura ))
 	//2. Save off the status code from the device's device register.

@@ -134,7 +134,7 @@ void uTLB_RefillHandler() {
     LDST((state_t *)0x0FFFF000);
 }
 
-//#include "klog/klog.h"
+#include "klog/klog.h"
 /*********************************************************************/
 /*                                                                   */
 /*                 p1 -- the root process                            */
@@ -142,7 +142,8 @@ void uTLB_RefillHandler() {
 void test() {
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
-    print("p1 v(sem_testsem)\n");
+     //print("p1 v(sem_testsem)\n");
+klog_print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
 
@@ -150,82 +151,89 @@ void test() {
     hp_p1state.reg_sp = hp_p1state.reg_sp - QPAGE;
     hp_p1state.pc_epc = hp_p1state.reg_t9 = (memaddr)hp_p1;
     hp_p1state.status                     = hp_p1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("*1");
     STST(&hp_p2state);
     hp_p2state.reg_sp = hp_p1state.reg_sp - QPAGE;
     hp_p2state.pc_epc = hp_p2state.reg_t9 = (memaddr)hp_p2;
     hp_p2state.status                     = hp_p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**2");
     STST(&p2state);
     p2state.reg_sp = hp_p2state.reg_sp - QPAGE;
     p2state.pc_epc = p2state.reg_t9 = (memaddr)p2;
     p2state.status                  = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**3");
     STST(&p3state);
     p3state.reg_sp = p2state.reg_sp - QPAGE;
     p3state.pc_epc = p3state.reg_t9 = (memaddr)p3;
     p3state.status                  = p3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**4");
     STST(&p4state);
     p4state.reg_sp = p3state.reg_sp - QPAGE;
     p4state.pc_epc = p4state.reg_t9 = (memaddr)p4;
     p4state.status                  = p4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**5");
     STST(&p5state);
     p5Stack = p5state.reg_sp = p4state.reg_sp - (2 * QPAGE); /* because there will 2 p4 running*/
     p5state.pc_epc = p5state.reg_t9 = (memaddr)p5;
     p5state.status                  = p5state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**6");
     STST(&p6state);
     p6state.reg_sp = p5state.reg_sp - (2 * QPAGE);
     p6state.pc_epc = p6state.reg_t9 = (memaddr)p6;
     p6state.status                  = p6state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**7");
     STST(&p7state);
     p7state.reg_sp = p6state.reg_sp - QPAGE;
     p7state.pc_epc = p7state.reg_t9 = (memaddr)p7;
     p7state.status                  = p7state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**8");
     STST(&p8rootstate);
     p8rootstate.reg_sp = p7state.reg_sp - QPAGE;
     p8rootstate.pc_epc = p8rootstate.reg_t9 = (memaddr)p8root;
     p8rootstate.status                      = p8rootstate.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
+klog_print("**child");
     STST(&child1state);
     child1state.reg_sp = p8rootstate.reg_sp - QPAGE;
     child1state.pc_epc = child1state.reg_t9 = (memaddr)child1;
     child1state.status                      = child1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+klog_print("**child2");
     STST(&child2state);
     child2state.reg_sp = child1state.reg_sp - QPAGE;
     child2state.pc_epc = child2state.reg_t9 = (memaddr)child2;
     child2state.status                      = child2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+klog_print("**gchild1");
     STST(&gchild1state);
     gchild1state.reg_sp = child2state.reg_sp - QPAGE;
     gchild1state.pc_epc = gchild1state.reg_t9 = (memaddr)p8leaf1;
     gchild1state.status                       = gchild1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+klog_print("**child2");
     STST(&gchild2state);
     gchild2state.reg_sp = gchild1state.reg_sp - QPAGE;
     gchild2state.pc_epc = gchild2state.reg_t9 = (memaddr)p8leaf2;
     gchild2state.status                       = gchild2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+klog_print("**child3");
     STST(&gchild3state);
     gchild3state.reg_sp = gchild2state.reg_sp - QPAGE;
     gchild3state.pc_epc = gchild3state.reg_t9 = (memaddr)p8leaf3;
     gchild3state.status                       = gchild3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+klog_print("**child4");
     STST(&gchild4state);
     gchild4state.reg_sp = gchild3state.reg_sp - QPAGE;
     gchild4state.pc_epc = gchild4state.reg_t9 = (memaddr)p8leaf4;
     gchild4state.status                       = gchild4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+klog_print("**9");
     STST(&p9state);
     p9state.reg_sp = gchild4state.reg_sp - QPAGE;
     p9state.pc_epc = p9state.reg_t9 = (memaddr)p9;
     p9state.status                  = p9state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
+klog_print("**10");
     STST(&p10state);
     p10state.reg_sp = p9state.reg_sp - QPAGE;
     p10state.pc_epc = p10state.reg_t9 = (memaddr)p10;
@@ -234,20 +242,25 @@ void test() {
     /* create process p2 */
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
-    print("p2 was started\n");
+   // print("p2 was started\n");
+klog_print("p2 was started\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
+klog_print("v\n");
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
 
+klog_print("v done");
     /* make sure we really blocked */
-    if (p1p2synch == 0) {
-        print("error: p1/p2 synchronization bad\n");
+    if (p1p2synch == 0) { 
+     //   print("error: p1/p2 synchronization bad\n");
+        klog_print("error: p1/p2 synchronization bad\n");
     }
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
-    print("p3 is started\n");
+    //print("p3 is started\n");
+klog_print("p3 is started\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
@@ -273,7 +286,8 @@ void test() {
 
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
 
-    print("p1 knows p5 ended\n");
+    //print("p1 knows p5 ended\n");
+klog_print("p1 knows p5 ended\n");
 
     SYSCALL(PASSEREN, (int)&sem_blkp4, 0, 0); /* P(sem_blkp4)		*/
 

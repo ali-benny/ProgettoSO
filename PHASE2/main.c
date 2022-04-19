@@ -78,8 +78,8 @@ int main(){
     // - processor Local Timer enabled
     // - kernel mode on 
     //(vedi paragraph 2.3 virtualsquare (pag 9))
-    pcb->p_s.status = IMON | IEPON | TEBITON; //? 0b00001000000000001111111100000100;
-    //pcb->p_s.status = 0b00001000000000001111111100000100;
+   // pcb->p_s.status = IMON | IEPON | TEBITON; //? 0b00001000000000001111111100000100;
+    pcb->p_s.status = IECON | IMON | TEBITON;
 	// - the SP (stack pointer) set to RAMTOP
 	RAMTOP(pcb->p_s.reg_sp);
     // - and its PC set to the address of test.
