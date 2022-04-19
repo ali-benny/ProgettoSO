@@ -211,7 +211,7 @@ klog_print("[P]");
 			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
 		}
 		Blocking_Syscall();
-	}else if(FindAsl(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
+	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
 		if (pcb == NULL) klog_print(".NULL..");
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
@@ -267,7 +267,7 @@ klog_print("[V]");
 			//! un po' troppo: PANIC();
 		}
 		Blocking_Syscall();
-	}else if(FindAsl(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
+	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
 			insertProcQ(&high_priority_q, pcb);

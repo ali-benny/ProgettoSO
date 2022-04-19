@@ -1,12 +1,11 @@
 #include "memcpy.h"
-/* proposta di carlo
-**
+/**
  * A simple memcpy implementation. Copies n bytes from the from address to the to address.
  *
  * @param to The source first address 
  * @param from The destination first address
  * @param n How many bytes to copy
- ***/
+ **/
 void memcpy(void* to, void* from, size_tt n){
   // since we want to copy byte by byte, treat both pointers as char*
   char *cfrom = (char *)from;

@@ -18,7 +18,7 @@ HIDDEN struct list_head asl_h;	 //lista di semafori attivi, utilizzati in questo
 
  * @return 1 se e` vuota, 0 se ha qualcosa
 */
-int FindAsl(int *semAdd){
+int BusySem(int *semAdd){
 //cercare il semAdd (key) nella ASL
 	struct list_head *iter;
 	list_for_each(iter, &(asl_h)){

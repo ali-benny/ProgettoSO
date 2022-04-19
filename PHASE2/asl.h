@@ -3,7 +3,7 @@
 
 #include "pcb.h"
 
-int FindAsl(int *semAddr);
+int BusySem(int *semAddr);
 
 int insertBlocked(int *semAdd, pcb_t *p);
 pcb_t* removeBlocked(int *semAdd);
