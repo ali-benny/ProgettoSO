@@ -35,11 +35,22 @@ klog_print("Blocking sys..");
 	//a. The saved processor state (located at the start of the BIOS Data Page [state_reg] [Section 3.4]) 
 	//	must be copied into the Current Process’s pcb (p_s).
 	//current_process->p_s = *state_reg;
-	memcpy((void *) &current_process->p_s, (void *) state_reg, sizeof(state_reg)); 
-	//memcpy(current_process, state_reg); //memcpy nostra
-	
+//	memcpy((void *) &current_process->p_s, (void *) state_reg, sizeof(state_reg)); 
+	memcpy(&current_process->p_s, state_reg);
+	/*
+	current_process->p_s.entry_hi = state_reg->entry_hi;
+	current_process->p_s.cause = state_reg->cause;
+	current_process->p_s.status = state_reg->status;
+	current_process->p_s.pc_epc = state_reg->pc_epc;
+	current_process->p_s.hi = state_reg->hi;
+	current_process->p_s.lo = state_reg->lo;
+	for (int i=0; i < STATE_GPR_LEN; i++) {
+		current_process->p_s.gpr[i] = state_reg->gpr[i];
+	}
+	*/
 	//b. Update the accumulated CPU time for the Current Process. [Section 3.8]
 	int time = STCK(time);
+	if (current_process == NULL) klog_print(" cp null ");
 	current_process->p_time += time;
 	
 	//c. The Current Process is blocked on the ASL (insertBlocked), transitioning 
@@ -79,7 +90,7 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 		pcb_PTR nuovo_pcb = allocPcb();// creo un pcb
 		if (nuovo_pcb != NULL){
 			//nuovo_pcb->p_s = *statep;
-			memcpy((void *) &nuovo_pcb->p_s, (void *) statep, sizeof(statep));
+			memcpy(&nuovo_pcb->p_s, statep);
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
 			nuovo_pcb->p_pid = (memaddr) nuovo_pcb;
@@ -257,6 +268,7 @@ void Verhogen(int a0, unsigned int a1) {
  */
 pcb_PTR V_operation(int *semaddr){
 klog_print("[V]");
+
 	if (*semaddr == 1) { // se e` 1 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
@@ -264,7 +276,6 @@ klog_print("[V]");
 			soft_block_count++;
 		else {
 			klog_print("Verhogen ADVICE: inserimento fallito miseramente\n");
-			//! un po' troppo: PANIC();
 		}
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
@@ -318,17 +329,18 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 		klog_print_hex((unsigned int)&devReg->devreg[IntLineNo][DevNo].term.transm_command);
 		
         //terminali di scrittura
-        if(&(devReg->devreg[IntLineNo][DevNo].term.recv_command) == (memaddr*) cmdAddr){ 
-            isRecv = 1;
-            devReg->devreg[IntLineNo][DevNo].term.recv_command = cmdValue;
-			state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.recv_status;
+        if(&(devReg->devreg[IntLineNo][DevNo].term.transm_command) == (memaddr*) cmdAddr){ 
+            devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
+            state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
             found = 1;
             klog_print("term write");
         }
+        
         //terminali di lettura
-		if(&(devReg->devreg[IntLineNo][DevNo].term.transm_command) == (memaddr*) cmdAddr){ 
-            devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
-            state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
+		if(&(devReg->devreg[IntLineNo][DevNo].term.recv_command) == (memaddr*) cmdAddr){ 
+            isRecv = 1;
+            devReg->devreg[IntLineNo][DevNo].term.recv_command = cmdValue;
+			state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.recv_status;
             found = 1;
             klog_print("term read");
         }
@@ -354,6 +366,9 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	}
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
+    
+	klog_print("; devPosition: ");
+	klog_print_hex(device_position);
     P_operation(&device_sem[device_position]);
 	
 	/*

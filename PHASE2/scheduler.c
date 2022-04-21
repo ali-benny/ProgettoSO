@@ -33,7 +33,8 @@ klog_print("Scheduler...\n");
 		    //1. Remove the pcb from the head of the high priority Ready Queue
 		    //and store the pointer to the pointer to the pcb in the Current Process field
 		    current_process = removeProcQ(&high_priority_q);
-		    setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR))); //! non c'è sul pdf ma ha senso farlo anche qui
+		   // setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR))); //! non c'è sul pdf ma ha senso farlo anche qui
+		    setTIMER(TIMESLICE);
 		    
 		    //2. Perform a Load Processor State (LDST) on the processor state
 		    //stored in pcb of the Current Process (p_s)
@@ -44,7 +45,8 @@ klog_print("Scheduler...\n");
 		    //and store the pointer to the pcb in the Current Process field
 		    current_process = removeProcQ(&low_priority_q);
 		    //2. Load 5 milliseconds on the PLT (vedi 4.1.4)
-		    setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR)));
+		 //   setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR)));
+			setTIMER(TIMESLICE);
 		    if (&current_process->p_s != NULL) klog_print("not null");
 		    //3. Perform a Load Processor State (LDST) on the processor state
 		    //stored in pcb of the Current Process (p_s)
