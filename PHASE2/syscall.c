@@ -221,6 +221,7 @@ klog_print("[P]");
 		else {
 			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
 		}
+			if (emptyProcQ(&low_priority_q)==0) klog_print("low not null");
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
@@ -230,6 +231,7 @@ klog_print("[P]");
 			soft_block_count--;	
 		}
 		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+			if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 		}
@@ -285,6 +287,7 @@ klog_print("[V]");
 			soft_block_count--;	
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+			if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 			return pcb;

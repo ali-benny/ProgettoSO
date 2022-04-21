@@ -93,7 +93,7 @@ klog_print("Syscall Handler...\n");
  * @returns None
  */
 void exception_handler() {
-klog_print("\n*Exception Handler...");
+klog_print("\n\n\n*Exception Handler...");
 	state_reg = (state_t*) BIOSDATAPAGE; // register value: che tipo di syscall è?
 	//The cause of the exception is encoded in the .ExcCode field of the Cause
 	//registrer (Cause.ExcCode) in the saved exception state (vedi 3.3-pop)
@@ -188,7 +188,7 @@ klog_print("Passup Or Die...\n");
 		state_t * src = ((state_t*) BIOSDATAPAGE);
 		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
 		
-		memcpy(&dest, src, sizeof(dest));
+		memcpy(&dest, src);
 		/*
 		dest.entry_hi = src->entry_hi;
 		dest.cause = src->cause;
@@ -301,7 +301,9 @@ klog_print("Device Interrupt...\n");
 
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
-	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[IntLineNo][DevNo];
+	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[IntLineNo-3][DevNo];
+//	devreg_t* devAddrBase = (devreg_t*) 0x10000054 + ((IntLineNo-3) * 0x80) + (DevNo * 0x10);
+	
 	int device_position = (IntLineNo - 3)*8 + DevNo;
 	unsigned int statusCode;
 	int *semAddr;

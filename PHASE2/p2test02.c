@@ -114,7 +114,7 @@ void print(char *msg) {
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-        if ((status & TERMSTATMASK) != RECVD) {
+        if ((status & TERMSTATMASK) != RECVD) {klog_print("PRINT PANIC");
             PANIC();
         }
         s++;
