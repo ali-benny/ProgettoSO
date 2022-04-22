@@ -298,7 +298,7 @@ klog_print("Device Interrupt...\n");
 		BitMap = BitMap >> 1;
 	}
 	klog_print("; found: "); klog_print_hex(found);
-
+	
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[IntLineNo-3][DevNo];
@@ -308,14 +308,14 @@ klog_print("Device Interrupt...\n");
 	unsigned int statusCode;
 	int *semAddr;
 	pcb_PTR pcb; 
-	klog_print("; line: "); klog_print_hex((unsigned int)IntLineNo-3);
-	klog_print("; dev: "); klog_print_hex((unsigned int)DevNo);
-	klog_print("; devPosition: "); klog_print_hex(device_position);
+	klog_print("\nline: "); klog_print_hex((unsigned int)IntLineNo-3);
+	klog_print("\ndev: "); klog_print_hex((unsigned int)DevNo);
+	klog_print("\ndevPosition: "); klog_print_hex(device_position);
 	
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
 		//4.
-		klog_print("dev");
+		klog_print(" dev ");
 		semAddr = (int *) device_sem[device_position];
 		pcb = V_operation(semAddr); // sblocchiamo il processo
 		if (pcb != NULL) {
@@ -325,19 +325,12 @@ klog_print("Device Interrupt...\n");
 			devAddrBase->dtp.status = READY; //? term.recv_command se è un terminale?
 			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 			pcb->p_s.reg_v0 = statusCode;
-			if(pcb->p_prio == PROCESS_PRIO_HIGH) {
-				insertProcQ(&high_priority_q, pcb);
-				soft_block_count--;	
-			} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-				insertProcQ(&low_priority_q, pcb);
-				soft_block_count--;
-			}
 		}
 	} else { //it is a terminal
-			klog_print("; devAddrEXE recv  ");
+			klog_print("\ndevAddrEXE recv  ");
 			klog_print_hex((unsigned int)devAddrBase->term.recv_status);
 			
-			klog_print("; devAddrEXE transm ");
+			klog_print("\ndevAddrEXE transm ");
 			klog_print_hex((unsigned int)devAddrBase->term.transm_status);
 			
 		//scrittura:
@@ -347,7 +340,7 @@ klog_print("Device Interrupt...\n");
 			//4. 
 			klog_print("dev scrittura");
 			semAddr = (int *) &device_sem[device_position];
-			klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
+			klog_print("\nsemAddr: ");	klog_print_hex((unsigned int)semAddr);
 			//5.
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
@@ -358,13 +351,6 @@ klog_print("Device Interrupt...\n");
 			//	devAddrBase->term.transm_status = READY; 
 				//5.
 				pcb->p_s.reg_v0 = statusCode;
-				if(pcb->p_prio == PROCESS_PRIO_HIGH) {
-					insertProcQ(&high_priority_q, pcb);
-					soft_block_count--;	
-				} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-					insertProcQ(&low_priority_q, pcb);
-					soft_block_count--;
-				}
 			}
 		}
 		//lettura:
@@ -374,7 +360,7 @@ klog_print("Device Interrupt...\n");
 			
 			device_position += 8;
 			semAddr = (int *) &device_sem[device_position];
-			klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
+			klog_print("\nsemAddr: ");	klog_print_hex((unsigned int)semAddr);
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
@@ -384,13 +370,6 @@ klog_print("Device Interrupt...\n");
 		//		devAddrBase->term.recv_status = READY; 
 				//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 				pcb->p_s.reg_v0 = statusCode;
-				if(pcb->p_prio == PROCESS_PRIO_HIGH) {
-					insertProcQ(&high_priority_q, pcb);
-					soft_block_count--;	
-				} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-					insertProcQ(&low_priority_q, pcb);
-					soft_block_count--;
-				}
 			}
 		}
 	}

@@ -1,1 +1,2 @@
-p1kernel panic()
+p1 v(sem_testsem)
+pkernel panic()

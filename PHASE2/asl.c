@@ -17,12 +17,14 @@ HIDDEN struct list_head asl_h;	 //lista di semafori attivi, utilizzati in questo
 /**	Ricerca Semafori dato un certo semAdd in asl_h
 
  * @return 1 se e` vuota, 0 se ha qualcosa
-*/
+ */
 int BusySem(int *semAdd){
 //cercare il semAdd (key) nella ASL
+klog_print("\n$BusySem$ ");
 	struct list_head *iter;
 	list_for_each(iter, &(asl_h)){
 		semd_PTR current = container_of(iter, semd_t, s_link);
+		klog_print_hex((unsigned int)&current);
 		if (current->s_key == semAdd){
 			if (emptyProcQ(&current->s_procq)==1) return 1;
 			else return 0;

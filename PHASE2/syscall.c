@@ -328,8 +328,6 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	while (DevNo < 8 && !found){
 		IntLineNo = 4; // per lettura e scrittura
 		//devAddr = (devreg_t*) base + ((IntLineNo) * 0x80) + (DevNo * 0x10);
-		klog_print("\ndevAddr: ");
-		klog_print_hex((unsigned int)&devReg->devreg[IntLineNo][DevNo].term.transm_command);
 		
         //terminali di scrittura
         if(&(devReg->devreg[IntLineNo][DevNo].term.transm_command) == (memaddr*) cmdAddr){ 
@@ -370,7 +368,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
     
-	klog_print("; devPosition: ");
+	klog_print("\ndevPosition: ");
 	klog_print_hex(device_position);
     P_operation(&device_sem[device_position]);
 	

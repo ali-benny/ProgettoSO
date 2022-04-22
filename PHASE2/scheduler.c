@@ -43,23 +43,21 @@ klog_print("Scheduler...\n");
 		}else if (emptyProcQ(&low_priority_q)==0){
 		    //1. Remove the pcb from the head of the low priority Ready Queue
 		    //and store the pointer to the pcb in the Current Process field
-		    klog_print(" LOW:");
+		    klog_print("LOW:");
 		    klog_print_hex(&low_priority_q);
-		    klog_print("; next: "); klog_print_hex(low_priority_q.next);
-		    
-		    current_process = removeProcQ(&low_priority_q);
-		    
+		    klog_print("next: "); klog_print_hex(low_priority_q.next);
 		    klog_print("; next->netx: "); klog_print_hex(low_priority_q.next->next);
 		    klog_print("; next->netx->next: "); klog_print_hex(low_priority_q.next->next->next);
 		    klog_print("; next->netx->next->next: "); klog_print_hex(low_priority_q.next->next->next->next);
+		    current_process = removeProcQ(&low_priority_q);
+		   
 		    //2. Load 5 milliseconds on the PLT (vedi 4.1.4)
 		 //   setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR)));
 			setTIMER(TIMESLICE);
 		    if (emptyProcQ(&low_priority_q)==1) klog_print("\nlow null");
-		    klog_print(" LOW:");
+		    klog_print("\nLOW:");
 		    klog_print_hex(&low_priority_q);
 		    klog_print("; next: "); klog_print_hex(low_priority_q.next);
-		    
 		    klog_print("; next->netx: "); klog_print_hex(low_priority_q.next->next);
 		    klog_print("; next->netx->next: "); klog_print_hex(low_priority_q.next->next->next);
 		    klog_print("; next->netx->next->next: "); klog_print_hex(low_priority_q.next->next->next->next);
