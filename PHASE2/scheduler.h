@@ -9,6 +9,7 @@
 #include "klog/klog.h"
 
 void scheduler();
+//void auxiliare_scheduler(list_head * list);
 
 #endif // SCHEDULER_H
 

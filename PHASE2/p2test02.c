@@ -143,6 +143,7 @@ void test() {
     SYSCALL(VERHOGEN, (int)&sem_testsem, 0, 0); /* V(sem_testsem)   */
 
      print("p1 v(sem_testsem)\n");
+klog_print("p1 v(sem_testsem)\n");
 
     /* set up states of the other processes */
 
@@ -151,54 +152,45 @@ void test() {
     hp_p1state.pc_epc = hp_p1state.reg_t9 = (memaddr)hp_p1;
     hp_p1state.status                     = hp_p1state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-
     STST(&hp_p2state);
     hp_p2state.reg_sp = hp_p1state.reg_sp - QPAGE;
     hp_p2state.pc_epc = hp_p2state.reg_t9 = (memaddr)hp_p2;
     hp_p2state.status                     = hp_p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
 
     STST(&p2state);
     p2state.reg_sp = hp_p2state.reg_sp - QPAGE;
     p2state.pc_epc = p2state.reg_t9 = (memaddr)p2;
     p2state.status                  = p2state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-
     STST(&p3state);
     p3state.reg_sp = p2state.reg_sp - QPAGE;
     p3state.pc_epc = p3state.reg_t9 = (memaddr)p3;
     p3state.status                  = p3state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
 
     STST(&p4state);
     p4state.reg_sp = p3state.reg_sp - QPAGE;
     p4state.pc_epc = p4state.reg_t9 = (memaddr)p4;
     p4state.status                  = p4state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-
     STST(&p5state);
     p5Stack = p5state.reg_sp = p4state.reg_sp - (2 * QPAGE); /* because there will 2 p4 running*/
     p5state.pc_epc = p5state.reg_t9 = (memaddr)p5;
     p5state.status                  = p5state.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
 
     STST(&p6state);
     p6state.reg_sp = p5state.reg_sp - (2 * QPAGE);
     p6state.pc_epc = p6state.reg_t9 = (memaddr)p6;
     p6state.status                  = p6state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-
     STST(&p7state);
     p7state.reg_sp = p6state.reg_sp - QPAGE;
     p7state.pc_epc = p7state.reg_t9 = (memaddr)p7;
     p7state.status                  = p7state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
-
     STST(&p8rootstate);
     p8rootstate.reg_sp = p7state.reg_sp - QPAGE;
     p8rootstate.pc_epc = p8rootstate.reg_t9 = (memaddr)p8root;
     p8rootstate.status                      = p8rootstate.status | IEPBITON | CAUSEINTMASK | TEBITON;
-
 
     STST(&child1state);
     child1state.reg_sp = p8rootstate.reg_sp - QPAGE;
@@ -251,15 +243,23 @@ void test() {
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
     print("p2 was started\n");
+    
+klog_print("p2 v(sem_testsem)\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
+klog_print("TRA V)\n");
+
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
+
 
     /* make sure we really blocked */
     if (p1p2synch == 0) { 
-       print("error: p1/p2 synchronization bad\n");
+    klog_print("DOPODPOP\n");
+        print("error: p1/p2 synchronization bad\n");
+        
     }
+    
 
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
@@ -322,8 +322,10 @@ void p2() {
     cpu_t now1, now2;     /* times of day        */
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
 
+	
+klog_print("**p2 STARTS**\n");
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
-
+klog_print("**p2 STARTS**\n");
     print("p2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
