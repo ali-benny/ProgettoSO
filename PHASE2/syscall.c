@@ -29,7 +29,9 @@ extern state_t* state_reg;
 void auxiliary_terminate(pcb_PTR current); //terminate
 
 void Blocking_Syscall(){
-klog_print("Blocking sys..");
+#ifdef SYS_DEBUG
+	klog_print("Blocking sys..");
+#endif
 	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
 	//   to avoid an infinite loop of SYSCALLs.
 	//a. The saved processor state (located at the start of the BIOS Data Page [state_reg] [Section 3.4]) 
@@ -37,20 +39,10 @@ klog_print("Blocking sys..");
 	//current_process->p_s = *state_reg;
 //	memcpy((void *) &current_process->p_s, (void *) state_reg, sizeof(state_reg)); 
 	memcpy(&current_process->p_s, state_reg);
-	/*
-	current_process->p_s.entry_hi = state_reg->entry_hi;
-	current_process->p_s.cause = state_reg->cause;
-	current_process->p_s.status = state_reg->status;
-	current_process->p_s.pc_epc = state_reg->pc_epc;
-	current_process->p_s.hi = state_reg->hi;
-	current_process->p_s.lo = state_reg->lo;
-	for (int i=0; i < STATE_GPR_LEN; i++) {
-		current_process->p_s.gpr[i] = state_reg->gpr[i];
-	}
-	*/
+	
 	//b. Update the accumulated CPU time for the Current Process. [Section 3.8]
 	int time = STCK(time);
-	if (current_process == NULL) klog_print(" cp null ");
+//	if (current_process == NULL) klog_print(" cp null ");
 	current_process->p_time += time;
 	
 	//c. The Current Process is blocked on the ASL (insertBlocked), transitioning 
@@ -89,8 +81,7 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 		
 		pcb_PTR nuovo_pcb = allocPcb();// creo un pcb
 		if (nuovo_pcb != NULL){
-			//nuovo_pcb->p_s = *statep;
-			memcpy(&nuovo_pcb->p_s, statep);
+			memcpy(&nuovo_pcb->p_s, statep); //ovvero: nuovo_pcb->p_s = *statep;
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
 			nuovo_pcb->p_pid = (memaddr) nuovo_pcb;
@@ -99,7 +90,7 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 				insertProcQ(&high_priority_q, nuovo_pcb);
 			else if(prio == PROCESS_PRIO_LOW)
 				insertProcQ(&low_priority_q, nuovo_pcb);
-			else klog_print("prio non e' Low o High\n");
+			else klog_print("Create_Process ADVICE: prio non e' Low o High\n");
 			
 			// aggiungo al current un figlio del nuovo pcb (=chiamante)
 			insertChild(current_process, nuovo_pcb);
@@ -212,26 +203,30 @@ void Passeren(int a0, unsigned int a1) {
 	semaddr: a1
 */
 void P_operation(int *semaddr) {
-klog_print("[P]");
+#ifdef SYS_DEBUG
+	klog_print("[P]");
+#endif
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);	
 		//aggiornare i contatori
 		if(result == 0) // insertBlocked avvenuta con successo
 			soft_block_count++;
 		else {
+		#ifdef SYS_DEBUG
 			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
+		#endif
 		}
-			if (emptyProcQ(&low_priority_q)==0) klog_print("low not null");
+//		if (emptyProcQ(&low_priority_q)==0) klog_print("low not null");
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
-		if (pcb == NULL) klog_print(".NULL..");
+//		if (pcb == NULL) klog_print(".NULL..");
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
 		}
 		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-			if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
+//			if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 		}
@@ -287,7 +282,7 @@ klog_print("[V]");
 			soft_block_count--;	
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-			if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
+//			if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 			return pcb;
@@ -345,7 +340,6 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
             found = 1;
             klog_print("term read");
         }
-        klog_print(".t.");
 		if (found == 0) {
 			IntLineNo = 0;
 			while (IntLineNo < 4 && !found){
@@ -360,10 +354,8 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 			}
 			DevNo++;
 		}
-		klog_print("\nSline: ");
-		klog_print_hex((unsigned int)IntLineNo);
-		klog_print("\nSdev: ");
-		klog_print_hex((unsigned int)DevNo);
+//		klog_print("\nSline: "); klog_print_hex((unsigned int)IntLineNo);
+//		klog_print("\nSdev: "); klog_print_hex((unsigned int)DevNo);
 	}
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
@@ -472,7 +464,6 @@ void Wait_For_Clock(int a0) {
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		Blocking_Syscall();
 	} else klog_print("Wait_For_Clock ERROR: a0 != CLOCKWAIT\n");
 }
 

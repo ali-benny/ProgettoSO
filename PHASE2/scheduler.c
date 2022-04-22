@@ -43,31 +43,34 @@ klog_print("Scheduler...\n");
 		}else if (emptyProcQ(&low_priority_q)==0){
 		    //1. Remove the pcb from the head of the low priority Ready Queue
 		    //and store the pointer to the pcb in the Current Process field
+		    /*
 		    klog_print("LOW:");
 		    klog_print_hex(&low_priority_q);
 		    klog_print("next: "); klog_print_hex(low_priority_q.next);
 		    klog_print("; next->netx: "); klog_print_hex(low_priority_q.next->next);
 		    klog_print("; next->netx->next: "); klog_print_hex(low_priority_q.next->next->next);
 		    klog_print("; next->netx->next->next: "); klog_print_hex(low_priority_q.next->next->next->next);
+		    */
 		    current_process = removeProcQ(&low_priority_q);
 		   
 		    //2. Load 5 milliseconds on the PLT (vedi 4.1.4)
 		 //   setTIMER(TIMESLICE*(*((cpu_t*) TIMESCALEADDR)));
 			setTIMER(TIMESLICE);
-		    if (emptyProcQ(&low_priority_q)==1) klog_print("\nlow null");
+//		    if (emptyProcQ(&low_priority_q)==1) klog_print("\nlow null");
+		    /*
 		    klog_print("\nLOW:");
 		    klog_print_hex(&low_priority_q);
 		    klog_print("; next: "); klog_print_hex(low_priority_q.next);
 		    klog_print("; next->netx: "); klog_print_hex(low_priority_q.next->next);
 		    klog_print("; next->netx->next: "); klog_print_hex(low_priority_q.next->next->next);
 		    klog_print("; next->netx->next->next: "); klog_print_hex(low_priority_q.next->next->next->next);
-		    
+		    */
 		    //3. Perform a Load Processor State (LDST) on the processor state
 		    //stored in pcb of the Current Process (p_s)
 		    LDST(&(current_process->p_s));
 		}
 	}
-klog_print("SCHEDULER advice\n");
+//klog_print("$SCHEDULER advice\n");
     //if the Process Count is zero
     if (process_count == 0){
         //invoke the HALT BIOS service/instructions (vedi 7.3.7)
@@ -85,9 +88,9 @@ klog_print("SCHEDULER advice\n");
     //Deadlock for Pandos is defined as when
     //the Process Count > 0 and the Soft-block Count is zero
     }else if (process_count>0 && soft_block_count==0){
-    klog_print("SCHEDULER ERROR: siamo in panic\n");
+ 		klog_print("^SCHEDULER PANIC\n");
         //invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
         PANIC();
     }
- klog_print("SCHEDULER niente!");
+ klog_print("¬SCHEDULER niente!");
 }

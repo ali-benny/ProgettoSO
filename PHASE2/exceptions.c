@@ -93,7 +93,7 @@ klog_print("Syscall Handler...\n");
  * @returns None
  */
 void exception_handler() {
-klog_print("\n\n\n*Exception Handler...");
+klog_print("\n\n*Exception Handler...");
 	state_reg = (state_t*) BIOSDATAPAGE; // register value: che tipo di syscall è?
 	//The cause of the exception is encoded in the .ExcCode field of the Cause
 	//registrer (Cause.ExcCode) in the saved exception state (vedi 3.3-pop)
@@ -189,17 +189,7 @@ klog_print("Passup Or Die...\n");
 		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
 		
 		memcpy(&dest, src);
-		/*
-		dest.entry_hi = src->entry_hi;
-		dest.cause = src->cause;
-		dest.status = src->status;
-		dest.pc_epc = src->pc_epc;
-		dest.hi = src->hi;
-		dest.lo = src->lo;
-		for (int i=0; i < STATE_GPR_LEN; i++) {
-			dest.gpr[i] = src->gpr[i];
-		}
-		*/
+		
 		context_t *context = &current_process->p_supportStruct->sup_exceptContext[type_of_exception]; //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
@@ -250,6 +240,7 @@ klog_print("Interval Timer Interrupt...\n");
 		pcb->p_semAdd = NULL;
 		if (pcb->p_prio == PROCESS_PRIO_HIGH) insertProcQ(&high_priority_q, pcb);
 		else insertProcQ(&low_priority_q, pcb);
+		soft_block_count--;
 	}
 	//3. Reset the Pseudo-clock semaphore to zero.
 	//   This insures that all NSYS7 calls block and that the Pseudo-clock semaphore does not grow positive-
@@ -287,7 +278,7 @@ klog_print("Device Interrupt...\n");
 	int found = 0;
 //	unsigned int BitMap = CDEV_BITMAP_ADDR(IntLineNo);
 	unsigned int BitMap = devRegArea->interrupt_dev[IntLineNo-3];
-	klog_print("bitmap: "); klog_print_hex(BitMap);
+//	klog_print("bitmap: "); klog_print_hex(BitMap);
 	
 	while (DevNo < 8 && !found){
 		if (BitMap % 2 != 0) {
@@ -297,7 +288,7 @@ klog_print("Device Interrupt...\n");
 			DevNo ++;
 		BitMap = BitMap >> 1;
 	}
-	klog_print("; found: "); klog_print_hex(found);
+//	klog_print("; found: "); klog_print_hex(found);
 	
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
@@ -308,9 +299,9 @@ klog_print("Device Interrupt...\n");
 	unsigned int statusCode;
 	int *semAddr;
 	pcb_PTR pcb; 
-	klog_print("\nline: "); klog_print_hex((unsigned int)IntLineNo-3);
-	klog_print("\ndev: "); klog_print_hex((unsigned int)DevNo);
-	klog_print("\ndevPosition: "); klog_print_hex(device_position);
+//	klog_print("\nline: "); klog_print_hex((unsigned int)IntLineNo-3);
+//	klog_print("\ndev: "); klog_print_hex((unsigned int)DevNo);
+//	klog_print("\ndevPosition: "); klog_print_hex(device_position);
 	
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
@@ -321,18 +312,12 @@ klog_print("Device Interrupt...\n");
 		if (pcb != NULL) {
 			//2. Save off the status code from the device's device register.
 			statusCode = devAddrBase->dtp.status;
-			devAddrBase->dtp.command = ACK;klog_print(" ACK ");
+			devAddrBase->dtp.command = ACK;// klog_print(" ACK ");
 			devAddrBase->dtp.status = READY; //? term.recv_command se è un terminale?
 			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 			pcb->p_s.reg_v0 = statusCode;
 		}
-	} else { //it is a terminal
-			klog_print("\ndevAddrEXE recv  ");
-			klog_print_hex((unsigned int)devAddrBase->term.recv_status);
-			
-			klog_print("\ndevAddrEXE transm ");
-			klog_print_hex((unsigned int)devAddrBase->term.transm_status);
-			
+	} else { //it is a terminal			
 		//scrittura:
 		klog_print("; term ");
 		
@@ -340,14 +325,14 @@ klog_print("Device Interrupt...\n");
 			//4. 
 			klog_print("dev scrittura");
 			semAddr = (int *) &device_sem[device_position];
-			klog_print("\nsemAddr: ");	klog_print_hex((unsigned int)semAddr);
+//			klog_print("\nsemAddr: ");	klog_print_hex((unsigned int)semAddr);
 			//5.
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.transm_status;
 				//3. Aknlowledge the outstanding interrupt.
-				devAddrBase->term.transm_command = ACK;klog_print(" ACK ");
+				devAddrBase->term.transm_command = ACK;//klog_print(" ACK ");
 			//	devAddrBase->term.transm_status = READY; 
 				//5.
 				pcb->p_s.reg_v0 = statusCode;
@@ -360,13 +345,13 @@ klog_print("Device Interrupt...\n");
 			
 			device_position += 8;
 			semAddr = (int *) &device_sem[device_position];
-			klog_print("\nsemAddr: ");	klog_print_hex((unsigned int)semAddr);
+//			klog_print("\nsemAddr: ");	klog_print_hex((unsigned int)semAddr);
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.recv_status;
 				//3. Aknlowledge the outstanding interrupt.
-				devAddrBase->term.recv_command = ACK; klog_print(" ACK ");
+				devAddrBase->term.recv_command = ACK; //klog_print(" ACK ");
 		//		devAddrBase->term.recv_status = READY; 
 				//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 				pcb->p_s.reg_v0 = statusCode;
