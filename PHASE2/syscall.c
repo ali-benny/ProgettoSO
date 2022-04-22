@@ -11,7 +11,7 @@
 
 #include "syscall.h"
 
-//#define SYS_DEBUG //per debuggare le systemcall
+#define SYS_DEBUG //per debuggare le systemcall
 
 //richiami delle variabili globali di main.c
 extern struct list_head high_priority_q;
@@ -29,7 +29,7 @@ extern state_t* state_reg;
 void auxiliary_terminate(pcb_PTR current); //terminate
 
 void Blocking_Syscall(){
-//klog_print("Blocking sys..");
+klog_print("Blocksys..");
 	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
 	//   to avoid an infinite loop of SYSCALLs.
 	//a. The saved processor state (located at the start of the BIOS Data Page [state_reg] [Section 3.4]) 
@@ -197,14 +197,14 @@ void SYSCALL(PASSEREN, int* semaddr, 0, 0)
 void Passeren(int a0, unsigned int a1) {
 	if(a0 == PASSEREN) {
 #ifdef SYS_DEBUG
-		klog_print("Passeren ...");
+		klog_print("Pass...");
 #endif
 
 		int *semaddr = (int *) a1;
 		P_operation(semaddr);
 
 #ifdef SYS_DEBUG
-		klog_print(" done!\n");
+		klog_print(" done!");
 #endif
 	} else klog_print("Passeren ERROR: a0 != PASSEREN\n");
 }
@@ -251,14 +251,14 @@ void P_operation(int *semaddr) {
 void Verhogen(int a0, unsigned int a1) {
 	if(a0 == VERHOGEN) {
 #ifdef SYS_DEBUG
-		klog_print("Verhogen ...");
+		klog_print("Ver...");
 #endif
 
 	int *semaddr = (int *) a1;
 	V_operation(semaddr);
 	
 #ifdef SYS_DEBUG
-		klog_print(" done!\n");
+		klog_print(" done!");
 #endif
 	} else klog_print("Verhogen ERROR: a0 != VERHOGEN\n");
 	
@@ -320,7 +320,7 @@ int SYSCALL(DOIO, int *cmdAddr, int cmdValue, 0)
 void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	if(a0 == DOIO) {
 #ifdef SYS_DEBUG
-		klog_print("Do_Io ...");
+		klog_print("IO...");
 #endif
 	
 	unsigned int *cmdAddr = (unsigned int *) a1;

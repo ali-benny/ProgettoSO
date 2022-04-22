@@ -112,7 +112,7 @@ void print(char *msg) {
     devregtr  status;
 
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
-    //klog_print("INIZIO WHILE");
+    //klog_print("ùùùù");
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
@@ -121,7 +121,7 @@ void print(char *msg) {
         }
         s++;
     }
-    //klog_print("FINE WHILE");
+    klog_print("FINE");
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
 }
 
@@ -240,7 +240,7 @@ void test() {
     print("p2 was started\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
-
+	klog_print("TRA v");
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
 
     /* make sure we really blocked */
@@ -308,9 +308,9 @@ void p2() {
     int   i;              /* just to waste time  */
     cpu_t now1, now2;     /* times of day        */
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
-
+	klog_print("INIZIO P2");
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
-
+	klog_print("P2");
     print("p2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
@@ -335,11 +335,12 @@ void p2() {
     print("p2 v's successfully\n");
 
     /* test of SYS6 */
-
+	klog_print("PRIMA STCK");
     STCK(now1);                         /* time of day   */
+    klog_print("PRIMA GETTIME");
     cpu_t1 = SYSCALL(GETTIME, 0, 0, 0); /* CPU time used */
-
-    /* delay for several milliseconds */
+	klog_print("FATTA GETTIME");
+	/* delay for several milliseconds */
     for (i = 1; i < LOOPNUM; i++)
         ;
 
