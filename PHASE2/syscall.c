@@ -11,7 +11,7 @@
 
 #include "syscall.h"
 
-#define SYS_DEBUG //per debuggare le systemcall
+//#define SYS_DEBUG //per debuggare le systemcall
 
 //richiami delle variabili globali di main.c
 extern struct list_head high_priority_q;
@@ -29,7 +29,7 @@ extern state_t* state_reg;
 void auxiliary_terminate(pcb_PTR current); //terminate
 
 void Blocking_Syscall(){
-klog_print("Blocking sys..");
+//klog_print("Blocking sys..");
 	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
 	//   to avoid an infinite loop of SYSCALLs.
 	//a. The saved processor state (located at the start of the BIOS Data Page [state_reg] [Section 3.4]) 
@@ -213,7 +213,7 @@ void Passeren(int a0, unsigned int a1) {
 	semaddr: a1
 */
 void P_operation(int *semaddr) {
-klog_print("[P]");
+//klog_print("[P]");
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);	
 		//aggiornare i contatori
@@ -222,17 +222,17 @@ klog_print("[P]");
 		else {
 			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
 		}
-			if (emptyProcQ(&low_priority_q)==0) klog_print("low not null");
+			//if (emptyProcQ(&low_priority_q)==0) klog_print("low not null");
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
-		if (pcb == NULL) klog_print(".NULL..");
+		//if (pcb == NULL) klog_print(".NULL..");
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
 		}
 		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-			klog_print("CIAOAOAOAO");
+			//klog_print("CIAOAOAOAO");
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 		}
@@ -270,7 +270,7 @@ void Verhogen(int a0, unsigned int a1) {
  *	@return released_proc 
  */
 pcb_PTR V_operation(int *semaddr){
-klog_print("[V]");
+//klog_print("[V]");
 
 
 	if (*semaddr == 1) { // se e` 1 ci metto qualcosa e blocco un processo
@@ -289,14 +289,14 @@ klog_print("[V]");
 			soft_block_count--;	
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-			if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
+			//if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
 			insertProcQ(&low_priority_q, pcb);
-			klog_print(" DENTRO V:");
+			/*klog_print(" DENTRO V:");
 		    klog_print_hex(&low_priority_q);
 		    klog_print("; next: "); klog_print_hex(low_priority_q.next);
 		    
 		    klog_print("; next->netx: "); klog_print_hex(low_priority_q.next->next);
-		    klog_print("; next->netx->next: "); klog_print_hex(low_priority_q.next->next->next);
+		    klog_print("; next->netx->next: "); klog_print_hex(low_priority_q.next->next->next);*/
 			soft_block_count--;
 			return pcb;
 		}
@@ -342,7 +342,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
             devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
             state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
             found = 1;
-            klog_print("term write");
+           // klog_print("term write");
         }
         
         //terminali di lettura
@@ -351,9 +351,8 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
             devReg->devreg[IntLineNo][DevNo].term.recv_command = cmdValue;
 			state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.recv_status;
             found = 1;
-            klog_print("term read");
+            //klog_print("term read");
         }
-        klog_print(".t.");
 		if (found == 0) {
 			IntLineNo = 0;
 			while (IntLineNo < 4 && !found){
@@ -362,7 +361,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 					devReg->devreg[IntLineNo][DevNo].dtp.command = cmdValue;
 					state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].dtp.status; // da sostituire poi
 					found = 1;
-					klog_print("device");
+					//klog_print("device");
 				}
 				IntLineNo++;
 			}
@@ -371,9 +370,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	}
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
-    
-	klog_print("; devPosition: ");
-	klog_print_hex(device_position);
+
     P_operation(&device_sem[device_position]);
 	
 	/*
@@ -423,9 +420,6 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 		}
 		IntLine++;
 	}*/
-	
-	if (found == 1) klog_print(".found!..");
-	else klog_print(".NOTfound!..");
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");

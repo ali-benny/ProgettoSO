@@ -18,6 +18,7 @@
 #include "pandos_const.h"
 #include "pandos_types.h"
 #include <umps3/umps/libumps.h>
+#include "klog/klog.h"
 
 typedef unsigned int devregtr;
 
@@ -66,7 +67,7 @@ int sem_term_mut = 1,              /* for mutual exclusion on terminal */
     s[MAXSEM + 1],                 /* semaphore array */
     sem_testsem             = 0,   /* for a simple test */
     sem_startp2             = 0,   /* used to start p2 */
-    sem_endp2               = 0,   /* used to signal p2's demise */
+    sem_endp2               = 1,   /* used to signal p2's demise (test binary blocking V on binary sem*/
     sem_endp3               = 0,   /* used to signal p3's demise */
     sem_blkp4               = 1,   /* used to block second incaration of p4 */
     sem_synp4               = 0,   /* used to allow p4 incarnations to synhronize */
@@ -111,6 +112,7 @@ void print(char *msg) {
     devregtr  status;
 
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
+    //klog_print("INIZIO WHILE");
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
@@ -119,6 +121,7 @@ void print(char *msg) {
         }
         s++;
     }
+    //klog_print("FINE WHILE");
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
 }
 
@@ -238,7 +241,7 @@ void test() {
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
 
-    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)     */
+    SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
 
     /* make sure we really blocked */
     if (p1p2synch == 0) {
@@ -355,7 +358,7 @@ void p2() {
 
     p1p2synch = 1; /* p1 will check this */
 
-    SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2)     */
+    SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)    unblocking P ! */
 
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p2 */
 

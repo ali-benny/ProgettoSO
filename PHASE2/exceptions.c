@@ -38,7 +38,7 @@ state_t* state_reg;
  * @returns None
  */
 void syscall_handler(){
-klog_print("Syscall Handler...\n");
+//klog_print("Syscall Handler...\n");
 	state_reg->pc_epc += 4; //incrementiamo il pc
 	int a0 = (int) state_reg->reg_a0;
 	unsigned int a1 = state_reg->reg_a1;
@@ -119,7 +119,7 @@ void exception_handler() {
 		default: 
 			klog_print("Unknown exception! You're in default case.\n");
 			break;
-	}klog_print("done!\n");
+	}//klog_print("done!\n");
 }
 
 //paragrafo 3.6 pandos-chapter 3 (pag 17-18)
@@ -129,7 +129,7 @@ void exception_handler() {
  * @returns None
  */
 void interrupt_handler(){
-klog_print("Interrupt Handler...\n");
+//klog_print("Interrupt Handler...\n");
 	unsigned int cause = getCAUSE();
 	unsigned int ip = (cause & 0x0000FF00) >> 8;  // tutti a 0 tranne 8-15 (IP) e >> (= saltiamo i primi 8 bit) 
 	
@@ -162,7 +162,7 @@ klog_print("Interrupt Handler...\n");
  * @returns None
  */
 void passup_or_die(int type_of_exception){
-klog_print("Passup Or Die...\n");
+//klog_print("Passup Or Die...\n");
 	//a. if the Current Process's p_supportScruct is NULL,
 	//then the exception should be handled as a NSYS2:
 	//The Current Process and all its progeny are terminated.
@@ -216,7 +216,7 @@ klog_print("Passup Or Die...\n");
  * @returns None
  */
 void PLT_Interrupt(){ //(PLT = Processor Local Timer)
-klog_print("PLT Interrupt...\n");
+//klog_print("PLT Interrupt...\n");
 	//Aknowledge the PLT interrupt by loading the timer with a new value
 	setTIMER(TIMESLICE);
 	//Copy the processor state at the time of the exception (..) into the Current process's pcb
@@ -240,13 +240,13 @@ klog_print("PLT Interrupt...\n");
  * @returns None
  */
 void Interval_Timer_Interrupt(){
-klog_print("Interval Timer Interrupt...\n");
+//klog_print("Interval Timer Interrupt...\n");
 	//1. Aknnowledge the interrupt by loading the Interval Timer with a new value (100 milliseconds)
 	LDIT(PSECOND);
 	//2. Unblock ALL pcbs blocked on the Pseudo-clock semaphore.
 	//Hence the semantics of this semaphore are a bit different than traditional synchronization semaphores.
 	while(headBlocked(&device_sem[48]) != NULL){
-		klog_print("dentro al while");
+		//klog_print("dentro al while");
 		pcb_PTR pcb = removeBlocked(&device_sem[48]);
 		pcb->p_semAdd = NULL;
 		soft_block_count--;
@@ -272,7 +272,7 @@ klog_print("Interval Timer Interrupt...\n");
  * @returns None
  */
 void Device_Interrupt(unsigned int ip) {
-klog_print("Device Interrupt...\n");
+//klog_print("Device Interrupt...\n");
 	//paragrafo 3.6.1 pandos-chapter3.pdf(pag 18) Non-Timer-Interrupts			
 	//1. Calculate the address for this device's device register [5.1 pops].
 	//   [from 5.1 pops] devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10) // num di linea 3-7
@@ -289,7 +289,7 @@ klog_print("Device Interrupt...\n");
 	int found = 0;
 //	unsigned int BitMap = CDEV_BITMAP_ADDR(IntLineNo);
 	unsigned int BitMap = devRegArea->interrupt_dev[IntLineNo-3];
-	klog_print("bitmap: "); klog_print_hex(BitMap);
+	//klog_print("bitmap: "); klog_print_hex(BitMap);
 	
 	while (DevNo < 8 && !found){
 		if (BitMap % 2 != 0) {
@@ -313,7 +313,7 @@ klog_print("Device Interrupt...\n");
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
 		//4.
-		klog_print("dev");
+		//klog_print("dev");
 		semAddr = (int *) device_sem[device_position];
 		pcb = V_operation(semAddr); // sblocchiamo il processo
 		if (pcb != NULL) {
@@ -327,20 +327,20 @@ klog_print("Device Interrupt...\n");
 	} else { //it is a terminal
 			
 		//scrittura:
-		klog_print("; term ");
+		//klog_print("; term ");
 		
 		if (devAddrBase->term.transm_status != READY && devAddrBase->term.transm_status != BUSY ){
 			//4. 
-			klog_print("dev scrittura");
+			//klog_print("dev scrittura");
 			semAddr = (int *) &device_sem[device_position];
-			klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
+			//klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
 			//5.
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.transm_status;
 				//3. Aknlowledge the outstanding interrupt.
-				devAddrBase->term.transm_command = ACK;klog_print(" ACK ");
+				devAddrBase->term.transm_command = ACK;//klog_print(" ACK ");
 			//	devAddrBase->term.transm_status = READY; 
 				//5.
 				pcb->p_s.reg_v0 = statusCode;
@@ -349,17 +349,17 @@ klog_print("Device Interrupt...\n");
 		//lettura:
 		else if (devAddrBase->term.recv_status != READY && devAddrBase->term.recv_status != BUSY ){
 			//4.
-			klog_print(" dev lettura");
+			//klog_print(" dev lettura");
 			
 			device_position += 8;
 			semAddr = (int *) &device_sem[device_position];
-			klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
+			//klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.recv_status;
 				//3. Aknlowledge the outstanding interrupt.
-				devAddrBase->term.recv_command = ACK; klog_print(" ACK ");
+				devAddrBase->term.recv_command = ACK;// klog_print(" ACK ");
 		//		devAddrBase->term.recv_status = READY; 
 				//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 				pcb->p_s.reg_v0 = statusCode;
