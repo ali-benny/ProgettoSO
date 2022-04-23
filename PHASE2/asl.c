@@ -41,7 +41,7 @@ void print_list(struct list_head *head){
 	klog_print("[");
 	struct list_head *iter;
 	list_for_each(iter, head){
-		semd_PTR current = container_of(iter, semd_t, s_procq);
+		semd_PTR current = container_of(iter, semd_t, s_link);
 		klog_print_hex((unsigned int)current);
 	}
 	klog_print("]\n");
