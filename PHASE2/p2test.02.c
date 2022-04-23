@@ -324,15 +324,14 @@ void p2() {
     for (i = 0; i <= MAXSEM; i++) {
         s[i] = 0;
     }
-print("sos\n");
 klog_list();
     /* V, then P, all of the semaphores in the s[] array */
-    for (i = 0; i <= MAXSEM; i++) {
-        SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */ klog_print("v ");
-        SYSCALL(PASSEREN, (int)&s[i], 0, 0); /* P(S[I]) */ klog_print("p; ");
-        if (s[i] != 0)
-            print("error: p2 bad v/p pairs\n");
-    }
+//    for (i = 0; i <= MAXSEM; i++) {
+//        SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */ //klog_print("v ");
+//        SYSCALL(PASSEREN, (int)&s[i], 0, 0); /* P(S[I]) */ //klog_print("p; ");
+//       if (s[i] != 0)
+//            print("error: p2 bad v/p pairs\n");
+//    }
     klog_list();
     print("p2 v's successfully\n");
 

@@ -11,7 +11,7 @@
 
 #include "syscall.h"
 
-//#define SYS_DEBUG //per debuggare le systemcall
+#define SYS_DEBUG //per debuggare le systemcall
 
 //richiami delle variabili globali di main.c
 extern struct list_head high_priority_q;
@@ -30,7 +30,7 @@ void auxiliary_terminate(pcb_PTR current); //terminate
 
 void Blocking_Syscall(){
 #ifdef SYS_DEBUG
-	klog_print("Blocksys..");
+	//klog_print("Blocksys..");
 #endif
 	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
 	//   to avoid an infinite loop of SYSCALLs.
@@ -219,6 +219,7 @@ void P_operation(int *semaddr) {
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);	
 		//aggiornare i contatori
+		//klog_print("p1 ");
 		if(result == 0) // insertBlocked avvenuta con successo
 			soft_block_count++;
 		else {
@@ -229,17 +230,18 @@ void P_operation(int *semaddr) {
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
 		//if (pcb == NULL) klog_print(".NULL..");
-		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
+		if(pcb->p_prio == PROCESS_PRIO_HIGH) {//klog_print("ph ");
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
 		}
-		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {//klog_print("pl ");
 			//klog_print("CIAOAOAOAO");
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 		}
-	}else
+	}else{//klog_print("p2 ");
 		(*semaddr)--;
+	}
 }
 /* Syscall -4: Verhogen
 	– Operazione di rilascio su un semaforo binario.
@@ -276,6 +278,7 @@ pcb_PTR V_operation(int *semaddr){
 	if (*semaddr == 1) { // se e` 1 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
+		//klog_print("v1 ");
 		if(result == 0) // insertBlocked avvenuta con successo
 			soft_block_count++;
 		else {
@@ -284,11 +287,11 @@ pcb_PTR V_operation(int *semaddr){
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
-		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
+		if(pcb->p_prio == PROCESS_PRIO_HIGH) {//klog_print("vh ");
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
 			return	pcb;
-		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
+		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {//klog_print("vl ");
 		//	if (emptyProcQ(&low_priority_q)==1) klog_print("low null ");
 			insertProcQ(&low_priority_q, pcb);
 			/*klog_print(" DENTRO V:");
@@ -300,8 +303,9 @@ pcb_PTR V_operation(int *semaddr){
 			soft_block_count--;
 			return pcb;
 		}
-	}else
+	}else {//klog_print("v2 ");
 		(*semaddr)++;
+	}
 	return NULL;
 }
 
@@ -532,7 +536,7 @@ int SYSCALL(YIELD, 0, 0, 0)
 void Yield(int a0) {
 	if (a0 == YIELD) {
 #ifdef SYS_DEBUG
-		klog_print("Yield ...");
+		klog_print("Yield ...\n");
 #endif
     
 	//TODO: come chiamare un low priority se la high priority è vuota?
@@ -540,23 +544,22 @@ void Yield(int a0) {
 	pcb_PTR next_process = NULL; //next process to be started
 	
 	//controllo quale altro processo potrebbe andare avanti
-	if(emptyProcQ(&high_priority_q)==0)//se la lista ad alta priorità non è vuota		
-		next_process = removeProcQ(&high_priority_q);
-	else if(emptyProcQ(&low_priority_q)==0) //se la alta è vuota ma la bassa no
-		next_process = removeProcQ(&low_priority_q);
-	else //se sono entrambe vuote faccio partire il processo corrente
-		next_process = current_process;
+	if(emptyProcQ(&high_priority_q)==0){//se la lista ad alta priorità non è vuota		
+		next_process = removeProcQ(&high_priority_q);klog_print("yH ");}
+	else if(emptyProcQ(&low_priority_q)==0) {//se la alta è vuota ma la bassa no
+		next_process = removeProcQ(&low_priority_q);klog_print("yL ");}
+	else {//se sono entrambe vuote faccio partire il processo corrente
+		next_process = current_process;klog_print("yCP ");}
 	
 	//e successivamente inserisco il processo corrente nella sua coda
 	if(current_process->p_prio  == PROCESS_PRIO_HIGH) {
 		//se è high priority e la lista è vuota non devo richiamare lui ma un altro
-		insertProcQ(&high_priority_q, current_process);
+		insertProcQ(&high_priority_q, current_process);klog_print("yH2 ");
 	}
 	else if(current_process->p_prio  == PROCESS_PRIO_LOW) {
-		insertProcQ(&low_priority_q, current_process);
+		insertProcQ(&low_priority_q, current_process);klog_print("yL2 ");
 	} else {
 		klog_print("Yield ADVICE: current have no good priority\n");
-		//! un po' troppo: PANIC();
 	}
 	//poi avvio il next_process
 	// faccio partire il processo che voglio senza chiamare lo scheduler
