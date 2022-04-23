@@ -11,7 +11,7 @@
 
 #include "syscall.h"
 
-#define SYS_DEBUG //per debuggare le systemcall
+//#define SYS_DEBUG //per debuggare le systemcall
 
 //richiami delle variabili globali di main.c
 extern struct list_head high_priority_q;
@@ -29,7 +29,9 @@ extern state_t* state_reg;
 void auxiliary_terminate(pcb_PTR current); //terminate
 
 void Blocking_Syscall(){
-klog_print("Blocksys..");
+#ifdef SYS_DEBUG
+	klog_print("Blocksys..");
+#endif
 	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
 	//   to avoid an infinite loop of SYSCALLs.
 	//a. The saved processor state (located at the start of the BIOS Data Page [state_reg] [Section 3.4]) 
@@ -271,8 +273,6 @@ void Verhogen(int a0, unsigned int a1) {
  */
 pcb_PTR V_operation(int *semaddr){
 //klog_print("[V]");
-
-
 	if (*semaddr == 1) { // se e` 1 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
@@ -289,7 +289,7 @@ pcb_PTR V_operation(int *semaddr){
 			soft_block_count--;	
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
-			//if (emptyProcQ(&low_priority_q)==1) klog_print("low null");
+		//	if (emptyProcQ(&low_priority_q)==1) klog_print("low null ");
 			insertProcQ(&low_priority_q, pcb);
 			/*klog_print(" DENTRO V:");
 		    klog_print_hex(&low_priority_q);

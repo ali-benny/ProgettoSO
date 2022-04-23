@@ -19,6 +19,7 @@
 #include "pandos_types.h"
 #include <umps3/umps/libumps.h>
 #include "klog/klog.h"
+#include "asl.h"
 
 typedef unsigned int devregtr;
 
@@ -105,14 +106,13 @@ extern void p5mm();
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
-
+klog_print("Inizio ");
     char     *s       = msg;
     devregtr *base    = (devregtr *)(TERM0ADDR);
     devregtr *command = base + 3;
     devregtr  status;
 
     SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); /* P(sem_term_mut) */
-    //klog_print("ùùùù");
     while (*s != EOS) {
         devregtr value = PRINTCHR | (((devregtr)*s) << 8);
         status         = SYSCALL(DOIO, (int)command, (int)value, 0);
@@ -121,8 +121,8 @@ void print(char *msg) {
         }
         s++;
     }
-    klog_print("FINE");
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
+    klog_print("fine. ");
 }
 
 
@@ -240,14 +240,15 @@ void test() {
     print("p2 was started\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
-	klog_print("TRA v");
+	klog_print("TRA v\n");
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
-
+	klog_print("FINE v\n");
+    
     /* make sure we really blocked */
     if (p1p2synch == 0) {
         print("error: p1/p2 synchronization bad\n");
     }
-
+    klog_print("p3:");
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
     print("p3 is started\n");
@@ -308,9 +309,9 @@ void p2() {
     int   i;              /* just to waste time  */
     cpu_t now1, now2;     /* times of day        */
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
-	klog_print("INIZIO P2");
+	klog_print("INIZIO P2\n");
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
-	klog_print("P2");
+	klog_print("P2\n");
     print("p2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
@@ -318,20 +319,21 @@ void p2() {
         print("Inconsistent process id for p2!\n");
         PANIC();
     }
-
+    
     /* initialize all semaphores in the s[] array */
     for (i = 0; i <= MAXSEM; i++) {
         s[i] = 0;
     }
-
+print("sos\n");
+klog_list();
     /* V, then P, all of the semaphores in the s[] array */
     for (i = 0; i <= MAXSEM; i++) {
-        SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */
-        SYSCALL(PASSEREN, (int)&s[i], 0, 0); /* P(S[I]) */
+        SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */ klog_print("v ");
+        SYSCALL(PASSEREN, (int)&s[i], 0, 0); /* P(S[I]) */ klog_print("p; ");
         if (s[i] != 0)
             print("error: p2 bad v/p pairs\n");
     }
-
+    klog_list();
     print("p2 v's successfully\n");
 
     /* test of SYS6 */

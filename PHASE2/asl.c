@@ -31,6 +31,25 @@ int BusySem(int *semAdd){
 	return 1;
 }
 
+#include "klog/klog.h"
+/**	Stampa liste di Semafori
+
+	@param head lista da stampare 
+
+ */
+void print_list(struct list_head *head){
+	klog_print("[");
+	struct list_head *iter;
+	list_for_each(iter, head){
+		semd_PTR current = container_of(iter, semd_t, s_procq);
+		klog_print_hex((unsigned int)current);
+	}
+	klog_print("]\n");
+}
+void klog_list(){
+	print_list(&asl_h);
+}
+
 /*	18
 	Inizializza la lista dei semdFree in modo da contenere 
 	tutti gli elementi della semdTable. 
