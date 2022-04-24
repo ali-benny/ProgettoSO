@@ -86,7 +86,7 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			nuovo_pcb->p_pid = (memaddr) nuovo_pcb;
 			klog_print(" created pid:  ");
 			klog_print_hex((unsigned int) nuovo_pcb->p_pid);
-			klog_print("  .    ");
+			klog_print(" \n");
 			//scelgo in che coda metterlo in base alla sua priority
 			if (prio == PROCESS_PRIO_HIGH)
 				insertProcQ(&high_priority_q, nuovo_pcb);
@@ -204,13 +204,13 @@ void Passeren(int a0, unsigned int a1) {
 #endif
 	} else klog_print("Passeren ERROR: a0 != PASSEREN\n");
 }
-/*	Auxiliar Function of Passeren	*
+/**	Auxiliar Function of Passeren	*
 	
-	semaddr: a1
+	@param semaddr: a1
 */
 void P_operation(int *semaddr) {
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
-		int result = insertBlocked(semaddr, current_process);	
+		int result = insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
 		if(result == 0) // insertBlocked avvenuta con successo
 			soft_block_count++;

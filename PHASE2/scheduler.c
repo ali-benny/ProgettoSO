@@ -77,22 +77,22 @@ void scheduler(){
 		}
 
 	}else{
-			//if the Process Count is zero
-			if (process_count == 0){
-			//invoke the HALT BIOS service/instructions (vedi 7.3.7)
-				HALT();
-			//if the Process Count > 0 and the Soft-block Count > 0
-			}else if (process_count>0 && soft_block_count>0){
-			//enter a Wait State (vedi 7.2.2-pop)
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK); // ovvero:	setSTATUS(0b00010000000000001111111100000001);
-				WAIT();
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
-			//Deadlock for Pandos is defined as when
-			//the Process Count > 0 and the Soft-block Count is zero
-			}else if (process_count>0 && soft_block_count==0){
-			//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
-				PANIC();
-			}
+		//if the Process Count is zero
+		if (process_count == 0){
+		//invoke the HALT BIOS service/instructions (vedi 7.3.7)
+			HALT();
+		//if the Process Count > 0 and the Soft-block Count > 0
+		}else if (process_count>0 && soft_block_count>0){
+		//enter a Wait State (vedi 7.2.2-pop)
+			setSTATUS(STATUS_IEc | STATUS_IM_MASK); // ovvero:	setSTATUS(0b00010000000000001111111100000001);
+			WAIT();
+			setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
+		//Deadlock for Pandos is defined as when
+		//the Process Count > 0 and the Soft-block Count is zero
+		}else if (process_count>0 && soft_block_count==0){
+		//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
+			PANIC();
+		}
 	}
 	
 }

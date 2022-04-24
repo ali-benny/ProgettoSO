@@ -233,6 +233,7 @@ void test() {
     p10state.status                   = p10state.status | IEPBITON | CAUSEINTMASK | TEBITON;
 
     /* create process p2 */
+    klog_print("p2: ");
     p2pid = SYSCALL(CREATEPROCESS, (int)&p2state, PROCESS_PRIO_LOW, (int)NULL); /* start p2     */
 
     print("p2 was started\n");
@@ -246,15 +247,19 @@ void test() {
         print("error: p1/p2 synchronization bad\n");
     }
     
+    klog_print("p3: ");
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
     print("p3 is started\n");
 
     SYSCALL(PASSEREN, (int)&sem_endp3, 0, 0); /* P(sem_endp3)     */
 
+    klog_print("hp_p1: ");
     SYSCALL(CREATEPROCESS, (int)&hp_p1state, PROCESS_PRIO_HIGH, (int)NULL);
+    klog_print("hp_p2: ");
     SYSCALL(CREATEPROCESS, (int)&hp_p2state, PROCESS_PRIO_HIGH, (int)NULL);
 
+    klog_print("p4: ");
     p4pid = SYSCALL(CREATEPROCESS, (int)&p4state, PROCESS_PRIO_LOW, (int)NULL); /* start p4     */
 
     pFiveSupport.sup_exceptContext[GENERALEXCEPT].stackPtr = (int)p5Stack;
@@ -264,12 +269,16 @@ void test() {
     pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].status   = ALLOFF | IEPBITON | CAUSEINTMASK | TEBITON;
     pFiveSupport.sup_exceptContext[PGFAULTEXCEPT].pc       = (memaddr)p5mm;
 
+    klog_print("p5: ");
     SYSCALL(CREATEPROCESS, (int)&p5state, PROCESS_PRIO_LOW, (int)&(pFiveSupport)); /* start p5     */
 
+    klog_print("p6: ");
     SYSCALL(CREATEPROCESS, (int)&p6state, PROCESS_PRIO_LOW, (int)NULL); /* start p6		*/
 
+    klog_print("p7: ");
     SYSCALL(CREATEPROCESS, (int)&p7state, PROCESS_PRIO_LOW, (int)NULL); /* start p7		*/
 
+    klog_print("p9: ");
     p9pid = SYSCALL(CREATEPROCESS, (int)&p9state, PROCESS_PRIO_LOW, (int)NULL); /* start p7		*/
 
     SYSCALL(PASSEREN, (int)&sem_endp5, 0, 0); /* P(sem_endp5)		*/
@@ -287,6 +296,7 @@ void test() {
             sem_endcreate[i] = 0;
         }
 
+    klog_print("p8: ");
         p8pid = SYSCALL(CREATEPROCESS, (int)&p8rootstate, PROCESS_PRIO_LOW, (int)NULL);
 
         SYSCALL(PASSEREN, (int)&sem_endp8, 0, 0);
@@ -354,7 +364,7 @@ void p2() {
     p1p2synch = 1; /* p1 will check this */
 
     SYSCALL(PASSEREN, (int)&sem_endp2, 0, 0); /* P(sem_endp2)    unblocking P ! */
-klog_print("p2 termination");
+
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p2 */
 
     /* just did a SYS2, so should not get to this point */
@@ -404,7 +414,7 @@ void p3() {
     }
 
     SYSCALL(VERHOGEN, (int)&sem_endp3, 0, 0); /* V(sem_endp3)        */
-klog_print("p3 termination");
+
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p3    */
 
     /* just did a SYS2, so should not get to this point */
@@ -443,7 +453,7 @@ void p4() {
     /* off both p4's.                                         */
 
     p4state.reg_sp -= QPAGE; /* give another page  */
-
+klog_print("p4pt2: ");
     p4pid = SYSCALL(CREATEPROCESS, (int)&p4state, PROCESS_PRIO_LOW, 0); /* start a new p4    */
 
     SYSCALL(PASSEREN, (int)&sem_synp4, 0, 0); /* wait for it       */
@@ -451,7 +461,7 @@ void p4() {
     print("p4 is OK\n");
 
     SYSCALL(VERHOGEN, (int)&sem_endp4, 0, 0); /* V(sem_endp4)          */
-klog_print("p4 termination");
+
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p4      */
 
     /* just did a SYS2, so should not get to this point */
@@ -540,11 +550,12 @@ void p5() {
     *p5MemLocation = *p5MemLocation + 1; /* Should cause a program trap */
 }
 
-void p5a() {
+void p5a() {klog_print("P5A");
     /* generage a TLB exception after a TLB-Refill event */
 
     p5MemLocation  = (memaddr *)0x80000000;
     *p5MemLocation = 42;
+    klog_print("fine p5a");
 }
 
 /* second part of p5 - should be entered in user mode first time through */
@@ -572,7 +583,7 @@ void p5b() {
     /* should cause a termination       */
     /* since this has already been      */
     /* done for PROGTRAPs               */
-klog_print("p5 termination");
+
     SYSCALL(TERMPROCESS, 0, 0, 0);
 
     /* should have terminated, so should not get to this point */
@@ -611,9 +622,10 @@ void p8root() {
     int grandchild;
 
     print("p8root starts\n");
-
+klog_print("p8-child1: ");
     SYSCALL(CREATEPROCESS, (int)&child1state, PROCESS_PRIO_LOW, (int)NULL);
 
+klog_print("p8-child2: ");
     SYSCALL(CREATEPROCESS, (int)&child2state, PROCESS_PRIO_LOW, (int)NULL);
 
     for (grandchild = 0; grandchild < NOLEAVES; grandchild++) {
@@ -621,7 +633,7 @@ void p8root() {
     }
 
     SYSCALL(VERHOGEN, (int)&sem_endp8, 0, 0);
-klog_print("p8root termination");
+
     SYSCALL(TERMPROCESS, 0, 0, 0);
 }
 
@@ -636,8 +648,10 @@ void child1() {
         PANIC();
     }
 
+klog_print("p8-C1=GGGchild1: ");
     SYSCALL(CREATEPROCESS, (int)&gchild1state, PROCESS_PRIO_LOW, (int)NULL);
 
+klog_print("p8-C1=GGGchild2: ");
     SYSCALL(CREATEPROCESS, (int)&gchild2state, PROCESS_PRIO_LOW, (int)NULL);
 
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
@@ -652,8 +666,10 @@ void child2() {
         PANIC();
     }
 
+klog_print("p8-C2=GGGchild3: ");
     SYSCALL(CREATEPROCESS, (int)&gchild3state, PROCESS_PRIO_LOW, (int)NULL);
 
+klog_print("p8-C2=GGchild4: ");
     SYSCALL(CREATEPROCESS, (int)&gchild4state, PROCESS_PRIO_LOW, (int)NULL);
 
     SYSCALL(PASSEREN, (int)&sem_blkp8, 0, 0);
@@ -691,8 +707,12 @@ void p8leaf4() {
 
 void p9() {
     print("p9 starts\n");
+
+klog_print("p10: ");
     SYSCALL(CREATEPROCESS, (int)&p10state, PROCESS_PRIO_LOW, (int)NULL); /* start p7		*/
+    klog_print(" [P]: ");
     SYSCALL(PASSEREN, (int)&sem_blkp9, 0, 0);
+    klog_print("FINE p9()");
 }
 
 
@@ -704,7 +724,7 @@ void p10() {
         print("Inconsistent process id for p9!\n");
         PANIC();
     }
-klog_print("p10 termination");
+
     SYSCALL(TERMPROCESS, ppid, 0, 0);
 
     print("Error: p10 didn't die with its parent!\n");
@@ -718,7 +738,7 @@ void hp_p1() {
     for (int i = 0; i < 100; i++) {
         SYSCALL(YIELD, 0, 0, 0);
     }
-klog_print("hp_p1 termination");
+
     SYSCALL(TERMPROCESS, 0, 0, 0);
     print("Error: hp_p1 didn't die!\n");
     PANIC();
@@ -731,7 +751,7 @@ void hp_p2() {
     for (int i = 0; i < 10; i++) {
         SYSCALL(CLOCKWAIT, 0, 0, 0);
     }
-klog_print("hp_p2 termination");
+
     SYSCALL(TERMPROCESS, 0, 0, 0);
     print("Error: hp_p2 didn't die!\n");
     PANIC();
