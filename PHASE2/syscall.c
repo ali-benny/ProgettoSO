@@ -198,7 +198,6 @@ void Passeren(int a0, unsigned int a1) {
 
 		int *semaddr = (int *) a1;
 		P_operation(semaddr);
-
 #ifdef SYS_DEBUG
 		klog_print(" done!");
 #endif
@@ -208,7 +207,7 @@ void Passeren(int a0, unsigned int a1) {
 	
 	@param semaddr: a1
 */
-void P_operation(int *semaddr) {
+pcb_PTR P_operation(int *semaddr) {
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
@@ -222,14 +221,21 @@ void P_operation(int *semaddr) {
 		pcb_t* pcb = removeBlocked(semaddr);
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
 			insertProcQ(&high_priority_q, pcb);
-			soft_block_count--;	
+			soft_block_count--;
+			LDST(state_reg);
+			return pcb;	
 		}
 		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
+			LDST(state_reg);
+			return pcb;
 		}
-	}else
+	}else{
 		(*semaddr)--;
+		LDST(state_reg);
+		}
+	return NULL;
 }
 /* Syscall -4: Verhogen
 	– Operazione di rilascio su un semaforo binario.
@@ -253,7 +259,6 @@ void Verhogen(int a0, unsigned int a1) {
 		klog_print(" done!");
 #endif
 	} else klog_print("Verhogen ERROR: a0 != VERHOGEN\n");
-	
 	LDST(state_reg);
 }
 /**	Auxiliar Function of Veroghen	*
@@ -277,14 +282,17 @@ pcb_PTR V_operation(int *semaddr){
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {;
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
+			
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
+			
 			return pcb;
 		}
-	}else 
+	}else {
 		(*semaddr)++;
+		}
 	return NULL;
 }
 
@@ -351,8 +359,8 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	}
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
-
-    P_operation(&device_sem[device_position]);
+	
+	P_operation(&device_sem[device_position]);
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
@@ -397,8 +405,7 @@ void Wait_For_Clock(int a0) {
 #ifdef SYS_DEBUG
 		klog_print("Wait_For_Clock ...");
 #endif
-
-    	P_operation(&device_sem[48]);
+	P_operation(&device_sem[48]);
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");

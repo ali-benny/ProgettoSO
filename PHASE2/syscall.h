@@ -8,7 +8,7 @@
 #include <umps3/umps/arch.h>
 #include "umps_utils/memcpy.h"
 
-void P_operation(int *semaddr);	//Passeren, Wait for clock
+pcb_PTR P_operation(int *semaddr);	//Passeren, Wait for clock
 pcb_PTR V_operation(int *semaddr); //Veroghen
 
 void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3);

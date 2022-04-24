@@ -304,7 +304,8 @@ void Device_Interrupt(unsigned int ip) {
 		//it is NOT a terminal
 		//4.
 		semAddr = (int *) device_sem[device_position];
-		pcb = V_operation(semAddr); // sblocchiamo il processo
+		if (*semAddr == 1) pcb = P_operation(semAddr);
+		else pcb = V_operation(semAddr); // sblocchiamo il processo
 		if (pcb != NULL) {
 			//2. Save off the status code from the device's device register.
 			statusCode = devAddrBase->dtp.status;
@@ -320,7 +321,8 @@ void Device_Interrupt(unsigned int ip) {
 			//4.
 			semAddr = (int *) &device_sem[device_position];
 			//5.
-			pcb = V_operation(semAddr);
+			if (*semAddr == 1) pcb = P_operation(semAddr);
+			else pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.transm_status;
@@ -337,7 +339,8 @@ void Device_Interrupt(unsigned int ip) {
 			
 			device_position += 8;
 			semAddr = (int *) &device_sem[device_position];
-			pcb = V_operation(semAddr);
+			if (*semAddr == 1) pcb = P_operation(semAddr);
+			else pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.recv_status;
