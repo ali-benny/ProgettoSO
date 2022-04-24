@@ -10,11 +10,11 @@
 #include "umps_utils/memcpy.h"
 #include <umps3/umps/cp0.h>
 
-void syscall_handler();
+void syscall_handler(unsigned int cause);
 
 void exception_handler();
 void interrupt_handler();
-void passup_or_die(int type_of_exception);
+void passup_or_die(int type_of_exception, unsigned int cause);
 
 #endif //EXCEPTIONS_H
 
