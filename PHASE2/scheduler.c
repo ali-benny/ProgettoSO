@@ -26,123 +26,75 @@ extern pcb_PTR current_process;
  * @returns None
  */
 void scheduler(){
-/*klog_print("Scheduler...\n");
-klog_print("; PROCNUMB: "); klog_print_hex(process_count);
-
-klog_print("; SOFTNUMB: "); klog_print_hex(soft_block_count);*/
+//klog_print("Scheduler...\n");
 	
-		//- if the queue of high priority is not empty
-		if (emptyProcQ(&high_priority_q)==0){
-			current_process = removeProcQ(&high_priority_q);
-			if (current_process == NULL){
-				//klog_print("SCHEDULER advice\n");
-			    //if the Process Count is zero
-			    if (process_count == 0){
-				//invoke the HALT BIOS service/instructions (vedi 7.3.7)
-				//klog_print("*halted*");
-				HALT();
-			    //if the Process Count > 0 and the Soft-block Count > 0
-			    }else if (process_count>0 && soft_block_count>0){
-				//enter a Wait State (vedi 7.2.2-pop)
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK);
-			      // ovvero:	setSTATUS(0b00010000000000001111111100000001);
-				klog_print("->");
-				WAIT();
-				//klog_print("waited");
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
-			    //Deadlock for Pandos is defined as when
-			    //the Process Count > 0 and the Soft-block Count is zero
-			    }else if (process_count>0 && soft_block_count==0){
-			    //klog_print("SCHEDULER ERROR: siamo in panic\n");
-				//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
-				PANIC();
-			    }
-				//klog_print("SCHEDULER niente!");
-			}else{
-				setTIMER(TIMESLICE);
-				LDST(&(current_process->p_s));	
+	//- if the queue of high priority is not empty
+	if (emptyProcQ(&high_priority_q)==0){
+		current_process = removeProcQ(&high_priority_q);
+		if (current_process == NULL){
+			//if the Process Count is zero
+			if (process_count == 0){
+			//invoke the HALT BIOS service/instructions (vedi 7.3.7)
+			HALT();
+			//if the Process Count > 0 and the Soft-block Count > 0
+			}else if (process_count>0 && soft_block_count>0){
+			//enter a Wait State (vedi 7.2.2-pop)
+			setSTATUS(STATUS_IEc | STATUS_IM_MASK); // ovvero:	setSTATUS(0b00010000000000001111111100000001);
+			WAIT();
+			setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
+			//Deadlock for Pandos is defined as when
+			//the Process Count > 0 and the Soft-block Count is zero
+			}else if (process_count>0 && soft_block_count==0){
+			//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
+			PANIC();
 			}
-
-		}else if (emptyProcQ(&low_priority_q)==0){
-			current_process = removeProcQ(&low_priority_q);
-			if (current_process == NULL){
-				//klog_print("SCHEDULER advice\n");
-			    //if the Process Count is zero
-			    if (process_count == 0){
-				//invoke the HALT BIOS service/instructions (vedi 7.3.7)
-				//klog_print("*halted*");
-				HALT();
-			    //if the Process Count > 0 and the Soft-block Count > 0
-			    }else if (process_count>0 && soft_block_count>0){
-				//enter a Wait State (vedi 7.2.2-pop)
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK);
-			      // ovvero:	setSTATUS(0b00010000000000001111111100000001);
-				//klog_print("->");
-				WAIT();
-				//klog_print("waited");
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
-			    //Deadlock for Pandos is defined as when
-			    //the Process Count > 0 and the Soft-block Count is zero
-			    }else if (process_count>0 && soft_block_count==0){
-			    //klog_print("SCHEDULER ERROR: siamo in panic\n");
-				//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
-				PANIC();
-			    }
-				//klog_print("SCHEDULER niente!");
-			}else{
-				setTIMER(TIMESLICE);
-				LDST(&(current_process->p_s));	
-			}
-
 		}else{
-		//klog_print("SCHEDULER advice\n");
-			    //if the Process Count is zero
-			    if (process_count == 0){
-				//invoke the HALT BIOS service/instructions (vedi 7.3.7)
-		//		klog_print("*halted*");
-				HALT();
-			    //if the Process Count > 0 and the Soft-block Count > 0
-			    }else if (process_count>0 && soft_block_count>0){
-				//enter a Wait State (vedi 7.2.2-pop)
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK);
-			      // ovvero:	setSTATUS(0b00010000000000001111111100000001);
-			//	klog_print("->");
-				WAIT();
-			//	klog_print("waited");
-				setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
-			    //Deadlock for Pandos is defined as when
-			    //the Process Count > 0 and the Soft-block Count is zero
-			    }else if (process_count>0 && soft_block_count==0){
-			  //  klog_print("SCHEDULER ERROR: siamo in panic\n");
-				//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
-				PANIC();
-			    }
-				//klog_print("SCHEDULER niente!");
+			setTIMER(TIMESLICE);
+			LDST(&(current_process->p_s));	
 		}
+
+	}else if (emptyProcQ(&low_priority_q)==0){
+		current_process = removeProcQ(&low_priority_q);
+		if (current_process == NULL){
+			//if the Process Count is zero
+			if (process_count == 0){
+			//invoke the HALT BIOS service/instructions (vedi 7.3.7)
+			HALT();
+			//if the Process Count > 0 and the Soft-block Count > 0
+			} else if (process_count>0 && soft_block_count>0) {
+			//enter a Wait State (vedi 7.2.2-pop)
+			setSTATUS(STATUS_IEc | STATUS_IM_MASK); // ovvero:	setSTATUS(0b00010000000000001111111100000001);
+			WAIT();
+			setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
+			//Deadlock for Pandos is defined as when
+			//the Process Count > 0 and the Soft-block Count is zero
+			} else if (process_count>0 && soft_block_count==0)
+			//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
+			PANIC();
+		}else{
+			setTIMER(TIMESLICE);
+			LDST(&(current_process->p_s));	
+		}
+
+	}else{
+			//if the Process Count is zero
+			if (process_count == 0){
+			//invoke the HALT BIOS service/instructions (vedi 7.3.7)
+				HALT();
+			//if the Process Count > 0 and the Soft-block Count > 0
+			}else if (process_count>0 && soft_block_count>0){
+			//enter a Wait State (vedi 7.2.2-pop)
+				setSTATUS(STATUS_IEc | STATUS_IM_MASK); // ovvero:	setSTATUS(0b00010000000000001111111100000001);
+				WAIT();
+				setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
+			//Deadlock for Pandos is defined as when
+			//the Process Count > 0 and the Soft-block Count is zero
+			}else if (process_count>0 && soft_block_count==0){
+			//invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
+				PANIC();
+			}
+	}
 	
-/*klog_print("SCHEDULER advice\n");
-    //if the Process Count is zero
-    if (process_count == 0){
-        //invoke the HALT BIOS service/instructions (vedi 7.3.7)
-        klog_print("*halted*");
-        HALT();
-    //if the Process Count > 0 and the Soft-block Count > 0
-    }else if (process_count>0 && soft_block_count>0){
-        //enter a Wait State (vedi 7.2.2-pop)
-        setSTATUS(STATUS_IEc | STATUS_IM_MASK);
-      // ovvero:	setSTATUS(0b00010000000000001111111100000001);
-        klog_print("->");
-        WAIT();
-        klog_print("waited");
-        setSTATUS(STATUS_IEc | STATUS_IM_MASK | STATUS_TE);
-    //Deadlock for Pandos is defined as when
-    //the Process Count > 0 and the Soft-block Count is zero
-    }else if (process_count>0 && soft_block_count==0){
-    klog_print("SCHEDULER ERROR: siamo in panic\n");
-        //invoke the PANIC BIOS service/instruction. (vedi 7.3.6)
-        PANIC();
-    }
- klog_print("SCHEDULER niente!");*/
 }
 
 /*void auxiliare_scheduler(list_head* list){

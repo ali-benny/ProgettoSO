@@ -119,7 +119,7 @@ void exception_handler() {
 		default: 
 			klog_print("Unknown exception! You're in default case.\n");
 			break;
-	}//klog_print("done!\n");
+	}
 }
 
 //paragrafo 3.6 pandos-chapter 3 (pag 17-18)
@@ -148,8 +148,6 @@ void interrupt_handler(){
 		ip = ip >> 1;
 		//Devices, Non-Timer Interrupts
 		Device_Interrupt(ip);
-		
-		klog_print(" niente ");
 	}
 }
 
@@ -183,24 +181,15 @@ void passup_or_die(int type_of_exception, unsigned int cause){
 		//b. Copy the saved exception state from the Bios Data Page to the correct
 		//sup_exceptState field of the Current Process.
 		//The Curren Process's pcb should point to a non-null support_t.
-		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
-		klog_print("\nexception uses cause\n");
 
-		current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause; //!
+		//!NOTA: here i pass the cause to the handler of the "personalized handler"
+		current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause;
+
+		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
 		state_t * src = ((state_t*) BIOSDATAPAGE);
 		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
 		memcpy(&dest, src);
-		/*
-		dest.entry_hi = src->entry_hi;
-		dest.cause = src->cause;
-		dest.status = src->status;
-		dest.pc_epc = src->pc_epc;
-		dest.hi = src->hi;
-		dest.lo = src->lo;
-		for (int i=0; i < STATE_GPR_LEN; i++) {
-			dest.gpr[i] = src->gpr[i];
-		}
-		*/
+
 		context_t *context = &current_process->p_supportStruct->sup_exceptContext[type_of_exception]; //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
@@ -248,7 +237,6 @@ void Interval_Timer_Interrupt(){
 	//2. Unblock ALL pcbs blocked on the Pseudo-clock semaphore.
 	//Hence the semantics of this semaphore are a bit different than traditional synchronization semaphores.
 	while(headBlocked(&device_sem[48]) != NULL){
-		//klog_print("dentro al while");
 		pcb_PTR pcb = removeBlocked(&device_sem[48]);
 		pcb->p_semAdd = NULL;
 		soft_block_count--;
@@ -261,7 +249,6 @@ void Interval_Timer_Interrupt(){
 	//4. Return control to the Current Process: Perform a LDST on the saved exception state(...)
 	if (current_process == NULL) scheduler();
 	else LDST((state_t*) BIOSDATAPAGE);
-	//	LDST((state_t*)&current_process->p_s); //?
 }
 
 
@@ -280,7 +267,6 @@ void Device_Interrupt(unsigned int ip) {
 	//   [from 5.1 pops] devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10) // num di linea 3-7
 	
 	devregarea_t* devRegArea = (devregarea_t*) RAMBASEADDR;
-//	devReg->interrupt_dev[];
 	
 	int IntLineNo = 3; // numero di linea
 	while (ip % 2 == 0) { // trova il primo bit che è a 1
@@ -291,7 +277,6 @@ void Device_Interrupt(unsigned int ip) {
 	int found = 0;
 //	unsigned int BitMap = CDEV_BITMAP_ADDR(IntLineNo);
 	unsigned int BitMap = devRegArea->interrupt_dev[IntLineNo-3];
-	//klog_print("bitmap: "); klog_print_hex(BitMap);
 	
 	while (DevNo < 8 && !found){
 		if (BitMap % 2 != 0) {
@@ -315,34 +300,29 @@ void Device_Interrupt(unsigned int ip) {
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
 		//4.
-		//klog_print("dev");
 		semAddr = (int *) device_sem[device_position];
 		pcb = V_operation(semAddr); // sblocchiamo il processo
 		if (pcb != NULL) {
 			//2. Save off the status code from the device's device register.
 			statusCode = devAddrBase->dtp.status;
-			devAddrBase->dtp.command = ACK;klog_print(" ACK ");
-			devAddrBase->dtp.status = READY; //? term.recv_command se è un terminale?
+			devAddrBase->dtp.command = ACK;
+			devAddrBase->dtp.status = READY; //? da commentare?
 			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 			pcb->p_s.reg_v0 = statusCode;
 		}
 	} else { //it is a terminal
 			
 		//scrittura:
-		//klog_print("; term ");
-		
 		if (devAddrBase->term.transm_status != READY && devAddrBase->term.transm_status != BUSY ){
-			//4. 
-			//klog_print("dev scrittura");
+			//4.
 			semAddr = (int *) &device_sem[device_position];
-			//klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
 			//5.
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.transm_status;
 				//3. Aknlowledge the outstanding interrupt.
-				devAddrBase->term.transm_command = ACK;//klog_print(" ACK ");
+				devAddrBase->term.transm_command = ACK;
 			//	devAddrBase->term.transm_status = READY; 
 				//5.
 				pcb->p_s.reg_v0 = statusCode;
@@ -351,17 +331,15 @@ void Device_Interrupt(unsigned int ip) {
 		//lettura:
 		else if (devAddrBase->term.recv_status != READY && devAddrBase->term.recv_status != BUSY ){
 			//4.
-			//klog_print(" dev lettura");
 			
 			device_position += 8;
 			semAddr = (int *) &device_sem[device_position];
-			//klog_print("; semAddr: ");	klog_print_hex((unsigned int)semAddr);
 			pcb = V_operation(semAddr);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.recv_status;
 				//3. Aknlowledge the outstanding interrupt.
-				devAddrBase->term.recv_command = ACK;// klog_print(" ACK ");
+				devAddrBase->term.recv_command = ACK;
 		//		devAddrBase->term.recv_status = READY; 
 				//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 				pcb->p_s.reg_v0 = statusCode;
@@ -371,7 +349,6 @@ void Device_Interrupt(unsigned int ip) {
 	
 	//6. Insert the newly unblocked pcb on the Ready Queue, transitioning this process
 	//   from the "blocked" state to the "ready" state
-	
 	//7. Return controll to the Current Process: Perform a LDST on the saved exception state
 	//   (located at the start of the BIOS Data Page [section 3.4])
 	if (current_process == NULL)
@@ -390,5 +367,4 @@ void Device_Interrupt(unsigned int ip) {
 	//4 Perform a V operation on the Nucleus maintained semaphore associated with this (sub) device.
 			//   This operation should unblock the process (pcb) wich initiates this I/O operation
 			//   and then requested to wait its completion via a NSYS5 operation
-
 }

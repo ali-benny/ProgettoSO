@@ -106,7 +106,6 @@ extern void p5mm();
 
 /* a procedure to print on terminal 0 */
 void print(char *msg) {
-klog_print("Inizio ");
     char     *s       = msg;
     devregtr *base    = (devregtr *)(TERM0ADDR);
     devregtr *command = base + 3;
@@ -122,7 +121,6 @@ klog_print("Inizio ");
         s++;
     }
     SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); /* V(sem_term_mut) */
-    klog_print("fine. ");
 }
 
 
@@ -240,15 +238,14 @@ void test() {
     print("p2 was started\n");
 
     SYSCALL(VERHOGEN, (int)&sem_startp2, 0, 0); /* V(sem_startp2)   */
-	klog_print("TRA v\n");
+    
     SYSCALL(VERHOGEN, (int)&sem_endp2, 0, 0); /* V(sem_endp2) (blocking V!)     */
-	klog_print("FINE v\n");
     
     /* make sure we really blocked */
     if (p1p2synch == 0) {
         print("error: p1/p2 synchronization bad\n");
     }
-    klog_print("p3:");
+    
     p3pid = SYSCALL(CREATEPROCESS, (int)&p3state, PROCESS_PRIO_LOW, (int)NULL); /* start p3     */
 
     print("p3 is started\n");
@@ -309,9 +306,7 @@ void p2() {
     int   i;              /* just to waste time  */
     cpu_t now1, now2;     /* times of day        */
     cpu_t cpu_t1, cpu_t2; /* cpu time used       */
-	klog_print("INIZIO P2\n");
     SYSCALL(PASSEREN, (int)&sem_startp2, 0, 0); /* P(sem_startp2)   */
-	klog_print("P2\n");
     print("p2 starts\n");
 
     int pid = SYSCALL(GETPROCESSID, 0, 0, 0);
@@ -324,7 +319,7 @@ void p2() {
     for (i = 0; i <= MAXSEM; i++) {
         s[i] = 0;
     }
-klog_list();
+//  klog_list();
     /* V, then P, all of the semaphores in the s[] array */
 //    for (i = 0; i <= MAXSEM; i++) {
 //        SYSCALL(VERHOGEN, (int)&s[i], 0, 0); /* V(S[I]) */ //klog_print("v ");
@@ -332,15 +327,13 @@ klog_list();
 //       if (s[i] != 0)
 //            print("error: p2 bad v/p pairs\n");
 //    }
-    klog_list();
+//  klog_list();
     print("p2 v's successfully\n");
 
     /* test of SYS6 */
-	klog_print("PRIMA STCK");
     STCK(now1);                         /* time of day   */
-    klog_print("PRIMA GETTIME");
     cpu_t1 = SYSCALL(GETTIME, 0, 0, 0); /* CPU time used */
-	klog_print("FATTA GETTIME");
+    
 	/* delay for several milliseconds */
     for (i = 1; i < LOOPNUM; i++)
         ;
@@ -471,9 +464,7 @@ void p4() {
 /* p5's program trap handler */
 void p5gen() {
     unsigned int exeCode = pFiveSupport.sup_exceptState[GENERALEXCEPT].cause;
-    klog_print("exeCode: "); klog_print_hex(exeCode);
     exeCode              = (exeCode & CAUSEMASK) >> 2;
-    klog_print("exeCode: "); klog_print_hex(exeCode);
     switch (exeCode) {
         case BUSERROR:
             print("Bus Error (as expected): Access non-existent memory\n");
@@ -502,8 +493,6 @@ void p5gen() {
         case SYSCALLEXCPT: p5sys(); break;
 
         default:
-            klog_print("\nlast thing done is the DOIO of 'other program trap' ");
-            klog_print("exeCode: "); klog_print_hex(exeCode); klog_print("\n");
             print("other program trap\n");
     }
 
@@ -515,7 +504,6 @@ void p5mm() {
     print("memory management trap\n");
 
     support_t *pFiveSupAddr = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    klog_print("\n\n\ni getted the support of pFive\n\n\n");
     if ((pFiveSupAddr) != &(pFiveSupport)) {
         print("Support Structure Address Error\n");
     } else {

@@ -11,7 +11,7 @@
 
 #include "syscall.h"
 
-#define SYS_DEBUG //per debuggare le systemcall
+//#define SYS_DEBUG //per debuggare le systemcall
 
 //richiami delle variabili globali di main.c
 extern struct list_head high_priority_q;
@@ -30,7 +30,7 @@ void auxiliary_terminate(pcb_PTR current); //terminate
 
 void Blocking_Syscall(){
 #ifdef SYS_DEBUG
-	//klog_print("Blocksys..");
+	klog_print("Blocksys..");
 #endif
 	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
 	//   to avoid an infinite loop of SYSCALLs.
@@ -39,26 +39,14 @@ void Blocking_Syscall(){
 	//current_process->p_s = *state_reg;
 //	memcpy((void *) &current_process->p_s, (void *) state_reg, sizeof(state_reg)); 
 	memcpy(&current_process->p_s, state_reg);
-	/*
-	current_process->p_s.entry_hi = state_reg->entry_hi;
-	current_process->p_s.cause = state_reg->cause;
-	current_process->p_s.status = state_reg->status;
-	current_process->p_s.pc_epc = state_reg->pc_epc;
-	current_process->p_s.hi = state_reg->hi;
-	current_process->p_s.lo = state_reg->lo;
-	for (int i=0; i < STATE_GPR_LEN; i++) {
-		current_process->p_s.gpr[i] = state_reg->gpr[i];
-	}
-	*/
+
 	//b. Update the accumulated CPU time for the Current Process. [Section 3.8]
 	int time = STCK(time);
-	if (current_process == NULL) klog_print(" cp null ");
 	current_process->p_time += time;
 	
 	//c. The Current Process is blocked on the ASL (insertBlocked), transitioning 
 	//	the process from the “running” state, to the “blocked” state.
 	// già fatto nelle relative syscall con P_operation
-	
 	current_process = NULL;
 	//d. Call the Scheduler
 	scheduler();
@@ -215,33 +203,27 @@ void Passeren(int a0, unsigned int a1) {
 	semaddr: a1
 */
 void P_operation(int *semaddr) {
-//klog_print("[P]");
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);	
 		//aggiornare i contatori
-		//klog_print("p1 ");
 		if(result == 0) // insertBlocked avvenuta con successo
 			soft_block_count++;
-		else {
+		else
 			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
-		}
-			//if (emptyProcQ(&low_priority_q)==0) klog_print("low not null");
+		
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
-		//if (pcb == NULL) klog_print(".NULL..");
-		if(pcb->p_prio == PROCESS_PRIO_HIGH) {//klog_print("ph ");
+		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
 		}
-		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {//klog_print("pl ");
-			//klog_print("CIAOAOAOAO");
+		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
 			soft_block_count--;
 		}
-	}else{//klog_print("p2 ");
+	}else
 		(*semaddr)--;
-	}
 }
 /* Syscall -4: Verhogen
 	– Operazione di rilascio su un semaforo binario.
@@ -274,7 +256,6 @@ void Verhogen(int a0, unsigned int a1) {
  *	@return released_proc 
  */
 pcb_PTR V_operation(int *semaddr){
-//klog_print("[V]");
 	if (*semaddr == 1) { // se e` 1 ci metto qualcosa e blocco un processo
 		int result = insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
@@ -287,25 +268,17 @@ pcb_PTR V_operation(int *semaddr){
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
-		if(pcb->p_prio == PROCESS_PRIO_HIGH) {//klog_print("vh ");
+		if(pcb->p_prio == PROCESS_PRIO_HIGH) {;
 			insertProcQ(&high_priority_q, pcb);
 			soft_block_count--;	
 			return	pcb;
-		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {//klog_print("vl ");
-		//	if (emptyProcQ(&low_priority_q)==1) klog_print("low null ");
+		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
-			/*klog_print(" DENTRO V:");
-		    klog_print_hex(&low_priority_q);
-		    klog_print("; next: "); klog_print_hex(low_priority_q.next);
-		    
-		    klog_print("; next->netx: "); klog_print_hex(low_priority_q.next->next);
-		    klog_print("; next->netx->next: "); klog_print_hex(low_priority_q.next->next->next);*/
 			soft_block_count--;
 			return pcb;
 		}
-	}else {//klog_print("v2 ");
+	}else 
 		(*semaddr)++;
-	}
 	return NULL;
 }
 
@@ -333,8 +306,6 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	int found = 0, IntLineNo = 0, DevNo = 0, isRecv = 0, device_position;
 	
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
-	//const int base = 0x10000054;
-//	devreg_t *devAddr;
 	
 	// parto con line = 0 e dev = 0
 	while (DevNo < 8 && !found){
@@ -346,7 +317,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
             devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
             state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
             found = 1;
-           // klog_print("term write");
+           //klog_print("term write");
         }
         
         //terminali di lettura
@@ -376,54 +347,6 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
     else device_position = IntLineNo*8 + DevNo;
 
     P_operation(&device_sem[device_position]);
-	
-	/*
-	while (IntLine < 5 && !found){
-	klog_print(".0.");
-		DevNo = 0;
-		while (DevNo < 8 && !found){
-		klog_print(".T.");
-			//calculate the devAddrBase
-			devreg_t* devAddrBase = (devreg_t*)(0x10000054 + (IntLine * 0x80) + (DevNo * 0x10));
-		// devAddrBase = DEV_REG_START + DevNo * DEV_REG_SIZE;
-		// devAddr = DEV_REG_ADDR(IntLineNo, DevNo);
-			int device_position = (IntLine * 8) + DevNo;
-			
-			if ((devAddrBase+0x4) ==  (devreg_t*)(0x10000054 + 0x80 +0x10 +0x4))
-				klog_print("siiii.");
-				
-			if (devAddrBase->term.transm_status != READY)
-				device_position += 8;
-			//if them are not terminals
-			if (device_position <= 31) {
-				if (&(devAddrBase->dtp.command) == cmdAddr){ //if we find it
-					devAddrBase->dtp.command = cmdValue;
-					state_reg->reg_v0 = devAddrBase->dtp.status;
-					found = 1;
-					P_operation(&device_sem[device_position]);
-				}
-			}else if (device_position <= 39 ) { //if them are terminals and writing terminals
-				if (&(devAddrBase->term.recv_command) == cmdAddr){ //if we find it
-					devAddrBase->term.recv_command = cmdValue;
-					state_reg->reg_v0 = devAddrBase->term.recv_status;	
-					found = 1;
-					P_operation(&device_sem[device_position]);
-				}
-			}else if (device_position <= 47 ) { //if them are terminals and reading terminals 
-				if (&(devAddrBase->term.transm_command) == cmdAddr){ //if we find it
-					devAddrBase->term.transm_command = cmdValue;
-					state_reg->reg_v0 = devAddrBase->term.transm_status;
-					found = 1;
-					P_operation(&device_sem[device_position]);
-				}
-			}else {//if i am not supposed to be here (device position = 48 or 49 or other stuff)				
-				klog_print("DO_IO ERROR: out of bounds\n");
-			}
-		 //if we not found it yet
-			DevNo++;
-		}
-		IntLine++;
-	}*/
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
@@ -544,23 +467,22 @@ void Yield(int a0) {
 	pcb_PTR next_process = NULL; //next process to be started
 	
 	//controllo quale altro processo potrebbe andare avanti
-	if(emptyProcQ(&high_priority_q)==0){//se la lista ad alta priorità non è vuota		
-		next_process = removeProcQ(&high_priority_q);klog_print("yH ");}
-	else if(emptyProcQ(&low_priority_q)==0) {//se la alta è vuota ma la bassa no
-		next_process = removeProcQ(&low_priority_q);klog_print("yL ");}
-	else {//se sono entrambe vuote faccio partire il processo corrente
-		next_process = current_process;klog_print("yCP ");}
+	if(emptyProcQ(&high_priority_q)==0) //se la lista ad alta priorità non è vuota		
+		next_process = removeProcQ(&high_priority_q);
+	else if(emptyProcQ(&low_priority_q)==0) //se la alta è vuota ma la bassa no
+		next_process = removeProcQ(&low_priority_q);
+	else//se sono entrambe vuote faccio partire il processo corrente
+		next_process = current_process;
 	
 	//e successivamente inserisco il processo corrente nella sua coda
-	if(current_process->p_prio  == PROCESS_PRIO_HIGH) {
+	if(current_process->p_prio  == PROCESS_PRIO_HIGH)
 		//se è high priority e la lista è vuota non devo richiamare lui ma un altro
-		insertProcQ(&high_priority_q, current_process);klog_print("yH2 ");
-	}
-	else if(current_process->p_prio  == PROCESS_PRIO_LOW) {
-		insertProcQ(&low_priority_q, current_process);klog_print("yL2 ");
-	} else {
+		insertProcQ(&high_priority_q, current_process);
+	else if(current_process->p_prio  == PROCESS_PRIO_LOW)
+		insertProcQ(&low_priority_q, current_process);
+	else
 		klog_print("Yield ADVICE: current have no good priority\n");
-	}
+	
 	//poi avvio il next_process
 	// faccio partire il processo che voglio senza chiamare lo scheduler
 	current_process = next_process;
