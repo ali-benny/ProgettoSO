@@ -14,4 +14,4 @@ p6 starts
 p7 starts
 p9 starts
 second incarnation of p4 starts
-other program trap
+Bus Error (as expected): Access non-existent memory

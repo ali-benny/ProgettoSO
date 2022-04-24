@@ -20,7 +20,7 @@ extern pcb_PTR current_process; //Current Process: processo corrente in stato "r
 extern int device_sem[49]; //Device Semaphores: 
 extern struct list_head high_priority_q;// alta priorità
 extern struct list_head low_priority_q;
-extern struct passupvector_t *passupvector;
+//extern struct passupvector_t *passupvector;
 
 // * Auxiliar Functions * //
 void PLT_Interrupt();
@@ -37,7 +37,7 @@ state_t* state_reg;
  *
  * @returns None
  */
-void syscall_handler(){
+void syscall_handler(unsigned int cause){
 //klog_print("Syscall Handler...\n");
 	state_reg->pc_epc += 4; //incrementiamo il pc
 	int a0 = (int) state_reg->reg_a0;
@@ -76,13 +76,13 @@ void syscall_handler(){
 			Yield(a0);
 			break;
 		default:
-			klog_print("default case");
+			klog_print("\nsyscall_handler default case");
 			//paragrafo 3.5.11 (Syscall in Usermode)
 			//we are simulating a Program Trap exception
 			//Cause.ExeCode = RI [= Reserved Instruction]
 			//11111111.11111111.11111111.00000011 = 0xFF.FF.FF.03 (e i . sono per leggibilità!)
-		//	state_reg->cause = (state_reg->cause & 0xFFFFFF03) + 0x28;  //! sarebbe + 0b101000;
-			passup_or_die(GENERALEXCEPT);
+			//state_reg->cause = (state_reg->cause & 0xFFFFFF03) + 0x28;  //! sarebbe + 0b101000;
+			passup_or_die(GENERALEXCEPT, cause);
 	}
 }
 
@@ -97,7 +97,7 @@ void exception_handler() {
 	//The cause of the exception is encoded in the .ExcCode field of the Cause
 	//registrer (Cause.ExcCode) in the saved exception state (vedi 3.3-pop)
 	unsigned int cause = getCAUSE();
-	unsigned int excCode = CAUSE_GET_EXCCODE(cause); 
+	unsigned int excCode = CAUSE_GET_EXCCODE(cause);
 	switch (excCode) { //for exception code ... :processing should be pased logn to your ...
 		case 0: //Interrupts
 			//Nucleus's device intterrupt handler (vedi 3.6)
@@ -105,16 +105,16 @@ void exception_handler() {
 			break;
 		case 1: case 2: case 3: //TLB exceptions
 			//Nucleus's TLB exception handler (vedi 3.7.3)
-			passup_or_die(PGFAULTEXCEPT);
+			passup_or_die(PGFAULTEXCEPT, cause);
 			break;
 		case 8: //SYSCALL
 			//Nucleus's SYSCALL exception handler (vedi 3.5)
-            syscall_handler();
+            syscall_handler(cause);
 			break;
 		case 4: case 5: case 6: case 7: //Program Traps
         case 9: case 10: case 11: case 12: //Program Traps
 			//Nucleus's Program Traps exception handler (vedi 3.7.2)
-            passup_or_die(GENERALEXCEPT);
+            passup_or_die(GENERALEXCEPT, cause);
 			break;
 		default: 
 			klog_print("Unknown exception! You're in default case.\n");
@@ -161,7 +161,7 @@ void interrupt_handler(){
  *
  * @returns None
  */
-void passup_or_die(int type_of_exception){
+void passup_or_die(int type_of_exception, unsigned int cause){
 //klog_print("Passup Or Die...\n");
 	//a. if the Current Process's p_supportScruct is NULL,
 	//then the exception should be handled as a NSYS2:
@@ -184,9 +184,11 @@ void passup_or_die(int type_of_exception){
 		//sup_exceptState field of the Current Process.
 		//The Curren Process's pcb should point to a non-null support_t.
 		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
+		klog_print("\nexception uses cause\n");
+
+		current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause; //!
 		state_t * src = ((state_t*) BIOSDATAPAGE);
 		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
-		
 		memcpy(&dest, src);
 		/*
 		dest.entry_hi = src->entry_hi;
@@ -221,8 +223,8 @@ void PLT_Interrupt(){ //(PLT = Processor Local Timer)
 	setTIMER(TIMESLICE);
 	//Copy the processor state at the time of the exception (..) into the Current process's pcb
 	//state_reg = (state_t *) BIOSDATAPAGE;
-	current_process->p_s = *(state_t *) BIOSDATAPAGE; // copy process state at the time of the exception
-	
+	//current_process->p_s = *(state_t *) BIOSDATAPAGE; // copy process state at the time of the exception
+	memcpy(&current_process->p_s, (state_t *) BIOSDATAPAGE);
 	//Place the Current Process on the Ready Queue; transitioning the Current Process
 	//from the "running" state to the "ready" state.
 	if (current_process->p_prio == 1) insertProcQ(&high_priority_q, current_process);

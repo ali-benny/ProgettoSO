@@ -471,7 +471,9 @@ void p4() {
 /* p5's program trap handler */
 void p5gen() {
     unsigned int exeCode = pFiveSupport.sup_exceptState[GENERALEXCEPT].cause;
+    klog_print("exeCode: "); klog_print_hex(exeCode);
     exeCode              = (exeCode & CAUSEMASK) >> 2;
+    klog_print("exeCode: "); klog_print_hex(exeCode);
     switch (exeCode) {
         case BUSERROR:
             print("Bus Error (as expected): Access non-existent memory\n");
@@ -499,7 +501,10 @@ void p5gen() {
 
         case SYSCALLEXCPT: p5sys(); break;
 
-        default: print("other program trap\n");
+        default:
+            klog_print("\nlast thing done is the DOIO of 'other program trap' ");
+            klog_print("exeCode: "); klog_print_hex(exeCode); klog_print("\n");
+            print("other program trap\n");
     }
 
     LDST(&(pFiveSupport.sup_exceptState[GENERALEXCEPT]));
@@ -510,6 +515,7 @@ void p5mm() {
     print("memory management trap\n");
 
     support_t *pFiveSupAddr = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
+    klog_print("\n\n\ni getted the support of pFive\n\n\n");
     if ((pFiveSupAddr) != &(pFiveSupport)) {
         print("Support Structure Address Error\n");
     } else {
