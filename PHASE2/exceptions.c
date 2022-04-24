@@ -167,8 +167,11 @@ void passup_or_die(int type_of_exception, unsigned int cause){
 	//this is the "DIE" portion of PassUp or Die.
 	
 	if(current_process->p_supportStruct == NULL){
+		klog_print(" passup_or_die doing a die ");
+		klog_print_hex((unsigned int) current_process->p_pid);
 		Terminate_Process(TERMPROCESS,(unsigned int) current_process); //! modificato con casting per prova fix error
 	} else {
+		klog_print(" passup_or_die doing a passup ");
 		//- If the Current Process's p_supportStruct is non-NULL
 		//then handling of the exception is "PASSED UP"		
 		//- the location, in this case, is fixed; 

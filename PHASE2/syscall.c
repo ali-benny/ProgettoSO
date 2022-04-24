@@ -84,6 +84,9 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
 			nuovo_pcb->p_pid = (memaddr) nuovo_pcb;
+			klog_print(" created pid:  ");
+			klog_print_hex((unsigned int) nuovo_pcb->p_pid);
+			klog_print("  .    ");
 			//scelgo in che coda metterlo in base alla sua priority
 			if (prio == PROCESS_PRIO_HIGH)
 				insertProcQ(&high_priority_q, nuovo_pcb);
@@ -160,6 +163,9 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 	current: puntatore processo corrente
 */
 void auxiliary_terminate(pcb_PTR current){
+	klog_print(" terminated pid:  ");
+	klog_print_hex((unsigned int) current->p_pid);
+	klog_print("  .    ");
 	pcb_PTR removed_child;
 	if (current != NULL) {
 		//se ha figli caso ricorsivo
