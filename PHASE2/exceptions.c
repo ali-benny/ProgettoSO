@@ -192,8 +192,8 @@ void passup_or_die(int type_of_exception, unsigned int cause){
 		state_t * src = ((state_t*) BIOSDATAPAGE);
 		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
 		memcpy(&dest, src);
-
-		context_t *context = &current_process->p_supportStruct->sup_exceptContext[type_of_exception]; //! modificato con context_t* invece di unsigned int per prova fix error
+		
+		context_t *context = &(current_process->p_supportStruct->sup_exceptContext[type_of_exception]); //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
 		//field of the Current Process. [Section 7.3.4-pops]
@@ -304,8 +304,8 @@ void Device_Interrupt(unsigned int ip) {
 		//it is NOT a terminal
 		//4.
 		semAddr = (int *) device_sem[device_position];
-		if (*semAddr == 1) pcb = P_operation(semAddr);
-		else pcb = V_operation(semAddr); // sblocchiamo il processo
+		if (*semAddr == 1) pcb = P_operation(semAddr,1);
+		else pcb = V_operation(semAddr,1); // sblocchiamo il processo
 		if (pcb != NULL) {
 			//2. Save off the status code from the device's device register.
 			statusCode = devAddrBase->dtp.status;
@@ -321,8 +321,8 @@ void Device_Interrupt(unsigned int ip) {
 			//4.
 			semAddr = (int *) &device_sem[device_position];
 			//5.
-			if (*semAddr == 1) pcb = P_operation(semAddr);
-			else pcb = V_operation(semAddr);
+			if (*semAddr == 1) pcb = P_operation(semAddr,1);
+			else pcb = V_operation(semAddr,1);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.transm_status;
@@ -339,8 +339,8 @@ void Device_Interrupt(unsigned int ip) {
 			
 			device_position += 8;
 			semAddr = (int *) &device_sem[device_position];
-			if (*semAddr == 1) pcb = P_operation(semAddr);
-			else pcb = V_operation(semAddr);
+			if (*semAddr == 1) pcb = P_operation(semAddr,1);
+			else pcb = V_operation(semAddr,1);
 			if (pcb != NULL) {
 				//2. Save off the status code from the device's device register.
 				statusCode = devAddrBase->term.recv_status;

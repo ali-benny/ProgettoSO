@@ -153,8 +153,12 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		current_process = NULL;
-		scheduler();
+		if (pid != 0)
+			LDST(state_reg);
+		else{
+			current_process = NULL;
+			scheduler();
+		}
 	} else klog_print("Terminate_Process ERROR: a0 != TERMPROCESS\n");
 }
 /*	Auxiliar Function of Terminate_Process	*
@@ -197,7 +201,7 @@ void Passeren(int a0, unsigned int a1) {
 #endif
 
 		int *semaddr = (int *) a1;
-		P_operation(semaddr);
+		P_operation(semaddr,0);
 #ifdef SYS_DEBUG
 		klog_print(" done!");
 #endif
@@ -207,27 +211,27 @@ void Passeren(int a0, unsigned int a1) {
 	
 	@param semaddr: a1
 */
-pcb_PTR P_operation(int *semaddr) {
+pcb_PTR P_operation(int *semaddr, int isDevSem) {
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
-		int result = insertBlocked(semaddr, current_process);
+		insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
-		if(result == 0) // insertBlocked avvenuta con successo
+		if(isDevSem == 1) // insertBlocked avvenuta con successo
 			soft_block_count++;
-		else
-			klog_print("Passeren ADVICE: inserimento fallito miseramente\n");
 		
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {
 			insertProcQ(&high_priority_q, pcb);
-			soft_block_count--;
+			if(isDevSem == 1)	
+				soft_block_count--;
 			LDST(state_reg);
 			return pcb;	
 		}
 		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
-			soft_block_count--;
+			if(isDevSem == 1)
+				soft_block_count--;
 			LDST(state_reg);
 			return pcb;
 		}
@@ -253,7 +257,7 @@ void Verhogen(int a0, unsigned int a1) {
 #endif
 
 	int *semaddr = (int *) a1;
-	V_operation(semaddr);
+	V_operation(semaddr,0);
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!");
@@ -266,27 +270,27 @@ void Verhogen(int a0, unsigned int a1) {
 	semAddr
  *	@return released_proc 
  */
-pcb_PTR V_operation(int *semaddr){
+pcb_PTR V_operation(int *semaddr, int isDevSem){
 	if (*semaddr == 1) { // se e` 1 ci metto qualcosa e blocco un processo
-		int result = insertBlocked(semaddr, current_process);
+		insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
 		//klog_print("v1 ");
-		if(result == 0) // insertBlocked avvenuta con successo
+		if(isDevSem == 1) // insertBlocked avvenuta con successo
 			soft_block_count++;
-		else {
-			klog_print("Verhogen ADVICE: inserimento fallito miseramente\n");
-		}
+		
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
 		if(pcb->p_prio == PROCESS_PRIO_HIGH) {;
 			insertProcQ(&high_priority_q, pcb);
-			soft_block_count--;	
+			if(isDevSem == 1) 
+				soft_block_count--;	
 			
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
-			soft_block_count--;
+			if(isDevSem == 1) 
+				soft_block_count--;
 			
 			return pcb;
 		}
@@ -360,7 +364,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
 	
-	P_operation(&device_sem[device_position]);
+	P_operation(&device_sem[device_position],1);
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
@@ -405,7 +409,7 @@ void Wait_For_Clock(int a0) {
 #ifdef SYS_DEBUG
 		klog_print("Wait_For_Clock ...");
 #endif
-	P_operation(&device_sem[48]);
+	P_operation(&device_sem[48],1);
 	
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
