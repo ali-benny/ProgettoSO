@@ -159,12 +159,12 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		if (pid != 0 )
-			LDST(state_reg);
-		else{
+		//if (pid != 0 && trovato != NULL)
+		//	LDST(state_reg);
+		//else{
 			current_process = NULL;
 			scheduler();
-		}
+		//}
 		
 	} else klog_print("Terminate_Process ERROR: a0 != TERMPROCESS\n");
 }
@@ -200,18 +200,20 @@ void auxiliary_terminate(pcb_PTR current){
 void auxiliary_terminate(pcb_PTR current){
 	klog_print(" terminated pid:  ");
 	klog_print_hex((unsigned int) current->p_pid);
-	klog_print("  .    ");
+	klog_print("  .  ");
     if (current != NULL){
         outChild(current);
         while(!emptyChild(current)){
             auxiliary_terminate(removeChild(current));
         }
-        if(current->p_semAdd == NULL){
+		if (current_process->p_pid == current->p_pid){
+			if (current->p_prio == PROCESS_PRIO_HIGH) outProcQ(&high_priority_q, current);
+			else outProcQ(&low_priority_q, current);
+        } else if(current->p_semAdd == NULL){
         	//caso readyQ 
-        	outProcQ(&high_priority_q, current);
-		outProcQ(&low_priority_q, current);
-        	}
-        else{
+        	if (current->p_prio == PROCESS_PRIO_HIGH) outProcQ(&high_priority_q, current);
+			else outProcQ(&low_priority_q, current);
+        } else{
         	//caso processo bloccato a un semaforo
             if(current->p_semAdd >= &device_sem[0] && current->p_semAdd <= &device_sem[48])
                 soft_block_count--;
