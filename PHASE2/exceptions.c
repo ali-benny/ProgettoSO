@@ -51,7 +51,7 @@ void syscall_handler(unsigned int cause){
 	//we are simulating a Program Trap exception
 	//Cause.ExeCode = RI [= Reserved Instruction]
 		state_reg->cause = (cause & ~CAUSE_EXCCODE_MASK) | (EXC_RI << CAUSE_EXCCODE_BIT);
-		passup_or_die(GENERALEXCEPT, cause);
+		passup_or_die(GENERALEXCEPT);
 	}else{
 		switch(a0){
 			case CREATEPROCESS: //-1
@@ -86,7 +86,7 @@ void syscall_handler(unsigned int cause){
 				break;
 			default:
 				klog_print("\nsyscall_handler default case");
-				passup_or_die(GENERALEXCEPT, cause);
+				passup_or_die(GENERALEXCEPT);
 	}
 	}
 	
@@ -111,7 +111,7 @@ void exception_handler() {
 			break;
 		case 1: case 2: case 3: //TLB exceptions
 			//Nucleus's TLB exception handler (vedi 3.7.3)
-			passup_or_die(PGFAULTEXCEPT, cause);
+			passup_or_die(PGFAULTEXCEPT);
 			break;
 		case 8: //SYSCALL
 			//Nucleus's SYSCALL exception handler (vedi 3.5)
@@ -120,7 +120,7 @@ void exception_handler() {
 		case 4: case 5: case 6: case 7: //Program Traps
         case 9: case 10: case 11: case 12: //Program Traps
 			//Nucleus's Program Traps exception handler (vedi 3.7.2)
-            passup_or_die(GENERALEXCEPT, cause);
+            passup_or_die(GENERALEXCEPT);
 			break;
 		default: 
 			klog_print("Unknown exception! You're in default case.\n");
@@ -165,7 +165,7 @@ void interrupt_handler(){
  *
  * @returns None
  */
-void passup_or_die(int type_of_exception, unsigned int cause){
+void passup_or_die(int type_of_exception){
 //klog_print("Passup Or Die...\n");
 	//a. if the Current Process's p_supportScruct is NULL,
 	//then the exception should be handled as a NSYS2:
@@ -194,11 +194,11 @@ void passup_or_die(int type_of_exception, unsigned int cause){
 		//!NOTA: here i pass the cause to the handler of the "personalized handler"
 
 		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
-		state_t * src = ((state_t*) BIOSDATAPAGE);
-		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
-		memcpy(&dest, src);
-		
-		current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause;
+		//state_t * src = ((state_t*) BIOSDATAPAGE);
+		//state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
+		//memcpy(&dest, src);
+		current_process->p_supportStruct->sup_exceptState[type_of_exception] = *state_reg;
+		//current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause;
 		context_t *context = &(current_process->p_supportStruct->sup_exceptContext[type_of_exception]); //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext

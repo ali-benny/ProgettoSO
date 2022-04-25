@@ -14,7 +14,7 @@ void syscall_handler(unsigned int cause);
 
 void exception_handler();
 void interrupt_handler();
-void passup_or_die(int type_of_exception, unsigned int cause);
+void passup_or_die(int type_of_exception);
 
 #endif //EXCEPTIONS_H
 
