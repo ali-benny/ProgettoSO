@@ -131,7 +131,7 @@ void uTLB_RefillHandler() {
     setENTRYHI(0x80000000);
     setENTRYLO(0x00000000);
     TLBWR();
-    
+
     LDST((state_t *)0x0FFFF000);
 }
 
@@ -455,12 +455,14 @@ void p4() {
 klog_print("p4pt2: ");
     p4pid = SYSCALL(CREATEPROCESS, (int)&p4state, PROCESS_PRIO_LOW, 0); /* start a new p4    */
 
+klog_print("-p4 passeren-");
     SYSCALL(PASSEREN, (int)&sem_synp4, 0, 0); /* wait for it       */
 
     print("p4 is OK\n");
 
     SYSCALL(VERHOGEN, (int)&sem_endp4, 0, 0); /* V(sem_endp4)          */
 
+klog_print("-p4 terminate-");
     SYSCALL(TERMPROCESS, 0, 0, 0); /* terminate p4      */
 
     /* just did a SYS2, so should not get to this point */
@@ -529,6 +531,7 @@ void p5mm() {
 
 /* p5's SYS trap handler */
 void p5sys() {
+    klog_print(">p5sys<");
     unsigned int p5status = pFiveSupport.sup_exceptState[GENERALEXCEPT].status;
     p5status              = (p5status << 28) >> 31;
     switch (p5status) {
@@ -549,7 +552,8 @@ void p5() {
     *p5MemLocation = *p5MemLocation + 1; /* Should cause a program trap */
 }
 
-void p5a() {klog_print("P5A");
+void p5a() {
+klog_print("P5A");
     /* generage a TLB exception after a TLB-Refill event */
 
     p5MemLocation  = (memaddr *)0x80000000;
@@ -560,6 +564,7 @@ void p5a() {klog_print("P5A");
 /* second part of p5 - should be entered in user mode first time through */
 /* should generate a program trap (Address error) */
 void p5b() {
+klog_print("-p5B-");
     cpu_t time1, time2;
 
     SYSCALL(1, 0, 0, 0);
@@ -724,6 +729,7 @@ void p10() {
         PANIC();
     }
 
+klog_print("-p10 terminate ppid-");
     SYSCALL(TERMPROCESS, ppid, 0, 0);
 
     print("Error: p10 didn't die with its parent!\n");
@@ -738,6 +744,7 @@ void hp_p1() {
         SYSCALL(YIELD, 0, 0, 0);
     }
 
+klog_print("-hp1 terminate-");
     SYSCALL(TERMPROCESS, 0, 0, 0);
     print("Error: hp_p1 didn't die!\n");
     PANIC();
@@ -751,6 +758,7 @@ void hp_p2() {
         SYSCALL(CLOCKWAIT, 0, 0, 0);
     }
 
+klog_print("-hp2 terminate-");
     SYSCALL(TERMPROCESS, 0, 0, 0);
     print("Error: hp_p2 didn't die!\n");
     PANIC();
