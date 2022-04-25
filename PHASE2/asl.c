@@ -18,6 +18,23 @@ HIDDEN struct list_head asl_h;	 //lista di semafori attivi, utilizzati in questo
 
  * @return 1 se e` vuota, 0 se ha qualcosa
 */
+pcb_PTR findPcb (pcb_PTR trovato , int pid){
+	pcb_PTR pcb;
+	semd_PTR current ;
+	struct list_head *iter1, *iter2;
+	//cercare il semaforo con p->p_semAdd (key) nella ASL
+	list_for_each(iter1, &(asl_h)){
+		current = container_of(iter1, semd_t, s_link);			
+		list_for_each(iter2, &(current->s_procq)){
+				pcb = container_of(iter2, pcb_t, p_list);	
+				if ( pcb->p_pid == pid){
+					trovato = pcb;
+					return trovato;
+				}
+			}
+	}return NULL;
+}
+
 int BusySem(int *semAdd){
 //cercare il semAdd (key) nella ASL
 	struct list_head *iter;
@@ -157,6 +174,7 @@ pcb_t* removeBlocked(int *semAdd) {
 			list_del(&semd->s_link);
 			//lo metto nella lista dei semafori liberi
 			list_add_tail(&semd->s_link, &(semdFree_h));
+			pcb->p_semAdd = NULL;
 		}
 		return pcb;
 	}
@@ -195,6 +213,7 @@ pcb_t* outBlocked(pcb_t *p) {
 			list_del(&semd->s_link);
 			//lo metto nella lista dei semafori liberi
 			list_add_tail(&semd->s_link, &(semdFree_h));
+			pcb->p_semAdd = NULL;
 		}
 		return pcb;
 	}

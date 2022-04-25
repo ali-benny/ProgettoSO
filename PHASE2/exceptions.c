@@ -39,51 +39,57 @@ state_t* state_reg;
  */
 void syscall_handler(unsigned int cause){
 //klog_print("Syscall Handler...\n");
+	//memcpy(state_reg, &current_process->p_s);
+	//memcpy( &current_process->p_s,state_reg);
 	state_reg->pc_epc += 4; //incrementiamo il pc
 	int a0 = (int) state_reg->reg_a0;
 	unsigned int a1 = state_reg->reg_a1;
 	unsigned int a2 = state_reg->reg_a2; 
 	unsigned int a3 = state_reg->reg_a3;
-	switch(a0){
-		case CREATEPROCESS: //-1
-			Create_Process(a0,a1,a2,a3);
-			break;
-		case TERMPROCESS: //-2
-			Terminate_Process(a0,a1);
-			break;
-		case PASSEREN:
-			Passeren(a0,a1);
-			break;
-		case VERHOGEN:
-			Verhogen(a0,a1);
-			break;
-		case DOIO:
-			DO_IO(a0,a1,a2);
-			break;
-		case GETTIME:
-			Get_CPU_Time(a0);
-			break;
-		case CLOCKWAIT:
-			Wait_For_Clock(a0);
-			break;
-		case GETSUPPORTPTR:
-			Get_Support_Data(a0);
-			break;
-		case GETPROCESSID:
-			Get_Process_Id(a0,a1);
-			break;
-		case YIELD:
-			Yield(a0);
-			break;
-		default:
-			klog_print("\nsyscall_handler default case");
-			//paragrafo 3.5.11 (Syscall in Usermode)
-			//we are simulating a Program Trap exception
-			//Cause.ExeCode = RI [= Reserved Instruction]
-			//11111111.11111111.11111111.00000011 = 0xFF.FF.FF.03 (e i . sono per leggibilità!)
-			//state_reg->cause = (state_reg->cause & 0xFFFFFF03) + 0x28;  //! sarebbe + 0b101000;
-			passup_or_die(GENERALEXCEPT, cause);
+	if ((state_reg->status & STATUS_KUp) == STATUS_KUp)  {
+	//paragrafo 3.5.11 (Syscall in Usermode)
+	//we are simulating a Program Trap exception
+	//Cause.ExeCode = RI [= Reserved Instruction]
+		state_reg->cause = (cause & ~CAUSE_EXCCODE_MASK) | (EXC_RI << CAUSE_EXCCODE_BIT);
+		passup_or_die(GENERALEXCEPT, cause);
+	}else{
+		switch(a0){
+			case CREATEPROCESS: //-1
+				Create_Process(a0,a1,a2,a3);
+				break;
+			case TERMPROCESS: //-2
+				Terminate_Process(a0,a1);
+				break;
+			case PASSEREN:
+				Passeren(a0,a1);
+				break;
+			case VERHOGEN:
+				Verhogen(a0,a1);
+				break;
+			case DOIO:
+				DO_IO(a0,a1,a2);
+				break;
+			case GETTIME:
+				Get_CPU_Time(a0);
+				break;
+			case CLOCKWAIT:
+				Wait_For_Clock(a0);
+				break;
+			case GETSUPPORTPTR:
+				Get_Support_Data(a0);
+				break;
+			case GETPROCESSID:
+				Get_Process_Id(a0,a1);
+				break;
+			case YIELD:
+				Yield(a0);
+				break;
+			default:
+				klog_print("\nsyscall_handler default case");
+				passup_or_die(GENERALEXCEPT, cause);
 	}
+	}
+	
 }
 
 
@@ -167,9 +173,9 @@ void passup_or_die(int type_of_exception, unsigned int cause){
 	//this is the "DIE" portion of PassUp or Die.
 	
 	if(current_process->p_supportStruct == NULL){
-		klog_print(" passup_or_die doing a die ");
+		//klog_print(" passup_or_die doing a die ");
 		klog_print_hex((unsigned int) current_process->p_pid);
-		Terminate_Process(TERMPROCESS,(unsigned int) current_process); //! modificato con casting per prova fix error
+		Terminate_Process(TERMPROCESS,0); //! modificato con casting per prova fix error
 	} else {
 		klog_print(" passup_or_die doing a passup ");
 		//- If the Current Process's p_supportStruct is non-NULL
@@ -186,13 +192,13 @@ void passup_or_die(int type_of_exception, unsigned int cause){
 		//The Curren Process's pcb should point to a non-null support_t.
 
 		//!NOTA: here i pass the cause to the handler of the "personalized handler"
-		current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause;
 
 		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
 		state_t * src = ((state_t*) BIOSDATAPAGE);
 		state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
 		memcpy(&dest, src);
 		
+		current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause;
 		context_t *context = &(current_process->p_supportStruct->sup_exceptContext[type_of_exception]); //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
@@ -310,7 +316,7 @@ void Device_Interrupt(unsigned int ip) {
 			//2. Save off the status code from the device's device register.
 			statusCode = devAddrBase->dtp.status;
 			devAddrBase->dtp.command = ACK;
-			devAddrBase->dtp.status = READY; //? da commentare?
+			//devAddrBase->dtp.status = READY; //? da commentare?
 			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 			pcb->p_s.reg_v0 = statusCode;
 		}

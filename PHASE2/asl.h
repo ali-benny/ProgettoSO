@@ -3,6 +3,7 @@
 
 #include "pcb.h"
 
+pcb_PTR findPcb (pcb_PTR trovato , int pid);
 int BusySem(int *semAddr);
 void klog_list();
 

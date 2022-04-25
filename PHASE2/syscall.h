@@ -2,6 +2,7 @@
 #define H_SYSCALL
 
 #include "pcb.h"
+#include "asl.h"
 #include "scheduler.h"
 #include <umps3/umps/libumps.h>
 #include "klog/klog.h"

@@ -20,6 +20,7 @@ extern int process_count;
 extern int soft_block_count; 
 extern pcb_PTR current_process;
 extern int device_sem[49]; //Device Semaphores: 
+extern struct list_head asl_h;	
 
 extern state_t* state_reg;
 
@@ -127,13 +128,14 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
     if(a0 == TERMPROCESS) {
 #ifdef SYS_DEBUG
 		klog_print("Terminate_Process ...");
-#endif
+#endif	
+		pcb_PTR trovato ;
 		int pid = (int) a1;
 		if (pid == 0){ //devo eliminare current process
 			auxiliary_terminate(current_process);
 		} else { //elimino il processo con pid indicato
 			//cerco pid nelle varie liste
-			pcb_PTR trovato = NULL;
+			trovato = NULL;
 			struct list_head *iter;
 			list_for_each(iter, &high_priority_q) { //lo cerco nella high priority coda
 				pcb_PTR iter_pcb = container_of(iter, pcb_t, p_list);
@@ -147,18 +149,23 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 						trovato = iter_pcb;	//trovato = processo con pid=pid(=a1)
 				}
 			}
+			if (trovato == NULL){
+				trovato = findPcb(trovato ,pid);
+			}
+			//klog_print_hex(trovato->p_pid);
 			if(trovato != NULL) //se l'ho trovato
 				auxiliary_terminate(trovato);
 		}		
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		if (pid != 0)
+		if (pid != 0 )
 			LDST(state_reg);
 		else{
 			current_process = NULL;
 			scheduler();
 		}
+		
 	} else klog_print("Terminate_Process ERROR: a0 != TERMPROCESS\n");
 }
 /*	Auxiliar Function of Terminate_Process	*
@@ -166,6 +173,8 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 
 	current: puntatore processo corrente
 */
+
+/*
 void auxiliary_terminate(pcb_PTR current){
 	klog_print(" terminated pid:  ");
 	klog_print_hex((unsigned int) current->p_pid);
@@ -182,8 +191,37 @@ void auxiliary_terminate(pcb_PTR current){
 		outProcQ(&low_priority_q, current);
 		freePcb(current);
 		//aggiornamento dei contatori
+		if (current->p_semAdd >= &device_sem[0] && current->p_semAdd <= &device_sem[48]) 
+			soft_block_count--;
 		process_count--;	
 	}
+}*/
+
+void auxiliary_terminate(pcb_PTR current){
+	klog_print(" terminated pid:  ");
+	klog_print_hex((unsigned int) current->p_pid);
+	klog_print("  .    ");
+    if (current != NULL){
+        outChild(current);
+        while(!emptyChild(current)){
+            auxiliary_terminate(removeChild(current));
+        }
+        if(current->p_semAdd == NULL){
+        	//caso readyQ 
+        	outProcQ(&high_priority_q, current);
+		outProcQ(&low_priority_q, current);
+        	}
+        else{
+        	//caso processo bloccato a un semaforo
+            if(current->p_semAdd >= &device_sem[0] && current->p_semAdd <= &device_sem[48])
+                soft_block_count--;
+            outBlocked(current);
+        }
+        freePcb(current);
+        process_count--;
+
+    }
+
 }
 
 /* Syscall -3: Passeren
@@ -225,14 +263,16 @@ pcb_PTR P_operation(int *semaddr, int isDevSem) {
 			insertProcQ(&high_priority_q, pcb);
 			if(isDevSem == 1)	
 				soft_block_count--;
-			LDST(state_reg);
+			if (pcb == NULL) 
+				LDST(state_reg);
 			return pcb;	
 		}
 		else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
 			if(isDevSem == 1)
 				soft_block_count--;
-			LDST(state_reg);
+			if (pcb == NULL) 
+				LDST(state_reg);
 			return pcb;
 		}
 	}else{
@@ -285,6 +325,7 @@ pcb_PTR V_operation(int *semaddr, int isDevSem){
 			insertProcQ(&high_priority_q, pcb);
 			if(isDevSem == 1) 
 				soft_block_count--;	
+			
 			
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
