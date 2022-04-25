@@ -41,7 +41,6 @@ extern void uTLB_RefillHandler();
 extern void test(); 
 
 int main(){
-	//klog_print("Benvenuto nel main di Phase2!\n");
     //paragraph 3.1 pandos-chapter3.pdf (pag 5-6)
 	//2. popolare il passupvector.
     //- set the Nucleus TLB_Refill event andler address

@@ -38,9 +38,6 @@ state_t* state_reg;
  * @returns None
  */
 void syscall_handler(unsigned int cause){
-//klog_print("Syscall Handler...\n");
-	//memcpy(state_reg, &current_process->p_s);
-	//memcpy( &current_process->p_s,state_reg);
 	state_reg->pc_epc += 4; //incrementiamo il pc
 	int a0 = (int) state_reg->reg_a0;
 	unsigned int a1 = state_reg->reg_a1;
@@ -85,7 +82,6 @@ void syscall_handler(unsigned int cause){
 				Yield(a0);
 				break;
 			default:
-				klog_print("\nsyscall_handler default case");
 				passup_or_die(GENERALEXCEPT);
 	}
 	}
@@ -123,7 +119,6 @@ void exception_handler() {
             passup_or_die(GENERALEXCEPT);
 			break;
 		default: 
-			klog_print("Unknown exception! You're in default case.\n");
 			break;
 	}
 }
@@ -135,7 +130,6 @@ void exception_handler() {
  * @returns None
  */
 void interrupt_handler(){
-//klog_print("Interrupt Handler...\n");
 	unsigned int cause = getCAUSE();
 	unsigned int ip = (cause & 0x0000FF00) >> 8;  // tutti a 0 tranne 8-15 (IP) e >> (= saltiamo i primi 8 bit) 
 	
@@ -166,18 +160,14 @@ void interrupt_handler(){
  * @returns None
  */
 void passup_or_die(int type_of_exception){
-//klog_print("Passup Or Die...\n");
 	//a. if the Current Process's p_supportScruct is NULL,
 	//then the exception should be handled as a NSYS2:
 	//The Current Process and all its progeny are terminated.
 	//this is the "DIE" portion of PassUp or Die.
 	
 	if(current_process->p_supportStruct == NULL){
-		//klog_print(" passup_or_die doing a die ");
-		klog_print_hex((unsigned int) current_process->p_pid);
 		Terminate_Process(TERMPROCESS,0); //! modificato con casting per prova fix error
 	} else {
-		klog_print(" passup_or_die doing a passup ");
 		//- If the Current Process's p_supportStruct is non-NULL
 		//then handling of the exception is "PASSED UP"		
 		//- the location, in this case, is fixed; 
@@ -191,14 +181,8 @@ void passup_or_die(int type_of_exception){
 		//sup_exceptState field of the Current Process.
 		//The Curren Process's pcb should point to a non-null support_t.
 
-		//!NOTA: here i pass the cause to the handler of the "personalized handler"
-
-		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *((state_t*) BIOSDATAPAGE);
-		//state_t * src = ((state_t*) BIOSDATAPAGE);
-		//state_t dest = current_process->p_supportStruct->sup_exceptState[type_of_exception];
-		//memcpy(&dest, src);
 		current_process->p_supportStruct->sup_exceptState[type_of_exception] = *state_reg;
-		//current_process->p_supportStruct->sup_exceptState[type_of_exception].cause = cause;
+
 		context_t *context = &(current_process->p_supportStruct->sup_exceptContext[type_of_exception]); //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext
@@ -216,12 +200,9 @@ void passup_or_die(int type_of_exception){
  * @returns None
  */
 void PLT_Interrupt(){ //(PLT = Processor Local Timer)
-//klog_print("PLT Interrupt...\n");
 	//Aknowledge the PLT interrupt by loading the timer with a new value
 	setTIMER(TIMESLICE);
 	//Copy the processor state at the time of the exception (..) into the Current process's pcb
-	//state_reg = (state_t *) BIOSDATAPAGE;
-	//current_process->p_s = *(state_t *) BIOSDATAPAGE; // copy process state at the time of the exception
 	memcpy(&current_process->p_s, (state_t *) BIOSDATAPAGE);
 	//Place the Current Process on the Ready Queue; transitioning the Current Process
 	//from the "running" state to the "ready" state.
@@ -240,7 +221,6 @@ void PLT_Interrupt(){ //(PLT = Processor Local Timer)
  * @returns None
  */
 void Interval_Timer_Interrupt(){
-//klog_print("Interval Timer Interrupt...\n");
 	//1. Aknnowledge the interrupt by loading the Interval Timer with a new value (100 milliseconds)
 	LDIT(PSECOND);
 	//2. Unblock ALL pcbs blocked on the Pseudo-clock semaphore.
@@ -270,7 +250,6 @@ void Interval_Timer_Interrupt(){
  * @returns None
  */
 void Device_Interrupt(unsigned int ip) {
-//klog_print("Device Interrupt...\n");
 	//paragrafo 3.6.1 pandos-chapter3.pdf(pag 18) Non-Timer-Interrupts			
 	//1. Calculate the address for this device's device register [5.1 pops].
 	//   [from 5.1 pops] devAddrBase = 0x1000.0054 + ((IntlineNo - 3) * 0x80) + (DevNo * 0x10) // num di linea 3-7
@@ -284,7 +263,6 @@ void Device_Interrupt(unsigned int ip) {
 	}	
 	int DevNo = 0; // numero device
 	int found = 0;
-//	unsigned int BitMap = CDEV_BITMAP_ADDR(IntLineNo);
 	unsigned int BitMap = devRegArea->interrupt_dev[IntLineNo-3];
 	
 	while (DevNo < 8 && !found){
@@ -299,7 +277,6 @@ void Device_Interrupt(unsigned int ip) {
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[IntLineNo-3][DevNo];
-//	devreg_t* devAddrBase = (devreg_t*) 0x10000054 + ((IntLineNo-3) * 0x80) + (DevNo * 0x10);
 	
 	int device_position = (IntLineNo - 3)*8 + DevNo;
 	unsigned int statusCode;
@@ -316,7 +293,6 @@ void Device_Interrupt(unsigned int ip) {
 			//2. Save off the status code from the device's device register.
 			statusCode = devAddrBase->dtp.status;
 			devAddrBase->dtp.command = ACK;
-			//devAddrBase->dtp.status = READY; //? da commentare?
 			//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 			pcb->p_s.reg_v0 = statusCode;
 		}
@@ -334,7 +310,6 @@ void Device_Interrupt(unsigned int ip) {
 				statusCode = devAddrBase->term.transm_status;
 				//3. Aknlowledge the outstanding interrupt.
 				devAddrBase->term.transm_command = ACK;
-			//	devAddrBase->term.transm_status = READY; 
 				//5.
 				pcb->p_s.reg_v0 = statusCode;
 			}
@@ -352,7 +327,6 @@ void Device_Interrupt(unsigned int ip) {
 				statusCode = devAddrBase->term.recv_status;
 				//3. Aknlowledge the outstanding interrupt.
 				devAddrBase->term.recv_command = ACK;
-		//		devAddrBase->term.recv_status = READY; 
 				//5. Place the stored off status code in the newly unblocked pcb's v0 register.
 				pcb->p_s.reg_v0 = statusCode;
 			}

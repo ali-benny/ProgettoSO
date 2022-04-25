@@ -85,9 +85,6 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			nuovo_pcb->p_prio = prio;
 			nuovo_pcb->p_supportStruct = supportp;
 			nuovo_pcb->p_pid = (memaddr) nuovo_pcb;
-			klog_print(" created pid:  ");
-			klog_print_hex((unsigned int) nuovo_pcb->p_pid);
-			klog_print(" \n");
 			//scelgo in che coda metterlo in base alla sua priority
 			if (prio == PROCESS_PRIO_HIGH)
 				insertProcQ(&high_priority_q, nuovo_pcb);
@@ -97,7 +94,6 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 			
 			// aggiungo al current un figlio del nuovo pcb (=chiamante)
 			insertChild(current_process, nuovo_pcb);
-			
 			nuovo_pcb->p_time = 0;
 			nuovo_pcb->p_semAdd = NULL;
 
@@ -152,19 +148,14 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 			if (trovato == NULL){
 				trovato = findPcb(trovato ,pid);
 			}
-			//klog_print_hex(trovato->p_pid);
 			if(trovato != NULL) //se l'ho trovato
 				auxiliary_terminate(trovato);
 		}		
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
-		//if (pid != 0 && trovato != NULL)
-		//	LDST(state_reg);
-		//else{
-			current_process = NULL;
-			scheduler();
-		//}
+		current_process = NULL;
+		scheduler();
 		
 	} else klog_print("Terminate_Process ERROR: a0 != TERMPROCESS\n");
 }
@@ -173,34 +164,7 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 
 	current: puntatore processo corrente
 */
-
-/*
 void auxiliary_terminate(pcb_PTR current){
-	klog_print(" terminated pid:  ");
-	klog_print_hex((unsigned int) current->p_pid);
-	klog_print("  .    ");
-	pcb_PTR removed_child;
-	if (current != NULL) {
-		//se ha figli caso ricorsivo
-		while (emptyChild(current)==0) {
-			removed_child = removeChild(current);
-			auxiliary_terminate(removed_child);
-		}
-		//caso base
-		outProcQ(&high_priority_q, current);
-		outProcQ(&low_priority_q, current);
-		freePcb(current);
-		//aggiornamento dei contatori
-		if (current->p_semAdd >= &device_sem[0] && current->p_semAdd <= &device_sem[48]) 
-			soft_block_count--;
-		process_count--;	
-	}
-}*/
-
-void auxiliary_terminate(pcb_PTR current){
-	klog_print(" terminated pid:  ");
-	klog_print_hex((unsigned int) current->p_pid);
-	klog_print("  .  ");
     if (current != NULL){
         outChild(current);
         while(!emptyChild(current)){
@@ -221,7 +185,6 @@ void auxiliary_terminate(pcb_PTR current){
         }
         freePcb(current);
         process_count--;
-
     }
 
 }
@@ -249,7 +212,8 @@ void Passeren(int a0, unsigned int a1) {
 }
 /**	Auxiliar Function of Passeren	*
 	
-	@param semaddr: a1
+	@param semaddr a1
+	@param isDevSem 1 se la operation è chiamata da un device, 0 altrimenti
 */
 pcb_PTR P_operation(int *semaddr, int isDevSem) {
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
@@ -257,7 +221,6 @@ pcb_PTR P_operation(int *semaddr, int isDevSem) {
 		//aggiornare i contatori
 		if(isDevSem == 1) // insertBlocked avvenuta con successo
 			soft_block_count++;
-		
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
@@ -280,7 +243,7 @@ pcb_PTR P_operation(int *semaddr, int isDevSem) {
 	}else{
 		(*semaddr)--;
 		LDST(state_reg);
-		}
+	}
 	return NULL;
 }
 /* Syscall -4: Verhogen
@@ -309,17 +272,16 @@ void Verhogen(int a0, unsigned int a1) {
 }
 /**	Auxiliar Function of Veroghen	*
 	
-	semAddr
+	@param semAddr
+	@param isDevSem 1 se la operation è chiamata da un device, 0 altrimenti
  *	@return released_proc 
  */
 pcb_PTR V_operation(int *semaddr, int isDevSem){
 	if (*semaddr == 1) { // se e` 1 ci metto qualcosa e blocco un processo
 		insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
-		//klog_print("v1 ");
 		if(isDevSem == 1) // insertBlocked avvenuta con successo
 			soft_block_count++;
-		
 		Blocking_Syscall();
 	}else if(BusySem(semaddr)==0) { // l'ho trovato con qualcosa nella lista?
 		pcb_t* pcb = removeBlocked(semaddr);
@@ -327,19 +289,15 @@ pcb_PTR V_operation(int *semaddr, int isDevSem){
 			insertProcQ(&high_priority_q, pcb);
 			if(isDevSem == 1) 
 				soft_block_count--;	
-			
-			
 			return	pcb;
 		} else if(pcb->p_prio  == PROCESS_PRIO_LOW) {
 			insertProcQ(&low_priority_q, pcb);
 			if(isDevSem == 1) 
 				soft_block_count--;
-			
 			return pcb;
 		}
-	}else {
+	}else 
 		(*semaddr)++;
-		}
 	return NULL;
 }
 
@@ -371,23 +329,18 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	// parto con line = 0 e dev = 0
 	while (DevNo < 8 && !found){
 		IntLineNo = 4; // per lettura e scrittura
-		//devAddr = (devreg_t*) base + ((IntLineNo) * 0x80) + (DevNo * 0x10);
-		
         //terminali di scrittura
         if(&(devReg->devreg[IntLineNo][DevNo].term.transm_command) == (memaddr*) cmdAddr){ 
             devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
             state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
             found = 1;
-           //klog_print("term write");
         }
-        
         //terminali di lettura
 		if(&(devReg->devreg[IntLineNo][DevNo].term.recv_command) == (memaddr*) cmdAddr){ 
             isRecv = 1;
             devReg->devreg[IntLineNo][DevNo].term.recv_command = cmdValue;
 			state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.recv_status;
             found = 1;
-            //klog_print("term read");
         }
 		if (found == 0) {
 			IntLineNo = 0;
@@ -397,7 +350,6 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 					devReg->devreg[IntLineNo][DevNo].dtp.command = cmdValue;
 					state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].dtp.status; // da sostituire poi
 					found = 1;
-					//klog_print("device");
 				}
 				IntLineNo++;
 			}
