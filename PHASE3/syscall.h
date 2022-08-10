@@ -9,8 +9,6 @@
 #include <umps3/umps/arch.h>
 #include "umps_utils/memcpy.h"
 
- //Syscall per la fase 2. Quelle per la fase 3 vengono aggiunte nel file syscall_supporto.c e .h
-
 pcb_PTR P_operation(int *semaddr, int isDevSem);	//Passeren, Wait for clock
 pcb_PTR V_operation(int *semaddr, int isDevSem); //Veroghen
 
