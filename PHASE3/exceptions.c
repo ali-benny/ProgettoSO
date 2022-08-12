@@ -83,7 +83,7 @@ void syscall_handler(unsigned int cause){
 				break;
 			default:
 				passup_or_die(GENERALEXCEPT);
-	}
+		}
 	}
 	
 }
@@ -166,7 +166,7 @@ void passup_or_die(int type_of_exception){
 	//this is the "DIE" portion of PassUp or Die.
 	
 	if(current_process->p_supportStruct == NULL){
-		Terminate_Process(TERMPROCESS,0); //! modificato con casting per prova fix error
+		Terminate_Process(TERMPROCESS,0);
 	} else {
 		//- If the Current Process's p_supportStruct is non-NULL
 		//then handling of the exception is "PASSED UP"		
