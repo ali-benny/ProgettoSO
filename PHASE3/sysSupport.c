@@ -12,6 +12,10 @@
 
 support_t* support_exc; // current process support struct
 state_t* state_exc;
+typedef unsigned int devregtr;
+//se dobbiamo utilizzare più terminali o più stampanti questi potrebbero diventare vettori di dim 8 (= num device installati)
+int semaphore_terminal = 1;
+int semaphore_printer = 1;
 
 /** 
  * Support Syscall Exception Handler
@@ -98,9 +102,49 @@ void Get_TOD(int a0){
 */
 void Terminate(int a0){
 	//a che serve la terminate della struttura di supporto se devo solo chiamare la terminate del kernel...?
-	SYSCALL(TERMPROCESS, 0, 0, 0);
+	if(a0 == TERMINATE) SYSCALL(TERMPROCESS, 0, 0, 0);
 }
+
 /**
+ * Print Auxiliar function SYS3 & SYS4 of support layer
+ * 
+ * @param command dove stampare
+ * @param semaphore semaforo per la mutua esclusione
+ * @param msg puntatore al primo carattere da stampare
+ * @param len lunghezza del messaggio da stampare
+ *
+ * @return il numero di caratteri attualmente trasmessi
+ */
+int write(devregtr *command, semd_PTR semaphore, char *msg, int len) {
+	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
+
+	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
+	if(len >= 0 && len <= 128) {
+		char *s = msg;
+		int count = len;
+		devregtr status;
+		int is_ready = 1; // "is all ok in doing next DOIO"
+		SYSCALL(PASSEREN, (int)&semaphore, 0, 0) // P(semaphore)
+		//controllo se non ho avuto errore al DOIOprecedente,
+		// se ho ancora caratteri da stampare (len - count)
+		// e se non ho già raggiunto la fine della stringa (*)
+		while (is_ready && count > 0 && s != EOS ) {
+			devregtr value = PRINTCHR | (((devregtr)*s) << 8);
+			status         = SYSCALL(DOIO, (int)command, (int)value, 0);
+			if (status != READY) {
+				state_exc->reg_v0 = status;
+				is_ready = 0; //in this case i haven't to do nexts DOIO
+			}
+			s++;
+			count--;
+		}
+		SYSCALL(VERHOGEN, (int)&semaphore, 0, 0) // V(semaphore)
+	} else Terminate(TERMINATE);
+	return len-count;	// num caratteri inviati
+	//nota (*) esempio xcvd "server scrivi 'ciao' lunghezza 100".
+}
+
+/** 
  * SYSCALL_supp 3
  * void SYSCALL(WRITEPRINTER, char *str, int len, 0);
  * 
@@ -113,48 +157,18 @@ void Terminate(int a0){
  * @param a1 stringa da stampare
  * @param a2 lunghezza della stringa
  * 
- * @return numero di caratteri attualmente trasmessi e negative of the devices's status
+ * @return numero di caratteri attualmente trasmessi e negative of the devices's status [in write]
 */
 void Write_Printer(int a0, unsigned int a1, unsigned int a2){
+	
 	char *str = a1;
 	int len = a2;
-	commandAddr = "una printer...";
-	commandValue = "valore del comando";
-
-	//da fase 2 per scrivere al terminal 0 usavamo questa funzione scritta dal prof:
+    devregtr *base    = (devregtr *)(....); //? in quale printer?
+	devregtr *command = base + 3;
 	
-/* a procedure to print on terminal 0 */
-/*
-void print(char *msg) {
-    char     *s       = msg;
-    devregtr *base    = (devregtr *)(TERM0ADDR);
-    devregtr *command = base + 3;
-    devregtr  status;
-
-    SYSCALL(PASSEREN, (int)&sem_term_mut, 0, 0); // P(sem_term_mut) 
-    while (*s != EOS) {
-        devregtr value = PRINTCHR | (((devregtr)*s) << 8);
-        status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-        if ((status & TERMSTATMASK) != RECVD) {
-            PANIC();
-        }
-        s++;
-    }
-    SYSCALL(VERHOGEN, (int)&sem_term_mut, 0, 0); // V(sem_term_mut)
-}*/
-	//
-	/*il che significa che dovremo:
-	dichiarare un semaforo per la mutua esclusione
-	trovare command di una stampante DISPONIBILE (una o 8?)
-	trovare value
-	chiamare una passeren sul semaforo
-	while s != end of file (come prima)
-		controllare lo status
-		s++
-	chiamare una verhoghen sul semaforo
-	*/
-	DO_IO(DOIO, commandaddr, commandValue)
+	state_exc->reg_v0 = write(command, &semaphore_printer, str, len);
 }
+
 /** SYSCALL_supp 4
 	void SYSCALL(WRITETERMINAL, char *str, int len, 0);
  * Richede una stampa ininterrotta della stringa richiesta sul 
@@ -164,9 +178,20 @@ void print(char *msg) {
  la lunghezza richiesta e’ zero deve risultare nella sua terminazione
  * Restituisce il numero di caratteri stampati in caso di successo, 
  l’opposto dello stato del dispositivo in caso contrario
+ * 
+ * @param a1 stringa da stampare
+ * @param a2 lunghezza della stringa
+ * 
+ * @return
 */
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
-
+	
+	char *str = a1;
+	int len = a2;
+    devregtr *base    = (devregtr *)(....); //? in quale terminale?
+	//se terminal 0 allora è TERM0ADDR
+    devregtr *command = base + 3;
+	state_ext->reg_v0 = write(command, &semaphore_terminal, str, len);
 }
 /** SYSCALL_supp 5
 	void SYSCALL(READTERMINAL, char *str, int len, 0);

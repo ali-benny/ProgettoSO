@@ -58,6 +58,10 @@
 #define WRITEPRINTER  3
 #define WRITETERMINAL 4
 #define READTERMINAL  5
+
+//for writing
+#define PRINTCHR 2
+#define RECVD    5
 //end definitions added for phase 3
 
 /* Status register constants */
