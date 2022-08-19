@@ -1,6 +1,13 @@
 #ifndef SYSCALL_SUPP
 #define SYSCALL_SUPP
 
+#include "pandos_const.h"
+#include "pandos_types.h"
+
+void support_exception_handler();
+void support_syscall_handler(unsigned int cause);
+void support_program_trap();
+
 //syscall per la fase di supporto, a0 positivo, quelle di fase 2 sono nel file syscall.c e .h
 
 // void SYSCALL(TERMINATE, int pid, 0, 0);

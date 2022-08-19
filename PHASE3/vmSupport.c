@@ -79,31 +79,42 @@ int FIFO(){
     return (page_index++)%POOLSIZE;
 }
 
-// TLB Atomically
-/** 
+/** Disable TLB Atomically
  * 
  */
 void disable_interrupts(){
     
     setSTATUS(getSTATUS() & (~IMON));
 }
-// TLB Atomically
-/**
-*/
+
+/** Enable TLB Atomically
+ * 
+ */
 void enable_interrupts(){
     
     setSTATUS(getSTATUS() | IMON); //esempio: 00FF0000 | 0000FF00 = 00FFFF00
 }
 
-/** 
- * 4.4.2 The pager
+//DA MODIFICARE: vedi 4.5.2
+void update_TLB(){
+    //Probe the TLB (TLBP) to see if the newly updated TLB entry is
+    //indeed cached in the TLB. If so (Index.P is 0), rewrite (update) that
+    //entry (TLBWI) to match the entry in the Page Table.
+    //   * or *
+    //Erase ALL the entries in the TLB (TLBCLR)
+    TLBCLR();   
+}
+
+/** 4.4.2 The pager
  * 
  * utilizzo di paragrafo 3.3 pop "The Cause Register"
+ * ~
+ * pandosplus_phase3.pdf pag 10
+ * paragrafo 4.4.2 The pager
+
+    Nota: chiamiamo il pager quando c'è page-fault quindi di sicuro la pagina cercata non c'è in cache.
  */
 void pager(){
-    //pandosplus_phase3.pdf pag 10
-    //paragrafo 4.4.2 The pager
-
     //1. Obtain the pointer to the Current Process’s Support Structure: NSYS8 (fase 2)
     support_t* current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     
@@ -128,11 +139,10 @@ void pager(){
     
     //6. Pick a frame, i, from the Swap Pool.
     //  Which frame is selected is determined by the Pandos page replacement algorithm. [Section 4.5.4]
-        int i = FIFO();        
+        int frame_i = FIFO();
 
     // 7. Determine if frame i is occupied; examine entry i in the Swap Pool table.
-        if ( ( swap_pool[i].sw_pte->pte_entryLO & VALIDON ) >> 8 ) {
-            // 8. frame i is currently occupied
+        if ( ( swap_pool[frame_i].sw_pte->pte_entryLO & VALIDON ) >> 8 ) {
             //8. If frame i is currently occupied, assume it is occupied by logical page
             //  number k belonging to process x (ASID) and that it is “dirty” (i.e. been modified):
                 disable_interrupts();   // * start TLB atomically *
@@ -140,7 +150,7 @@ void pager(){
             //      (a) Update process x’s Page Table: mark Page Table entry k as not valid.
             //      This entry is easily accessible, since the Swap Pool table’s
             //      entry i contains a pointer to this Page Table entry.
-                swap_pool[i].sw_pte->pte_entryLO &= ~VALIDON;  // v is not valid 
+                swap_pool[frame_i].sw_pte->pte_entryLO &= ~VALIDON;  // v is not valid 
                 //nota:
                 //VALIDON vuol dire tutti i bit a 0 tranne un bit a 1, il bit di validità
                 //(~ è il complemento a 1);
@@ -150,13 +160,40 @@ void pager(){
             //      (b) Update the TLB, if needed. The TLB is a cache of the most
             //      recently executed process’s Page Table entries. If process x’s page
             //      k’s Page Table entry is currently cached in the TLB it is clearly
-            //      out of date; it was just updated in the previous step.                            
+            //      out of date; it was just updated in the previous step.  [Section 4.5.2]                          
             //   Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
-                
+                update_TLB();
                 enable_interrupts();    // * end TLB atomically *
             //      (c) Update process x’s backing store. Write the contents of frame i
             //      to the correct location on process x’s backing store/flash device. [Section 4.5.1]
+                // 1. write the flash device's DATA0 field
+                dtpreg_t device;
+                device.data0 = UPROCSTARTADDR "operation" frame_i;
+                // 2. Use the NSYS5 system call to write the flash device’s COMMAND field 
+                // with the device block number (high order three bytes) and the
+                // command to read (or write) in the lower order byte
+                
             //      Treat any error status from the write operation as a program trap.[Section 4.8]
+
+            // 9.Read the contents of the Current Process’s backing store/flash device
+            // logical page p into frame i. [Section 4.5.1]
+            // Treat any error status from the read operation as a program trap.
+            // [Section 4.8]
+
+            // 10. Update the Swap Pool table’s entry i to reflect frame i’s new contents:
+            // page p belonging to the Current Process’s ASID, and a pointer to the
+            // Current Process’s Page Table entry for page p.
+
+            // 11. Update the Current Process’s Page Table entry for page p to indicate
+            // it is now present (V bit) and occupying frame i (PFN field).
+
+            // 12. Update the TLB. The cached entry in the TLB for the Current Process’s page p is clearly out of date; it was just updated in the previous step.
+            // Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
+            
+            // 13. Release mutual exclusion over the Swap Pool table. (NSYS4 – V operation on the Swap Pool semaphore)
+            
+            // 14. Return control to the Current Process to retry the instruction that
+            // caused the page fault: LDST on the saved exception state
         }
     }
 }

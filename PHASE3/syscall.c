@@ -419,7 +419,7 @@ void Wait_For_Clock(int a0) {
 	ovvero il campo p_supportStruct del
 	pcb_t
 
- support_t* SYSCALL(GETSUPPORT, 0, 0, 0) 
+ support_t* SYSCALL(GETSUPPORTPTR, 0, 0, 0) 
 */
 void Get_Support_Data(int a0) {
 	if (a0 == GETSUPPORTPTR) {

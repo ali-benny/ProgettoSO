@@ -33,7 +33,7 @@ state_t* state_reg;
 /**
  * Handles system calls.
  *
- * @param state The state of the current process.
+ * @param cause The state of the current process.
  *
  * @returns None
  */
