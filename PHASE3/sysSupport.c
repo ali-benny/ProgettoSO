@@ -12,10 +12,8 @@
 
 support_t* support_exc; // current process support struct
 state_t* state_exc;
-typedef unsigned int devregtr;
 //se dobbiamo utilizzare più terminali o più stampanti questi potrebbero diventare vettori di dim 8 (= num device installati)
-int semaphore_terminal = 1;
-int semaphore_printer = 1;
+int uproc_sem[UPROCMAX];
 
 /** 
  * Support Syscall Exception Handler
@@ -32,7 +30,6 @@ void support_exception_handler(){
 	}else{
 		support_program_trap();
 	}
-
 }
 
 /**
@@ -69,7 +66,6 @@ void support_syscall_handler(unsigned int cause){
 	
 	state_exc->pc_epc += 4;
 	LDST(state_exc);
-	
 }
 
 /**
@@ -85,7 +81,7 @@ void support_program_trap(){
  * ~ 4.7.1
  * Restituisce il numero di microsecondi passati dall’accensione del sistema.
  * 
- * @return in v0 microsecondi di attesa dall'accensione
+ * @return microsecondi di attesa dall'accensione
 */
 void Get_TOD(int a0){
 	int time;
@@ -115,21 +111,21 @@ void Terminate(int a0){
  *
  * @return il numero di caratteri attualmente trasmessi
  */
-int write(devregtr *command, semd_PTR semaphore, char *msg, int len) {
+int write(devreg_t* command, int* semaphore, char* msg, int len) {
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
-
+	int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && msg <= USERSTACKTOP);
 	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
-	if(len >= 0 && len <= 128) {
-		char *s = msg;
+	if (len >= 0 && len <= 128 && is_in_Uproc_address_space) {
+		char* s = msg;
 		int count = len;
-		devregtr status;
+		devreg_t status;
 		int is_ready = 1; // "is all ok in doing next DOIO"
-		SYSCALL(PASSEREN, (int)&semaphore, 0, 0) // P(semaphore)
-		//controllo se non ho avuto errore al DOIOprecedente,
+		SYSCALL(PASSEREN, (int)semaphore, 0, 0) // P(semaphore)
+		// controllo se non ho avuto errore al DOIO precedente,
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && s != EOS ) {
-			devregtr value = PRINTCHR | (((devregtr)*s) << 8);
+			devreg_t value = PRINTCHR | (((devreg_t)*s) << 8);
 			status         = SYSCALL(DOIO, (int)command, (int)value, 0);
 			if (status != READY) {
 				state_exc->reg_v0 = status;
@@ -138,8 +134,15 @@ int write(devregtr *command, semd_PTR semaphore, char *msg, int len) {
 			s++;
 			count--;
 		}
-		SYSCALL(VERHOGEN, (int)&semaphore, 0, 0) // V(semaphore)
-	} else Terminate(TERMINATE);
+		SYSCALL(VERHOGEN, (int)semaphore, 0, 0) // V(semaphore)
+	} else {
+		klog_print("write with wrong parameters");
+		if(is_in_Uproc_address_space)
+			klog_print("len error");
+		else
+			klog_print("address error")
+		SYSCALL(TERMINATE, 0, 0, 0);
+	}
 	return len-count;	// num caratteri inviati
 	//nota (*) esempio xcvd "server scrivi 'ciao' lunghezza 100".
 }
@@ -160,19 +163,18 @@ int write(devregtr *command, semd_PTR semaphore, char *msg, int len) {
  * @return numero di caratteri attualmente trasmessi e negative of the devices's status [in write]
 */
 void Write_Printer(int a0, unsigned int a1, unsigned int a2){
-	
-	char *str = a1;
+	char* str = a1;
 	int len = a2;
-    devregtr *base    = (devregtr *)(....); //? in quale printer?
-	devregtr *command = base + 3;
+	// address of the device's device register
+	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid];
 	
-	state_exc->reg_v0 = write(command, &semaphore_printer, str, len);
+	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid], str, len);
 }
 
 /** SYSCALL_supp 4
 	void SYSCALL(WRITETERMINAL, char *str, int len, 0);
- * Richede una stampa ininterrotta della stringa richiesta sul 
- terminale associato al processo
+ * Richede una stampa ininterrotta della stringa richiesta sul terminale associato al processo
  * Fa sostanzialmente il lavoro della funzione print di p2test.c
  * se l’indirizzo e’ fuori dalla memoria virtuale del processo o 
  la lunghezza richiesta e’ zero deve risultare nella sua terminazione
@@ -182,17 +184,17 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
  * @param a1 stringa da stampare
  * @param a2 lunghezza della stringa
  * 
- * @return
 */
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
-	
 	char *str = a1;
 	int len = a2;
-    devregtr *base    = (devregtr *)(....); //? in quale terminale?
-	//se terminal 0 allora è TERM0ADDR
-    devregtr *command = base + 3;
-	state_ext->reg_v0 = write(command, &semaphore_terminal, str, len);
+	// address of the device's device register
+	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid];
+	
+	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid], str, len);
 }
+
 /** SYSCALL_supp 5
 	void SYSCALL(READTERMINAL, char *str, int len, 0);
 
