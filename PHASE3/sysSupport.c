@@ -69,14 +69,25 @@ void support_syscall_handler(unsigned int cause){
 }
 
 /**
- * Support Program Traps
- * ~ 4.8 pandosplus-phase3-Chapter4.pdf
+ * Program Trap Exception Handler
+ * 
+ * pandosplus_phase3.pdf pag 18
+ * paragrafo 4.8 The Program Trap Exception Handler
+ * 
+ * 
  */
 void support_program_trap(){
+	//processor state in the exception is in support_exc->sup_exceptState
+	// terminate the process with SYS2
+
+	if (support_exc /*mutual exclusion*/)
+		// NSYS4 (verhogen)& NSYS2 (terminate_process)
 
 }
+
 /**
  * SYSCALL_supp 1
+ * 
  * unsigned int retValue = SYSCALL (GET_TOD, 0, 0, 0);
  * ~ 4.7.1
  * Restituisce il numero di microsecondi passati dall’accensione del sistema.
@@ -91,6 +102,7 @@ void Get_TOD(int a0){
 
 /**
  * SYSCALL_supp 2
+ * 
  * void SYSCALL(TERMINATE, int pid, 0, 0);
  * 
  * Un semplice wrapper per la system call corrispondente del kernel.
@@ -113,6 +125,7 @@ void Terminate(int a0){
  */
 int write(devreg_t* command, int* semaphore, char* msg, int len) {
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
+	//? int ASID = support_exc->sup_asid;
 	int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && msg <= USERSTACKTOP);
 	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
 	if (len >= 0 && len <= 128 && is_in_Uproc_address_space) {
@@ -149,6 +162,7 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 
 /** 
  * SYSCALL_supp 3
+ * 
  * void SYSCALL(WRITEPRINTER, char *str, int len, 0);
  * 
  * Richede una stampa ininterrotta della stringa richiesta sul terminale associato al processo
@@ -172,8 +186,11 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
 	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid], str, len);
 }
 
-/** SYSCALL_supp 4
-	void SYSCALL(WRITETERMINAL, char *str, int len, 0);
+/**
+ * SYSCALL_supp 4
+ * 
+ * void SYSCALL(WRITETERMINAL, char *str, int len, 0);
+ * 
  * Richede una stampa ininterrotta della stringa richiesta sul terminale associato al processo
  * Fa sostanzialmente il lavoro della funzione print di p2test.c
  * se l’indirizzo e’ fuori dalla memoria virtuale del processo o 
@@ -195,15 +212,21 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid], str, len);
 }
 
-/** SYSCALL_supp 5
-	void SYSCALL(READTERMINAL, char *str, int len, 0);
-
+/**
+ * SYSCALL_supp 5
+ * 
+ *	void SYSCALL(READTERMINAL, char *addr, 0, 0);
+ *
  * Legge una riga (fino al newline) dal terminale associato al processo
  * Mentre l’input viene letto il processo e’ sospeso
  * se l’indirizzo e’ fuori dalla memoria virtuale del processo o 
 	la lunghezza richiesta e’ zero deve risultare nella sua terminazione
  * Restituisce il numero di caratteri letti in caso di successo, l’opposto dello stato del dispositivo in caso contrario
+ * 
+ * @param a1 the virtual address of a string buffer where the data read should be placed
+ * 
+ * @return 
 */
-void Read_Terminal(int a0, unsigned int a1, unsigned int a2){
+void Read_Terminal(int a0, unsigned int a1){
 
 }

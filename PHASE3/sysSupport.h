@@ -20,6 +20,6 @@ void Terminate(int a0, unsigned int a1);
 void Get_TOD(int a0);
 void Write_Printer(int a0, unsigned int a1, unsigned int a2);
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2);
-void Read_Terminal(int a0, unsigned int a1, unsigned int a2);
+void Read_Terminal(int a0, unsigned int a1);
 
 #endif //SYSCALL_SUPP

@@ -50,16 +50,6 @@ void uTLB_RefillHandler(){
     //  located at the start of the BIOS Data Page.
     LDST(state);
 }
-/**
- * pandosplus_phase3.pdf pag 18
- * paragrafo 4.8 The Program Trap Exception Handler
- * Program Trap Exception Handler
- * 
- */
-void program_trap(){
-
-}
-
 
 /** First in First Out
 
@@ -127,7 +117,7 @@ void pager(){
     //3. If the Cause is a TLB-Modification exception, treat this exception as
     //  a program trap [Section 4.8], otherwise continue.
     if (exccode == 1){      // see pop Table 1.1 [pag 163 e 35]
-        program_trap();
+        support_program_trap();
     }else{
     //4.  Gain mutual exclusion over the Swap Pool table.
     //  (NSYS3 – P operation on the Swap Pool semaphore)
