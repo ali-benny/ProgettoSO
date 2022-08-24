@@ -126,7 +126,9 @@ void Terminate(int a0){
 int write(devreg_t* command, int* semaphore, char* msg, int len) {
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
 	//? int ASID = support_exc->sup_asid;
-	int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && msg <= USERSTACKTOP);
+	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
+	//int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len * Lunghezza_carattere) <= USERSTACKTOP);
+	int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len) <= USERSTACKTOP);
 	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
 	if (len >= 0 && len <= 128 && is_in_Uproc_address_space) {
 		char* s = msg;

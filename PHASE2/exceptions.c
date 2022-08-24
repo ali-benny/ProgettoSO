@@ -165,7 +165,7 @@ void passup_or_die(int type_of_exception){
 	//The Current Process and all its progeny are terminated.
 	//this is the "DIE" portion of PassUp or Die.
 	
-	if(current_process->p_supportStruct == NULL){
+	if(current_process->p_supportStruct == NULL) {
 		Terminate_Process(TERMPROCESS,0); //! modificato con casting per prova fix error
 	} else {
 		//- If the Current Process's p_supportStruct is non-NULL
