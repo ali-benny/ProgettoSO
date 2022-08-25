@@ -21,6 +21,7 @@ int uproc_sem[UPROCMAX];
  * 
  */
 void support_exception_handler(){
+	klog_print("exc_handler\n");
 	//we need the support_struct of the current process, and we get it with NSYS8
 	support_exc = (support_t*)SYSCALL(GETSUPPORTPTR,0,0,0); // current process support struct by NSYS8
 	state_exc = support_exc->sup_exceptState[GENERALEXCEPT];
@@ -40,6 +41,7 @@ void support_exception_handler(){
  * @returns None
  */
 void support_syscall_handler(unsigned int cause){
+	klog_print("sys_handl\n");
 	unsigned int a0 = cause;
 	//state_exc inizializzato dal chiamante
 	unsigned int a1 = state_exc->reg_a1;
@@ -77,6 +79,7 @@ void support_syscall_handler(unsigned int cause){
  * 
  */
 void support_program_trap(){
+	klog_print("progr_trap\n");
 	//processor state in the exception is in support_exc->sup_exceptState
 	// terminate the process with SYS2
 
@@ -95,6 +98,7 @@ void support_program_trap(){
  * @return microsecondi di attesa dall'accensione
 */
 void Get_TOD(int a0){
+	klog_print("sys1- ");
 	int time;
 	STCK(time); /* Macro to read the TOD clock */
 	state_exc->reg_v0 = time;
@@ -109,6 +113,7 @@ void Get_TOD(int a0){
  * 
 */
 void Terminate(int a0){
+	klog_print("sys2- ");
 	//a che serve la terminate della struttura di supporto se devo solo chiamare la terminate del kernel...?
 	if(a0 == TERMINATE) SYSCALL(TERMPROCESS, 0, 0, 0);
 }
@@ -124,6 +129,7 @@ void Terminate(int a0){
  * @return il numero di caratteri attualmente trasmessi
  */
 int write(devreg_t* command, int* semaphore, char* msg, int len) {
+	klog_print("write-");
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
 	//? int ASID = support_exc->sup_asid;
 	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
@@ -179,6 +185,7 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
  * @return numero di caratteri attualmente trasmessi e negative of the devices's status [in write]
 */
 void Write_Printer(int a0, unsigned int a1, unsigned int a2){
+	klog_print("sys3- ");
 	char* str = a1;
 	int len = a2;
 	// address of the device's device register
@@ -205,6 +212,7 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
  * 
 */
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
+	klog_print("sys4- ");
 	char *str = a1;
 	int len = a2;
 	// address of the device's device register
@@ -230,5 +238,5 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
  * @return 
 */
 void Read_Terminal(int a0, unsigned int a1){
-
+	klog_print("sys5- ");
 }

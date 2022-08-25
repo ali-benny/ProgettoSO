@@ -56,6 +56,7 @@ serve un semaforo dedicato.
  * 
  */
 void initialize_uproc() {
+    klog_print("init_uproc\n");
     //stato
     static state_t uproc_state[UPROCMAX];
     //struttura di supporto
@@ -111,16 +112,14 @@ void initialize_uproc() {
         SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]);   //! prio cosa mettiano?
         //PROCESS_PRIO_LOW scelta a caso giusto per.
     }
-    
-
-
-
+    //TODO
 }
 
 /**
  * 
  */
 void initSwapStructs(){
+    klog_print("initSwapStructs\n");
     //inizializzo il valore del semaforo binario per la swap pool
     //pandosplus_phase3.pdf
     //par 4.4.1 The Swap Pool
@@ -141,7 +140,7 @@ void initSwapStructs(){
  * par 4.9 Process Initialization and test
  */
 void test(){
-
+    klog_print("test\n");
     master_sem = 0;
     //Initialize the Level 4/Phase 3 data structures. These are:
     //– The Swap Pool table and Swap Pool semaphore
