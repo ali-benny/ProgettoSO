@@ -13,3 +13,5 @@ tempCodeRunnerFile.h
 app
 c
 .vscode/tasks.json
+.vscode/launch.json
+.vscode/sftp.json
