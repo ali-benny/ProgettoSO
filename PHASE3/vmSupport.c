@@ -12,7 +12,7 @@
 
 extern pcb_PTR current_process;
 int swap_pool_sem;      //swap pool semaphore
-swap_t swap_pool[POOLSIZE];
+swap_t swap_pool[POOLSIZE]; //swap pool table 
 
 /**
  *  pandosplus_phase3.pdf pag 6,7
@@ -132,7 +132,8 @@ void pager(){
         int frame_i = FIFO();
 
     // 7. Determine if frame i is occupied; examine entry i in the Swap Pool table.
-        if ( ( swap_pool[frame_i].sw_pte->pte_entryLO & VALIDON ) >> 8 ) {
+        if ((swap_pool[frame_i].sw_pte->pte_entryLO >> 9) % 2 == 1) {  // check the v bit is valid[1]
+            // v is valid
             //8. If frame i is currently occupied, assume it is occupied by logical page
             //  number k belonging to process x (ASID) and that it is “dirty” (i.e. been modified):
                 disable_interrupts();   // * start TLB atomically *
@@ -140,7 +141,7 @@ void pager(){
             //      (a) Update process x’s Page Table: mark Page Table entry k as not valid.
             //      This entry is easily accessible, since the Swap Pool table’s
             //      entry i contains a pointer to this Page Table entry.
-                swap_pool[frame_i].sw_pte->pte_entryLO &= ~VALIDON;  // v is not valid 
+                swap_pool[frame_i].sw_pte->pte_entryLO &= ~VALIDON;  // v is not valid now
                 //nota:
                 //VALIDON vuol dire tutti i bit a 0 tranne un bit a 1, il bit di validità
                 //(~ è il complemento a 1);
@@ -156,34 +157,44 @@ void pager(){
                 enable_interrupts();    // * end TLB atomically *
             //      (c) Update process x’s backing store. Write the contents of frame i
             //      to the correct location on process x’s backing store/flash device. [Section 4.5.1]
-                // 1. write the flash device's DATA0 field
-                dtpreg_t device;
-                device.data0 = UPROCSTARTADDR "operation" frame_i;
-                // 2. Use the NSYS5 system call to write the flash device’s COMMAND field 
-                // with the device block number (high order three bytes) and the
-                // command to read (or write) in the lower order byte
-                
+                    // 1. write the flash device's DATA0 field with the appropriate starting physical address of the 4k block to be read (or written); the particularframe’s starting address
+                memaddr starting_address = SWAPPOOLSTART + PAGESIZE * frame_i;
+                devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+	            devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][ swap_pool[frame_i].sw_asid - 1 ];  //flash device line 4-3 = 1
+                devAddrBase->dtp.data0 = starting_address;
+                    // 2. Use the NSYS5 [doio] system call to write the flash device’s COMMAND field 
+                    // with the device block number (high order three bytes) and the
+                    // command to read (or write) in the lower order byte
+                int return_doio = SYSCALL(DOIO, &devAddrBase->dtp.command, FLASHWRITE | swap_pool[frame_i].sw_pageNo, 0); //? in teoria
             //      Treat any error status from the write operation as a program trap.[Section 4.8]
-
+                if (return_doio != READY)
+                    support_program_trap();
             // 9.Read the contents of the Current Process’s backing store/flash device
             // logical page p into frame i. [Section 4.5.1]
             // Treat any error status from the read operation as a program trap.
             // [Section 4.8]
-
-            // 10. Update the Swap Pool table’s entry i to reflect frame i’s new contents:
+	            devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][ swap_pool[frame_i].sw_asid - 1 ];  //flash device line 4-3 = 1
+                devAddrBase->dtp.data0 = starting_address; //? probabilmente da modificare devaddrbase o serve data* ...
+                int return_doio = SYSCALL(DOIO, &devAddrBase->dtp.command, FLASHREAD, 0); //? in teoria
+                if (return_doio != READY) //il prof nel p2test mette come controllo "if ((status & TERMSTATMASK) != RECVD)"
+                    support_program_trap();
+            // 10. Update the Swap Pool table’s entry i [frame] to reflect frame i’s new contents:
             // page p belonging to the Current Process’s ASID, and a pointer to the
             // Current Process’s Page Table entry for page p.
-
+                
             // 11. Update the Current Process’s Page Table entry for page p to indicate
             // it is now present (V bit) and occupying frame i (PFN field).
-
+                disable_interrupts(); //* start TLB atomically *
+                //... codice per il 11. ...
             // 12. Update the TLB. The cached entry in the TLB for the Current Process’s page p is clearly out of date; it was just updated in the previous step.
             // Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
-            
+                //... codice per il 12. ...
+                enable_interrupts(); //* end TLB atomically *
             // 13. Release mutual exclusion over the Swap Pool table. (NSYS4 – V operation on the Swap Pool semaphore)
-            
+                SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
             // 14. Return control to the Current Process to retry the instruction that
             // caused the page fault: LDST on the saved exception state
+                LDST(/* ... */);
         }
     }
 }
