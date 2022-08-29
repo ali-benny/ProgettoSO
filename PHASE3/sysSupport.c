@@ -12,6 +12,7 @@
 
 support_t* support_exc; // current process support struct
 state_t* state_exc;
+extern int swap_pool_sem;
 //se dobbiamo utilizzare più terminali o più stampanti questi potrebbero diventare vettori di dim 8 (= num device installati)
 int uproc_sem[UPROCMAX];
 
@@ -85,7 +86,13 @@ void support_program_trap(){
 
 	if (support_exc /*mutual exclusion*/)
 		// NSYS4 (verhogen)& NSYS2 (terminate_process)
-
+	//se siamo in mutua esclusione
+		//verhogen
+	//SYS2
+	//stiamo usando solo un semaforo binario swap_pool_sem
+	//se il semaforo è a 1, la risorsa è libera, quindi nessuno è in mutua esclusione
+	//se il semaforo è a 0, la risorsa è occupata, bisogna capire se sto occupando io la risorsa o no.
+	
 }
 
 /**
@@ -196,8 +203,8 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
 }
 
 /**
- * SYSCALL_supp 4
- * 
+ *  SYSCALL_supp 4
+ *
  * void SYSCALL(WRITETERMINAL, char *str, int len, 0);
  * 
  * Richede una stampa ininterrotta della stringa richiesta sul terminale associato al processo
