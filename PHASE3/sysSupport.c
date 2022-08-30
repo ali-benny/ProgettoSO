@@ -246,4 +246,45 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 */
 void Read_Terminal(int a0, unsigned int a1){
 	klog_print("sys5- ");
+
+// *idea generale* //
+	int trasmitted_char = 0;
+	char *iter;
+	SYSCALL(PASSEREN, &sem_terminale_associato_al_processo, 0);
+	int *commandAddress = ...;
+	int commandValue = ...;
+	char carattere_letto = SYSCALL(DOIO, &commandAddress, commandValue);
+	while(carattere_letto != newline) {
+		//scrivo carattere_letto sul buffer
+		transmitted_char++;
+	}
+	SYSCALL(VERHOGEN, &sem_terminale_associato_al_processo, 0);
+	state_exc->reg_v0 = transmitted_char;
+
+	// if read was successfull
+	// then return in v0 the number of characters actually transmitted (--> to buffer)
+	
+	// if the operation end with status != 5 [character received]
+	// then return in v0 the negative of the device's status value
+
+	/*pandosplus_phase3.pdf
+	paragrafo 4.7.5 Read From Terminal (SYS5)
+		int SYS5 (READ FROM TERMINAL, char *addr) When requested, this service causes
+		the requesting U-proc to be suspended until a line of input (string
+		of characters) has been transmitted from the terminal device associated with
+		the U-proc.
+		The SYS5 service is requested by the calling U-proc by placing the value
+		5 in a0, the virtual address of a string buffer where the data read should
+		be placed in a1, and then executing a SYSCALL instruction. Once the
+		process resumes, the number of characters actually transmitted is returned
+		in v0 if the read was successful. If the operation ends with a status other
+		than “Character Received” (5), the negative of the device’s status value is
+		returned in v0.
+		Attempting to read from a terminal device to an address outside of the
+		requesting U-proc’s logical address space is an error and should result in the
+		U-proc being terminated (SYS2).
+		The following C code can be used to request a SYS5:
+		int retValue = SYSCALL (READTERMINAL, char *virtAddr, 0, 0);
+		Where the mnemonic constant READTERMINAL has the value of 5.
+	*/
 }
