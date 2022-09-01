@@ -28,13 +28,27 @@ UDEV = umps3-mkdev
 
 TEST = testers/
 
+PHASE2 = main.o syscall.o exceptions.o scheduler.o pcb.o asl.o crtso.o libumps.o  klog/klog.o umps_utils/memcpy.o
+
+PHASE3 = sysSupport.o vmSupport.o initProc.o
+
+OBJ = $(PHASE2) $(PHASE3)
+
 #main target
 all: $(TEST)printerTest.umps $(TEST)strConcat.umps \
 	$(TEST)fibEight.umps $(TEST)fibEleven.umps \
 	$(TEST)terminalTest2.umps $(TEST)terminalTest3.umps $(TEST)terminalTest4.umps \
 	$(TEST)terminalTest5.umps  \
+	kernel.core.umps
+	echo "all done"
 
-	
+kernel.core.umps : kernel
+	umps3-elf2umps -k $<
+	echo "kernel.core.umps done"
+ 
+kernel : $(OBJ)
+	$(LD) -o $@ $^ $(LDFLAGS)
+	echo "kernel done"
 	
 %.o: %.c $(TDEFS)
 	$(CC) $(CFLAGS) $<
