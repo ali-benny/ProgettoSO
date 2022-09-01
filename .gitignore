@@ -5,7 +5,6 @@ tempCodeRunnerFile.c
 tempCodeRunnerFile.exe
 tempCodeRunnerFile.h
 *.exe
-*.o
 .vscode/configurationCache.log
 .vscode/dryrun.log
 .vscode/targets.log
