@@ -17,6 +17,7 @@
 extern pcb_PTR current_process;
 int swap_pool_sem;      //swap pool semaphore
 swap_t swap_pool[POOLSIZE]; //swap pool table 
+int mutex_asid;     //which asid is holding the mutual exclusion for support semaphores (this case swap_pool_sem)
 
 /**
  *  pandosplus_phase3.pdf pag 6,7
@@ -127,6 +128,7 @@ void pager(){
     //4.  Gain mutual exclusion over the Swap Pool table.
     //  (NSYS3 – P operation on the Swap Pool semaphore)
         SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
+		mutex_asid = current_support->sup_asid;
         
     //5. Determine the missing page number (denoted as p):
     //  found in the saved exception state’s EntryHi.
@@ -203,6 +205,7 @@ void pager(){
             update_TLB();
             enable_interrupts(); //* end TLB atomically *
         // 13. Release mutual exclusion over the Swap Pool table. (NSYS4 – V operation on the Swap Pool semaphore)
+            mutex_asid = -1;    //my asid is not longer holding mutex
             SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
         // 14. Return control to the Current Process to retry the instruction that
         // caused the page fault: LDST on the saved exception state

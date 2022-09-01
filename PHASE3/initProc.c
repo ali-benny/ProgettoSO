@@ -14,9 +14,10 @@
 /* global variables */
 extern int swap_pool_sem;      //swap pool semaphore
 extern swap_t swap_pool[POOLSIZE];
+extern int mutex_asid;
 
 int sup_dev_sem[48];
-int master_sem;
+int master_sem;     // master semaphore
 
 /* le slide phase 3 dicono pag 37, 38, 39, 40
  * Inizializzazione dei processi *
@@ -125,7 +126,7 @@ void initSwapStructs(){
     //par 4.4.1 The Swap Pool
     //Since this semaphore is used for mutual exclusion, it should be initialized to one.
     swap_pool_sem = 1;
-
+    mutex_asid = -1;
     //per ogni pagina della swap_pool
     for(int i = 0; < POOLSIZE; i++){
         //la inizialmente non è di nessun processo (è -1)

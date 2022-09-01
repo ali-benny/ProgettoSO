@@ -13,6 +13,7 @@
 support_t* support_exc; // current process support struct
 state_t* state_exc;
 extern int swap_pool_sem;
+extern int mutex_asid;
 //se dobbiamo utilizzare più terminali o più stampanti questi potrebbero diventare vettori di dim 8 (= num device installati)
 int uproc_sem[UPROCMAX];
 
@@ -82,17 +83,13 @@ void support_syscall_handler(unsigned int cause){
 void support_program_trap(){
 	klog_print("progr_trap\n");
 	//processor state in the exception is in support_exc->sup_exceptState
+	if (support_exc->sup_asid == mutex_asid) {//if my asid is holding mutex
+		//siamo in mutua esclusione (quindi l'asid corrente è uguale al asid salvato in mutex_asid
+		mutex_asid = -1; //my asid is not longer holding mutex
+		SYSCALL(VERHOGEN, &swap_pool_sem, 0, 0);
+	}
 	// terminate the process with SYS2
-
-	if (support_exc /*mutual exclusion*/)
-		// NSYS4 (verhogen)& NSYS2 (terminate_process)
-	//se siamo in mutua esclusione
-		//verhogen
-	//SYS2
-	//stiamo usando solo un semaforo binario swap_pool_sem
-	//se il semaforo è a 1, la risorsa è libera, quindi nessuno è in mutua esclusione
-	//se il semaforo è a 0, la risorsa è occupata, bisogna capire se sto occupando io la risorsa o no.
-	
+	SYSCALL(TERMINATE, 0, 0, 0);
 }
 
 /**
@@ -138,7 +135,6 @@ void Terminate(int a0){
 int write(devreg_t* command, int* semaphore, char* msg, int len) {
 	klog_print("write-");
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
-	//? int ASID = support_exc->sup_asid;
 	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
 	//int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len * Lunghezza_carattere) <= USERSTACKTOP);
 	int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len) <= USERSTACKTOP);
@@ -149,6 +145,7 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 		devreg_t status;
 		int is_ready = 1; // "is all ok in doing next DOIO"
 		SYSCALL(PASSEREN, (int)semaphore, 0, 0) // P(semaphore)
+		mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
 		// controllo se non ho avuto errore al DOIO precedente,
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
@@ -162,6 +159,7 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 			s++;
 			count--;
 		}
+		mutex_asid = -1; //my asid is not longer holding mutex
 		SYSCALL(VERHOGEN, (int)semaphore, 0, 0) // V(semaphore)
 	} else {
 		klog_print("write with wrong parameters");
@@ -246,21 +244,25 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 */
 void Read_Terminal(int a0, unsigned int a1){
 	klog_print("sys5- ");
-
+/*
 // *idea generale* //
 	int trasmitted_char = 0;
-	char *iter;
-	SYSCALL(PASSEREN, &sem_terminale_associato_al_processo, 0);
+	//sospendi il processo mentre l'input viene letto
+//	SYSCALL(PASSEREN, &sem_terminale_associato_al_processo, 0, 0);
+	//devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+	
 	int *commandAddress = ...;
+	//devReg->devreg[IntLineNo][DevNo].term.recv_command
 	int commandValue = ...;
-	char carattere_letto = SYSCALL(DOIO, &commandAddress, commandValue);
-	while(carattere_letto != newline) {
+	char carattere_letto = SYSCALL(DOIO, &commandAddress, commandValue, 0);		//? boh, forse non serve
+	while(carattere_letto != EOS) { //finchè la riga da leggere non è finita
 		//scrivo carattere_letto sul buffer
 		transmitted_char++;
 	}
-	SYSCALL(VERHOGEN, &sem_terminale_associato_al_processo, 0);
+//	SYSCALL(VERHOGEN, &sem_terminale_associato_al_processo, 0, 0);
 	state_exc->reg_v0 = transmitted_char;
-
+	
+	*/
 	// if read was successfull
 	// then return in v0 the number of characters actually transmitted (--> to buffer)
 	
