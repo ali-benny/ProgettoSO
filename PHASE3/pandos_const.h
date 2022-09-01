@@ -52,20 +52,20 @@
 #define PROCESS_PRIO_LOW  0
 #define PROCESS_PRIO_HIGH 1
 
-// * added for phase 3 *
-// support syscall
+/* added for phase 3 */
+/* support syscall */
 #define GET_TOD        1
 #define TERMINATE     2
 #define WRITEPRINTER  3
 #define WRITETERMINAL 4
 #define READTERMINAL  5
 
-#define SWAPPOOLSTART 0x20020000 //STARTING ADDRESS OF SWAP POOL
+#define SWAPPOOLSTART 0x20020000 /*STARTING ADDRESS OF SWAP POOL*/
 
-//for writing
+/*for writing*/
 #define PRINTCHR 2
 #define RECVD    5
-// * end definitions added for phase 3 *
+/* end definitions added for phase 3 */
 
 /* Status register constants */
 #define ALLOFF      0x00000000
