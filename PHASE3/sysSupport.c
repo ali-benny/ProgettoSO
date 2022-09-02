@@ -26,7 +26,7 @@ void support_exception_handler(){
 	klog_print("exc_handler\n");
 	//we need the support_struct of the current process, and we get it with NSYS8
 	support_exc = (support_t*)SYSCALL(GETSUPPORTPTR,0,0,0); // current process support struct by NSYS8
-	state_exc = support_exc->sup_exceptState[GENERALEXCEPT];
+	state_exc = &support_exc->sup_exceptState[GENERALEXCEPT];
 	unsigned int a0 = state_exc->reg_a0;
 	if (a0 >=1 && a0 <= 5){
 		support_syscall_handler(a0);
@@ -137,19 +137,20 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
 	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
 	//int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len * Lunghezza_carattere) <= USERSTACKTOP);
-	int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len) <= USERSTACKTOP);
+	int is_in_Uproc_address_space = (&msg >= UPROCSTARTADDR && (&msg + len) <= USERSTACKTOP);
 	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
+
+	char* s = msg;
+	int count = len;
+	int status;
+	int is_ready = 1; // "is all ok in doing next DOIO"
 	if (len >= 0 && len <= 128 && is_in_Uproc_address_space) {
-		char* s = msg;
-		int count = len;
-		devreg_t status;
-		int is_ready = 1; // "is all ok in doing next DOIO"
-		SYSCALL(PASSEREN, (int)semaphore, 0, 0) // P(semaphore)
+		SYSCALL(PASSEREN, (int)semaphore, 0, 0); // P(semaphore)
 		mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
 		// controllo se non ho avuto errore al DOIO precedente,
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
-		while (is_ready && count > 0 && s != EOS ) {
+		while (is_ready && count > 0 && *s != EOS ) {
 			devreg_t value = PRINTCHR | (((devreg_t)*s) << 8);
 			status         = SYSCALL(DOIO, (int)command, (int)value, 0);
 			if (status != READY) {
@@ -160,13 +161,13 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 			count--;
 		}
 		mutex_asid = -1; //my asid is not longer holding mutex
-		SYSCALL(VERHOGEN, (int)semaphore, 0, 0) // V(semaphore)
+		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
 	} else {
 		klog_print("write with wrong parameters");
 		if(is_in_Uproc_address_space)
 			klog_print("len error");
 		else
-			klog_print("address error")
+			klog_print("address error");
 		SYSCALL(TERMINATE, 0, 0, 0);
 	}
 	return len-count;	// num caratteri inviati
@@ -191,8 +192,8 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 */
 void Write_Printer(int a0, unsigned int a1, unsigned int a2){
 	klog_print("sys3- ");
-	char* str = a1;
-	int len = a2;
+	char* str = (char*) a1;
+	int len = (int) a2;
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid];

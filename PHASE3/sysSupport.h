@@ -4,6 +4,7 @@
 #include "pandos_const.h"
 #include "pandos_types.h"
 #include "klog/klog.h"
+#include "exception.h"
 
 void support_exception_handler();
 void support_syscall_handler(unsigned int cause);
@@ -16,8 +17,7 @@ void support_program_trap();
 // void SYSCALL(WRITEPRINTER, char *str, int len, 0);
 // void SYSCALL(WRITETERMINAL, char *str, int len, 0);
 // void SYSCALL(READTERMINAL, char *str, int len, 0);
-
-void Terminate(int a0, unsigned int a1);
+void Terminate(int a0);
 void Get_TOD(int a0);
 void Write_Printer(int a0, unsigned int a1, unsigned int a2);
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2);
