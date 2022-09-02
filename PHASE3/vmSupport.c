@@ -132,7 +132,7 @@ void pager(){
         
     //5. Determine the missing page number (denoted as p):
     //  found in the saved exception state’s EntryHi.
-        pteEntry_t pteEntryP = current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi >> VPNSHIFT;
+        unsigned int pteEntryP = current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi >> VPNSHIFT;
     
     //6. Pick a frame, i, from the Swap Pool.
     //  Which frame is selected is determined by the Pandos page replacement algorithm. [Section 4.5.4]
@@ -140,8 +140,8 @@ void pager(){
 
         // --> for point 8.c and 9. 9 is outside the if.
         memaddr starting_address = SWAPPOOLSTART + PAGESIZE * frame_i;  //this is for 8 & 9
-        devReg = (devregarea_t*) RAMBASEADDR; // device register
-
+        devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+		devreg_t* devAddrBase;
     // 7. Determine if frame i is occupied; examine entry i in the Swap Pool table.
         if ((swap_pool[frame_i].sw_pte->pte_entryLO >> VSHIFT) % 2 == 1) {  // check the v bit is valid[1]
             // v is valid
@@ -176,7 +176,7 @@ void pager(){
                     // 2. Use the NSYS5 [doio] system call to write the flash device’s COMMAND field 
                     // with the device block number (high order three bytes) and the
                     // command to read (or write) in the lower order byte
-                int return_doio = SYSCALL(DOIO, &devAddrBase->dtp.command, FLASHWRITE | (swap_pool[frame_i].sw_pageNo << BLKSHIFT), 0);
+                int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command, FLASHWRITE | (swap_pool[frame_i].sw_pageNo << BLKSHIFT), 0);
             //      Treat any error status from the write operation as a program trap.[Section 4.8]
                 if (return_doio != READY)
                     support_program_trap();
@@ -186,7 +186,7 @@ void pager(){
         // Treat any error status from the read operation as a program trap. [Section 4.8]
             devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][current_support->sup_asid-1];  //flash device line 4-3 = 1
             devAddrBase->dtp.data0 = starting_address;
-            int return_doio = SYSCALL(DOIO, &devAddrBase->dtp.command, FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
+            int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command, FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
             if (return_doio != READY) //il prof nel p2test mette come controllo "if ((status & TERMSTATMASK) != RECVD)"
                 support_program_trap();
         // 10. Update the Swap Pool table’s entry i [frame] to reflect frame i’s new contents:

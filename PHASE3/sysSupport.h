@@ -4,7 +4,7 @@
 #include "pandos_const.h"
 #include "pandos_types.h"
 #include "klog/klog.h"
-#include "exception.h"
+#include "exceptions.h"
 
 void support_exception_handler();
 void support_syscall_handler(unsigned int cause);

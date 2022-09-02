@@ -128,7 +128,7 @@ void initSwapStructs(){
     swap_pool_sem = 1;
     mutex_asid = -1;
     //per ogni pagina della swap_pool
-    for(int i = 0; < POOLSIZE; i++){
+    for(int i = 0; i < POOLSIZE; i++){
         //la inizialmente non è di nessun processo (è -1)
         swap_pool[i].sw_asid = NOPROC;
     }
@@ -150,7 +150,7 @@ void test(){
 	initSwapStructs();
 
     // semaphore of peripherical I/O device
-    for (int i = 0; i <= 48){
+    for (int i = 0; i <= 48; i++){
         sup_dev_sem[i] = 1;
     }
 

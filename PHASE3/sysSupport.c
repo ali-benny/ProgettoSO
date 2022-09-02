@@ -86,7 +86,7 @@ void support_program_trap(){
 	if (support_exc->sup_asid == mutex_asid) {//if my asid is holding mutex
 		//siamo in mutua esclusione (quindi l'asid corrente è uguale al asid salvato in mutex_asid
 		mutex_asid = -1; //my asid is not longer holding mutex
-		SYSCALL(VERHOGEN, &swap_pool_sem, 0, 0);
+		SYSCALL(VERHOGEN, (memaddr)&swap_pool_sem, 0, 0);
 	}
 	// terminate the process with SYS2
 	SYSCALL(TERMINATE, 0, 0, 0);
@@ -137,7 +137,7 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
 	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
 	//int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len * Lunghezza_carattere) <= USERSTACKTOP);
-	int is_in_Uproc_address_space = (&msg >= UPROCSTARTADDR && (&msg + len) <= USERSTACKTOP);
+	int is_in_Uproc_address_space = ((int)&msg >= UPROCSTARTADDR && ((int)&msg + len) <= USERSTACKTOP);
 	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
 
 	char* s = msg;
@@ -151,7 +151,7 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && *s != EOS ) {
-			devreg_t value = PRINTCHR | (((devreg_t)*s) << 8);
+			int value = PRINTCHR | (((int)*s) << 8);	//! forse non `e int btw
 			status         = SYSCALL(DOIO, (int)command, (int)value, 0);
 			if (status != READY) {
 				state_exc->reg_v0 = status;
@@ -219,8 +219,8 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
 */
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 	klog_print("sys4- ");
-	char *str = a1;
-	int len = a2;
+	char *str = (char*)a1;
+	int len = (int) a2;
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid];
