@@ -7,28 +7,32 @@ else
 	UMPS3_DIR_PREFIX = /usr/local
 endif
 
+TEST = testers/
+
 LIBDIR = $(UMPS3_DIR_PREFIX)/lib/umps3
 INCDIR = $(UMPS3_DIR_PREFIX)/include/umps3/umps
 SUPDIR = $(UMPS3_DIR_PREFIX)/share/umps3
 
-TDEFS = h/print.h h/tconst.h $(INCDIR)/libumps.e Makefile
+TDEFS = $(TEST)/h/print.h $(TEST)/h/tconst.h $(INCDIR)/libumps.e $(TEST)/Makefile
 
 # CFLAGS = -ffreestanding -ansi -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls -Wall
 CFLAGS_LANG = -ffreestanding
 CFLAGS_MIPS = -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32
 CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS3_INCLUDE_DIR) -I$(UMPS3_INCLUDE_DIR2) -Wall -O0
 
-LDAOUTFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpsaout.ldscript
-LDCOREFLAGS =  -G 0 -nostdlib -T $(SUPDIR)/umpscore.ldscript
+#LDAOUTFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpsaout.ldscript
+#LDCOREFLAGS =  -G 0 -nostdlib -T $(SUPDIR)/umpscore.ldscript
+
+LDFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpscore.ldscript
+VPATH = $(SUPDIR)
 
 CC = mipsel-linux-gnu-gcc
 LD = mipsel-linux-gnu-ld
-AS = mipsel-linux-gnu-as -KPIC
+#AS = mipsel-linux-gnu-as -KPIC
 
 EF = umps3-elf2umps
 UDEV = umps3-mkdev
 
-TEST = testers/
 
 PHASE2 = main.o syscall.o exceptions.o scheduler.o pcb.o asl.o klog/klog.o umps_utils/memcpy.o
 
@@ -48,7 +52,7 @@ kernel.core.umps : kernel
 	umps3-elf2umps -k $<
 	echo "kernel.core.umps done"
  
-kernel : $(OBJ)  /usr/share/umps3/crtso.o /usr/share/umps3/libumps.o 
+kernel : $(OBJ) crtso.o libumps.o 
 	$(LD) -o $@ $^ $(LDFLAGS)
 	echo "kernel done"
 	
