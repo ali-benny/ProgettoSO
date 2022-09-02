@@ -119,7 +119,9 @@ void Get_TOD(int a0){
 void Terminate(int a0){
 	klog_print("sys2- ");
 	//a che serve la terminate della struttura di supporto se devo solo chiamare la terminate del kernel...?
+    klog_print("asid: ");klog_print_hex(support_exc->sup_asid);klog_print("\n");
 	if(a0 == TERMINATE) SYSCALL(TERMPROCESS, 0, 0, 0);
+	
 }
 
 /**

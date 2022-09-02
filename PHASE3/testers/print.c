@@ -6,7 +6,7 @@
 
 
 void print(int device, char *str) {
-
+	klog_print("wooo print\n");
 	char *s = "Bad device write status\n";
 	int leng, status;
 

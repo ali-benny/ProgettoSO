@@ -3,6 +3,7 @@
 
 #include "syscall.h"
 #include "sysSupport.h"
+#include "klog/klog.h"
 
 void uTLB_RefillHandler();
 void pager();

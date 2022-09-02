@@ -108,8 +108,10 @@ void initialize_uproc() {
         uproc_support[i].sup_privatePgTbl[USERPGTBLSIZE -1].pte_entryHI = 0xBFFFF000 + ((i + 1) << ASIDSHIFT);
         uproc_support[i].sup_privatePgTbl[USERPGTBLSIZE -1].pte_entryLO = 0b00000000000000000000010000000000;
     }
+    
     //Initialize and launch (NSYS1) between 1 and 8 U-procs.
     for (int i = 0; i < UPROCMAX; i++){
+    klog_print("i: ");klog_print_hex(i+1);klog_print("\n");
         SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]);   //! prio cosa mettiano?
         //PROCESS_PRIO_LOW scelta a caso giusto per.
     }

@@ -110,7 +110,7 @@ void update_TLB(){
 
     Nota: chiamiamo il pager quando c'è page-fault quindi di sicuro la pagina cercata non c'è in cache.
  */
-void pager(){
+void pager(){klog_print(" pager\n");
     //1. Obtain the pointer to the Current Process’s Support Structure: NSYS8 (fase 2)
     support_t* current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     
