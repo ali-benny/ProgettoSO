@@ -118,7 +118,7 @@ void initialize_uproc() {
     
     //Initialize and launch (NSYS1) between 1 and 8 U-procs.
     for (int i = 0; i < UPROCMAX; i++){
-    klog_print("i: ");klog_print_hex(i+1);klog_print("\n");
+    //klog_print("i: ");klog_print_hex(i+1);klog_print("\n");
         SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]);   //! prio cosa mettiano?
         //PROCESS_PRIO_LOW scelta a caso giusto per.
     }
@@ -129,7 +129,6 @@ void initialize_uproc() {
  * 
  */
 void initSwapStructs(){
-    klog_print("initSwapStructs\n");
     //inizializzo il valore del semaforo binario per la swap pool
     //pandosplus_phase3.pdf
     //par 4.4.1 The Swap Pool

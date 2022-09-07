@@ -29,8 +29,11 @@ void support_exception_handler(){
 	//we need the support_struct of the current process, and we get it with NSYS8
 	support_exc = (support_t*)SYSCALL(GETSUPPORTPTR,0,0,0); // current process support struct by NSYS8
 	state_exc = &support_exc->sup_exceptState[GENERALEXCEPT];
+	int cause = CAUSE_GET_EXCCODE(support_exc->sup_exceptState[GENERALEXCEPT].cause);
 	unsigned int a0 = state_exc->reg_a0;
-	if (a0 >=1 && a0 <= 5){
+	klog_print("a0: ");klog_print_hex(a0);klog_print("\n");
+	klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
+	if (cause == SYSEXCEPTION){
 		support_syscall_handler(a0);
 	}else{
 		support_program_trap();
