@@ -1,12 +1,11 @@
 /* Function to call print parameterized output to a terminal device */
 
-#include "/usr/local/include/umps3/umps/libumps.h"
+#include "/usr/include/umps3/umps/libumps.h"
 
 #include "h/tconst.h"
 
 
 void print(int device, char *str) {
-	klog_print("wooo print\n");
 	char *s = "Bad device write status\n";
 	int leng, status;
 

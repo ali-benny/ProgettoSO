@@ -16,6 +16,8 @@ extern int swap_pool_sem;
 extern int mutex_asid;
 //se dobbiamo utilizzare più terminali o più stampanti questi potrebbero diventare vettori di dim 8 (= num device installati)
 int uproc_sem[UPROCMAX];
+extern swap_t swap_pool[POOLSIZE];
+extern int master_sem; 
 
 /** 
  * Support Syscall Exception Handler
@@ -64,8 +66,9 @@ void support_syscall_handler(unsigned int cause){
 		case READTERMINAL:
 			Read_Terminal(a0, a1);
 			break;
-		default:
-			passup_or_die(GENERALEXCEPT);
+		/*default:
+			//passup_or_die(GENERALEXCEPT);
+			support_program_trap();*/
 	}
 	
 	state_exc->pc_epc += 4;
@@ -120,7 +123,16 @@ void Terminate(int a0){
 	klog_print("sys2- ");
 	//a che serve la terminate della struttura di supporto se devo solo chiamare la terminate del kernel...?
     klog_print("asid: ");klog_print_hex(support_exc->sup_asid);klog_print("\n");
-	if(a0 == TERMINATE) SYSCALL(TERMPROCESS, 0, 0, 0);
+	if(a0 == TERMINATE) {
+		for (int i = 0 ; i< POOLSIZE; i +=1){
+        	if(swap_pool[i].sw_asid == support_exc->sup_asid)
+          		swap_pool[i].sw_asid = NOPROC;
+        }
+        
+        SYSCALL(VERHOGEN,(memaddr) &master_sem, 0, 0);
+		SYSCALL(TERMPROCESS, 0, 0, 0);
+
+	}
 	
 }
 
@@ -200,7 +212,7 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid];
 	
-	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid], str, len);
+	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid-1], str, len);
 }
 
 /**
@@ -227,7 +239,7 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid];
 	
-	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid], str, len);
+	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid-1], str, len);
 }
 
 /**
