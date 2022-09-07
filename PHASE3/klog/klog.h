@@ -4,5 +4,5 @@
 void klog_print(char *str);
 void klog_print_hex(unsigned int num);
 
-#endif //KLOG_H
+#endif /*KLOG_H*/
 

@@ -10,15 +10,16 @@ endif
 TEST = testers/
 
 LIBDIR = $(UMPS3_DIR_PREFIX)/lib/umps3
-INCDIR = $(UMPS3_DIR_PREFIX)/include/umps3/umps
+INCDIR = $(UMPS3_DIR_PREFIX)/include/umps3
+INCDIR_1 = $(INCDIR)/umps
 SUPDIR = $(UMPS3_DIR_PREFIX)/share/umps3
 
-TDEFS = $(TEST)/h/print.h $(TEST)/h/tconst.h $(INCDIR)/libumps.e $(TEST)/Makefile
+TDEFS = $(TEST)/h/print.h $(TEST)/h/tconst.h $(INCDIR_1)/libumps.e $(TEST)/Makefile
 
 # CFLAGS = -ffreestanding -ansi -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls -Wall
 CFLAGS_LANG = -ffreestanding
 CFLAGS_MIPS = -mips1 -mabi=32 -mno-gpopt -G 0 -mno-abicalls -fno-pic -mfp32
-CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(UMPS3_INCLUDE_DIR) -I$(UMPS3_INCLUDE_DIR2) -Wall -O0
+CFLAGS = $(CFLAGS_LANG) $(CFLAGS_MIPS) -I$(INCDIR) -I$(INCDIR_1) -Wall -O0
 
 #LDAOUTFLAGS = -G 0 -nostdlib -T $(SUPDIR)/umpsaout.ldscript
 #LDCOREFLAGS =  -G 0 -nostdlib -T $(SUPDIR)/umpscore.ldscript
@@ -55,20 +56,9 @@ kernel.core.umps : kernel
 kernel : $(OBJ) crtso.o libumps.o 
 	$(LD) -o $@ $^ $(LDFLAGS)
 	echo "kernel done"
-	
-%.o: %.c $(TDEFS) %.S
-#	$(CC) $(CFLAGS) $<
+
+%.o : %.S
 	$(CC) $(CFLAGS) -c -o $@ $<
-	
-%.t: %.o print.o  $(LIBDIR)/crti.o
-	$(LD) $(LDAOUTFLAGS) $(LIBDIR)/crti.o $< print.o $(LIBDIR)/libumps.o -o $@
-	
-%.t.aout.umps: %.t
-	$(EF) -a $<
-
-%.umps: %.t.aout.umps
-	$(UDEV) -f $@ $<
-
 
 clean:
 	rm -f *.o *.t *.umps

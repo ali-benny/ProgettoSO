@@ -1,0 +1,41 @@
+ifneq ($(wildcard /usr/bin/umps3),)
+	UMPS3_DIR_PREFIX = /usr
+else
+	UMPS3_DIR_PREFIX = /usr/local
+endif
+
+LIBDIR = $(UMPS3_DIR_PREFIX)/lib/x86_64-linux-gnu/umps3
+LIBUMPS = $(LIBDIR)/libumps.o
+CRTI = $(LIBDIR)/crti.o
+
+CC = mipsel-linux-gnu-gcc
+CFLAG = -ffreestanding -ansi -c -mips1 -mabi=32 -mfp32 -mno-gpopt -G 0 -fno-pic -mno-abicalls
+
+LD = mipsel-linux-gnu-ld
+LDFLAG = -G 0 -nostdlib -T /usr/share/umps3/umpsaout.ldscript
+LDOBJ =	$(CRTI) print.o $(LIBUMPS) ../klog/klog.o
+
+EF = umps3-elf2umps
+UDEV = umps3-mkdev
+
+all: printerTest.umps strConcat.umps \
+	fibEight.umps fibEleven.umps \
+	terminalTest2.umps terminalTest3.umps terminalTest4.umps \
+	terminalTest5.umps  \
+
+%.o: %.c $(TDEFS)
+	$(CC) $(CFLAG) $<
+	
+%.t: %.o print.o  $(LIBDIR)/crti.o
+	$(LD) $(LDFLAG) $(LDOBJ) $< -o $@
+	
+%.t.aout.umps: %.t
+	$(EF) -a $<
+
+%.umps: %.t.aout.umps
+	$(UDEV) -f $@ $<
+
+
+clean:
+	rm -f *.o *.t *.umps
+

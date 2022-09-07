@@ -1,0 +1,23 @@
+/* Function to call print parameterized output to a terminal device */
+
+#include "h/include.h"
+
+#include "h/tconst.h"
+
+#include "../klog/klog.h"
+
+
+void print(int device, char *str) {
+	klog_print("wooo print\n");
+	char *s = "Bad device write status\n";
+	int leng, status;
+
+	for (leng = 0; str[leng] != '\0'; leng++);
+	
+	status = SYSCALL (device, (int)str, leng, 0);
+	
+	if (status < 0) {
+		status = SYSCALL (device, (int)s, 26, 0);
+		SYSCALL (TERMINATE, 0, 0, 0);
+	}
+}
