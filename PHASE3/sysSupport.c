@@ -25,14 +25,14 @@ extern int master_sem;
  * 
  */
 void support_exception_handler(){
-	klog_print("exc_handler\n");
+	klog_print("exc_h\n");
 	//we need the support_struct of the current process, and we get it with NSYS8
 	support_exc = (support_t*)SYSCALL(GETSUPPORTPTR,0,0,0); // current process support struct by NSYS8
 	state_exc = &support_exc->sup_exceptState[GENERALEXCEPT];
 	int cause = CAUSE_GET_EXCCODE(support_exc->sup_exceptState[GENERALEXCEPT].cause);
 	unsigned int a0 = state_exc->reg_a0;
-	klog_print("a0: ");klog_print_hex(a0);klog_print("\n");
-	klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
+	// klog_print("a0: ");klog_print_hex(a0);klog_print("\n");
+	// klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
 	if (cause == SYSEXCEPTION){
 		support_syscall_handler(a0);
 	}else{
@@ -48,7 +48,7 @@ void support_exception_handler(){
  * @returns None
  */
 void support_syscall_handler(unsigned int cause){
-	klog_print("sys_handl\n");
+	klog_print("sys_h\n");
 	unsigned int a0 = cause;
 	//state_exc inizializzato dal chiamante
 	unsigned int a1 = state_exc->reg_a1;
@@ -87,7 +87,7 @@ void support_syscall_handler(unsigned int cause){
  * 
  */
 void support_program_trap(){
-	klog_print("progr_trap\n");
+	klog_print("p_trap\n");
 	//processor state in the exception is in support_exc->sup_exceptState
 	if (support_exc->sup_asid == mutex_asid) {//if my asid is holding mutex
 		//siamo in mutua esclusione (quindi l'asid corrente è uguale al asid salvato in mutex_asid
@@ -108,7 +108,7 @@ void support_program_trap(){
  * @return microsecondi di attesa dall'accensione
 */
 void Get_TOD(int a0){
-	klog_print("sys1- ");
+	klog_print("sys1");
 	int time;
 	STCK(time); /* Macro to read the TOD clock */
 	state_exc->reg_v0 = time;
@@ -123,9 +123,9 @@ void Get_TOD(int a0){
  * 
 */
 void Terminate(int a0){
-	klog_print("sys2- ");
+	klog_print("sys2");
 	//a che serve la terminate della struttura di supporto se devo solo chiamare la terminate del kernel...?
-    klog_print("asid: ");klog_print_hex(support_exc->sup_asid);klog_print("\n");
+ //   klog_print("asid: ");klog_print_hex(support_exc->sup_asid);klog_print("\n");
 	if(a0 == TERMINATE) {
 		for (int i = 0 ; i< POOLSIZE; i +=1){
         	if(swap_pool[i].sw_asid == support_exc->sup_asid)

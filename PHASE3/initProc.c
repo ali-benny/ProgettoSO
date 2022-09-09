@@ -85,12 +85,13 @@ void initialize_uproc() {
         //sup_asid: The process’s ASID.
         uproc_support[i].sup_asid = i + 1;
         
-        
         //sup exceptState[2]: The two processor state (state t) areas where
 		//the processor state at the time of the exception is placed by the Nucleus
 		//for passing up exception handling to the Support Level.
         uproc_support[i].sup_exceptState[PGFAULTEXCEPT] = (state_t)*((state_t*)BIOSDATAPAGE);
         uproc_support[i].sup_exceptState[GENERALEXCEPT] = (state_t)*((state_t*)BIOSDATAPAGE);
+        // memcpy(&uproc_support[i].sup_exceptState[PGFAULTEXCEPT], (state_t*)((state_t*)BIOSDATAPAGE));
+        // memcpy(&uproc_support[i].sup_exceptState[GENERALEXCEPT], (state_t*)((state_t*)BIOSDATAPAGE));
         
         //sup_exceptContext[2]: The two processor context (context t) sets.
         //Each context is a PC/SP/Status combination. These are the two
@@ -122,16 +123,14 @@ void initialize_uproc() {
         SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]);   //! prio cosa mettiano?
         //PROCESS_PRIO_LOW scelta a caso giusto per.
     }
-    //TODO
 }
 
 /**
- * 
+ * inizializzo il valore del semaforo binario per la swap pool
+ * pandosplus_phase3.pdf
+ * par 4.4.1 The Swap Pool
  */
 void initSwapStructs(){
-    //inizializzo il valore del semaforo binario per la swap pool
-    //pandosplus_phase3.pdf
-    //par 4.4.1 The Swap Pool
     //Since this semaphore is used for mutual exclusion, it should be initialized to one.
     swap_pool_sem = 1;
     mutex_asid = -1;
@@ -140,7 +139,6 @@ void initSwapStructs(){
         //la inizialmente non è di nessun processo (è -1)
         swap_pool[i].sw_asid = NOPROC;
     }
-    //* done *
 }
 
 /**

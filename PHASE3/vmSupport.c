@@ -98,7 +98,10 @@ void update_TLB(){
     //entry (TLBWI) to match the entry in the Page Table.
     //   * or *
     //Erase ALL the entries in the TLB (TLBCLR)
-    TLBCLR();   
+    TLBCLR();
+        //! 4.10 pandosplus_phase3: update TLB using TLBP and TLBWI instead of TLBCLR
+    // TLBP();
+    // TLBWI();
 }
 
 /** 4.4.2 The pager
