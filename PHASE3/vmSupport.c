@@ -153,9 +153,11 @@ void pager(){klog_print(" pager\n");
         memaddr starting_address = SWAPPOOLSTART + PAGESIZE * frame_i;  //this is for 8 & 9
         devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 		devreg_t* devAddrBase;
+		klog_print(" prima if\n");
     // 7. Determine if frame i is occupied; examine entry i in the Swap Pool table.
-        if ((swap_pool[frame_i].sw_pte->pte_entryLO >> VSHIFT) % 2 == 1) {  // check the v bit is valid[1]
+        if (swap_pool[frame_i].sw_pte->pte_entryLO & VALIDON) {  // check the v bit is valid[1]
             // v is valid
+            klog_print(" dentro if\n");
             //8. If frame i is currently occupied, assume it is occupied by logical page
             //  number k belonging to process x (ASID) and that it is “dirty” (i.e. been modified):
                 disable_interrupts();   // * start TLB atomically *
@@ -192,12 +194,19 @@ void pager(){klog_print(" pager\n");
                 if (return_doio != READY)
                     support_program_trap();
         }
+        klog_print(" fuori if\n");
         // 9.Read the contents of the Current Process’s backing store/flash device
         // logical page p into frame i. [Section 4.5.1]
         // Treat any error status from the read operation as a program trap. [Section 4.8]
             devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][current_support->sup_asid-1];  //flash device line 4-3 = 1
+            klog_print("11: ");klog_print_hex(&devAddrBase->dtp.command);klog_print("\n");
+            klog_print("asid: ");klog_print_hex(current_support->sup_asid);klog_print("\n");
             devAddrBase->dtp.data0 = starting_address;
+            //devAddrBase->dtp.command = 
+            klog_print(" prima io\n");
             int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command, FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
+            //int return_doio = SYSCALL(DOIO,(int) devAddrBase + 3,FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
+            klog_print(" prima if\n");
             if (return_doio != READY) //il prof nel p2test mette come controllo "if ((status & TERMSTATMASK) != RECVD)"
                 support_program_trap();
         // 10. Update the Swap Pool table’s entry i [frame] to reflect frame i’s new contents:

@@ -53,6 +53,7 @@ void Blocking_Syscall(){
 	current_process = NULL;
 	//d. Call the Scheduler
 	scheduler();
+			
 }
 
 
@@ -218,6 +219,7 @@ void Passeren(int a0, unsigned int a1) {
 	@param isDevSem 1 se la operation è chiamata da un device, 0 altrimenti
 */
 pcb_PTR P_operation(int *semaddr, int isDevSem) {
+	
 	if (*semaddr == 0) { // se e` 0 ci metto qualcosa e blocco un processo
 		insertBlocked(semaddr, current_process);
 		//aggiornare i contatori
@@ -328,6 +330,8 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	
+	//klog_print("22: ");klog_print_hex(&devReg->devreg[1][0].dtp.command);klog_print("\n");
+	//klog_print("23: ");klog_print_hex(cmdAddr);klog_print("\n");
 	// parto con line = 0 e dev = 0
 	while (DevNo < 8 && !found){
 		IntLineNo = 4; // per lettura e scrittura
@@ -345,24 +349,30 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
             found = 1;
         }
 		if (found == 0) {
+		//klog_print("dev: ");klog_print_hex(DevNo);klog_print("\n");
 			IntLineNo = 0;
 			while (IntLineNo < 4 && !found){
 				//devAddr = (devreg_t*) base + ((IntLineNo) * 0x80) + (DevNo * 0x10); // lo fa la macro
 				if(&(devReg->devreg[IntLineNo][DevNo].dtp.command) == (memaddr*) cmdAddr){
+				klog_print("dev: ");klog_print_hex(DevNo);klog_print("\n");
+		klog_print("int: ");klog_print_hex(IntLineNo);klog_print("\n");
 					devReg->devreg[IntLineNo][DevNo].dtp.command = cmdValue;
 					state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].dtp.status; // da sostituire poi
 					found = 1;
 				}
+				//klog_print("int: ");klog_print_hex(IntLineNo);klog_print("\n");
 				IntLineNo++;
 			}
 			DevNo++;
 		}
+		
+		//klog_print("22: ");klog_print_hex(&devReg->devreg[1][1].dtp.command);klog_print("\n");
 	}
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
-	
+	klog_print("ciao1");
 	P_operation(&device_sem[device_position],1);
-	
+	klog_print("ciao2");
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
