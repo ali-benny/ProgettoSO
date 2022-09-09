@@ -35,7 +35,11 @@ void uTLB_RefillHandler(){
     //  by inspecting EntryHi in the saved exception state located at the start
     //  of the BIOS Data Page. [Section 3.4]
     state_t* state = (state_t*)BIOSDATAPAGE;
-    int page_number_P = (state->entry_hi - PRESENTFLAG) >> VPNSHIFT;
+    int page_number_P;
+    if (state->entry_hi >= 0xBFFFF000)
+    	page_number_P = 31;
+    else 
+    	page_number_P = (state->entry_hi - PRESENTFLAG) >> VPNSHIFT;
 
     //2. Get the Page Table entry for page number p for the Current Process.
     //  This will be located in the Current Process’s Page Table,
@@ -135,7 +139,11 @@ void pager(){klog_print(" pager\n");
         
     //5. Determine the missing page number (denoted as p):
     //  found in the saved exception state’s EntryHi.
-        unsigned int pteEntryP = current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi >> VPNSHIFT;
+        int pteEntryP;
+        if (current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi  >= 0xBFFFF000)
+			pteEntryP = 31;
+		else 
+			pteEntryP = (current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - PRESENTFLAG) >> VPNSHIFT;
     
     //6. Pick a frame, i, from the Swap Pool.
     //  Which frame is selected is determined by the Pandos page replacement algorithm. [Section 4.5.4]
