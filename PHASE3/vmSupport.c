@@ -35,7 +35,7 @@ void uTLB_RefillHandler(){
     //  by inspecting EntryHi in the saved exception state located at the start
     //  of the BIOS Data Page. [Section 3.4]
     state_t* state = (state_t*)BIOSDATAPAGE;
-    int page_number_P = state->entry_hi >> 12;
+    int page_number_P = (state->entry_hi - PRESENTFLAG) >> VPNSHIFT;
 
     //2. Get the Page Table entry for page number p for the Current Process.
     //  This will be located in the Current Process’s Page Table,
@@ -100,8 +100,8 @@ void update_TLB(){
     //Erase ALL the entries in the TLB (TLBCLR)
     TLBCLR();
         //! 4.10 pandosplus_phase3: update TLB using TLBP and TLBWI instead of TLBCLR
-    // TLBP();
-    // TLBWI();
+    TLBP();
+    TLBWI();
 }
 
 /** 4.4.2 The pager
