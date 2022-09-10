@@ -361,9 +361,9 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 					found = 1;
 				}
 				//klog_print("int: ");klog_print_hex(IntLineNo);klog_print("\n");
-				IntLineNo++;
+				if(found == 0) IntLineNo++;
 			}
-			DevNo++;
+			if(found == 0) DevNo++;
 		}
 		
 		//klog_print("22: ");klog_print_hex(&devReg->devreg[1][1].dtp.command);klog_print("\n");

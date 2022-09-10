@@ -286,7 +286,7 @@ void Device_Interrupt(unsigned int ip) {
 	if (IntLineNo != 7){ //it is a terminal?
 		//it is NOT a terminal
 		//4.
-		semAddr = (int *) device_sem[device_position];
+		semAddr = (int *) &device_sem[device_position];
 		if (*semAddr == 1) pcb = P_operation(semAddr,1);
 		else pcb = V_operation(semAddr,1); // sblocchiamo il processo
 		if (pcb != NULL) {
