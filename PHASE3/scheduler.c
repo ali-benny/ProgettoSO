@@ -54,12 +54,8 @@ void scheduler(){
 }
 
 void auxiliar_scheduler(){
-	klog_print("pc: ");klog_print_hex(process_count);klog_print("\n");
-	klog_print("sc: ");klog_print_hex(soft_block_count);klog_print("\n");
 	if (process_count == 0){
 		//invoke the HALT BIOS service/instructions (vedi 7.3.7)
-		
-	klog_print("dentro s");
 		HALT();
 		//if the Process Count > 0 and the Soft-block Count > 0
 	} else if (process_count>0 && soft_block_count>0) {

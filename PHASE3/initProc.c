@@ -109,12 +109,12 @@ void initialize_uproc() {
 
         //sup_privatePgTbl[32]: The process’s Page Table.
         for(int j = 0; j < USERPGTBLSIZE - 1; j++){
-            uproc_support[i].sup_privatePgTbl[j].pte_entryHI = (( i + 1) << ASIDSHIFT) + (PRESENTFLAG) + (i << VPNSHIFT);
+            uproc_support[i].sup_privatePgTbl[j].pte_entryHI = (( i + 1) << ASIDSHIFT) + (PRESENTFLAG) + (j << VPNSHIFT);
             //all 0 except bit "N non used", "D, V e G devono avere valori fissi 1, 0 e 0".
-            uproc_support[i].sup_privatePgTbl[j].pte_entryLO = 0b00000000000000000000010000000000;
+            uproc_support[i].sup_privatePgTbl[j].pte_entryLO = DIRTYON;
         }
         uproc_support[i].sup_privatePgTbl[USERPGTBLSIZE -1].pte_entryHI = 0xBFFFF000 + ((i + 1) << ASIDSHIFT);
-        uproc_support[i].sup_privatePgTbl[USERPGTBLSIZE -1].pte_entryLO = 0b00000000000000000000010000000000;
+        uproc_support[i].sup_privatePgTbl[USERPGTBLSIZE -1].pte_entryLO = DIRTYON;
     }
     
     //Initialize and launch (NSYS1) between 1 and 8 U-procs.

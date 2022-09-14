@@ -32,7 +32,7 @@ void support_exception_handler(){
 	int cause = CAUSE_GET_EXCCODE(support_exc->sup_exceptState[GENERALEXCEPT].cause);
 	unsigned int a0 = state_exc->reg_a0;
 	// klog_print("a0: ");klog_print_hex(a0);klog_print("\n");
-	//klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
+	klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
 	if (cause == SYSEXCEPTION){
 		support_syscall_handler(a0);
 	}else{

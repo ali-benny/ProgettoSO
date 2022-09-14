@@ -181,8 +181,10 @@ void passup_or_die(int type_of_exception){
 		//sup_exceptState field of the Current Process.
 		//The Curren Process's pcb should point to a non-null support_t.
 
-		current_process->p_supportStruct->sup_exceptState[type_of_exception] = *state_reg;
-
+		//current_process->p_supportStruct->sup_exceptState[type_of_exception] = *state_reg;
+	
+	
+		memcpy(&current_process->p_supportStruct->sup_exceptState[type_of_exception], (state_t *) BIOSDATAPAGE);
 		context_t *context = &(current_process->p_supportStruct->sup_exceptContext[type_of_exception]); //! modificato con context_t* invece di unsigned int per prova fix error
 		
 		//c. Perform a LDCXT using the fields from the correct sup exceptContext

@@ -322,7 +322,6 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 #ifdef SYS_DEBUG
 		klog_print("IO...");
 #endif
-	
 	unsigned int *cmdAddr = (unsigned int *) a1;
 	int cmdValue = (int) a2;
 	//initializes found boolean, intLineNumber and Device Number to 0 for the whiles.
@@ -354,8 +353,8 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 			while (IntLineNo < 4 && !found){
 				//devAddr = (devreg_t*) base + ((IntLineNo) * 0x80) + (DevNo * 0x10); // lo fa la macro
 				if(&(devReg->devreg[IntLineNo][DevNo].dtp.command) == (memaddr*) cmdAddr){
-				klog_print("dev: ");klog_print_hex(DevNo);klog_print("\n");
-		klog_print("int: ");klog_print_hex(IntLineNo);klog_print("\n");
+				//klog_print("dev: ");klog_print_hex(DevNo);klog_print("\n");
+		//klog_print("int: ");klog_print_hex(IntLineNo);klog_print("\n");
 					devReg->devreg[IntLineNo][DevNo].dtp.command = cmdValue;
 					state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].dtp.status; // da sostituire poi
 					found = 1;
@@ -370,9 +369,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	}
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
-	klog_print("ciao1");
 	P_operation(&device_sem[device_position],1);
-	klog_print("ciao2");
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
 #endif
