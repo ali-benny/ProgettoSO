@@ -25,7 +25,7 @@ extern int master_sem;
  * 
  */
 void support_exception_handler(){
-	klog_print("exc_h\n");
+	//klog_print("exc_h\n");
 	//we need the support_struct of the current process, and we get it with NSYS8
 	support_exc = (support_t*)SYSCALL(GETSUPPORTPTR,0,0,0); // current process support struct by NSYS8
 	state_exc = &support_exc->sup_exceptState[GENERALEXCEPT];
@@ -48,7 +48,7 @@ void support_exception_handler(){
  * @returns None
  */
 void support_syscall_handler(unsigned int cause){
-	klog_print("sys_h\n");
+	//klog_print("sys_h\n");
 	unsigned int a0 = cause;
 	//state_exc inizializzato dal chiamante
 	unsigned int a1 = state_exc->reg_a1;
@@ -69,9 +69,9 @@ void support_syscall_handler(unsigned int cause){
 		case READTERMINAL:
 			Read_Terminal(a0, a1);
 			break;
-		/*default:
+		default:
 			//passup_or_die(GENERALEXCEPT);
-			support_program_trap();*/
+			support_program_trap();
 	}
 	
 	state_exc->pc_epc += 4;

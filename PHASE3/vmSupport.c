@@ -45,11 +45,12 @@ void uTLB_RefillHandler(){
     //  This will be located in the Current Process’s Page Table,
     //  which is part of its Support Structure.
     pteEntry_t pteEntryP = current_process->p_supportStruct->sup_privatePgTbl[page_number_P];
-    if (current_process->p_supportStruct->sup_asid == 1){
+    //klog_print("tlbasid: ");klog_print_hex(current_process->p_supportStruct->sup_asid);klog_print("\n");
+   /*if (current_process->p_supportStruct->sup_asid == 1){
     	//klog_print("casid: ");klog_print_hex(current_process->p_supportStruct->sup_asid);klog_print("\n");
     	klog_print("lo: ");klog_print_hex(pteEntryP.pte_entryLO);klog_print("\n");
     	klog_print("p: ");klog_print_hex(page_number_P);klog_print("\n");
-    	}
+    	}*/
     //klog_print("lo: ");klog_print_hex(pteEntryP.pte_entryLO);klog_print("\n");
     //klog_print("p: ");klog_print_hex(page_number_P);klog_print("\n");
     //klog_print("tlb_asid: ");klog_print_hex((pteEntryP.pte_entryHI & 0b00000000000000000000111111000000)>>ASIDSHIFT);klog_print("\n");
@@ -125,7 +126,7 @@ void update_TLB(){
 
     Nota: chiamiamo il pager quando c'è page-fault quindi di sicuro la pagina cercata non c'è in cache.
  */
-void pager(){klog_print(" pager\n");
+void pager(){//klog_print(" pager\n");
     //1. Obtain the pointer to the Current Process’s Support Structure: NSYS8 (fase 2)
     support_t* current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
     
@@ -138,7 +139,9 @@ void pager(){klog_print(" pager\n");
     //3. If the Cause is a TLB-Modification exception, treat this exception as
     //  a program trap [Section 4.8], otherwise continue.
     if (exccode == 1){      // see pop Table 1.1 [pag 163 e 35]
+        klog_print("PRIMO ");
         support_program_trap();
+        
     }else{
     //4.  Gain mutual exclusion over the Swap Pool table.
     //  (NSYS3 – P operation on the Swap Pool semaphore)
@@ -152,7 +155,9 @@ void pager(){klog_print(" pager\n");
 			pteEntryP = 31;
 		else 
 			pteEntryP = (current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - PRESENTFLAG) >> VPNSHIFT;
-    	klog_print("asid: ");klog_print_hex((current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi & 0b00000000000000000000111111000000)>>ASIDSHIFT);klog_print("\n");
+    	//klog_print("asid: ");klog_print_hex(current_support->sup_asid);klog_print("\n");
+    	klog_print("p: ");klog_print_hex(pteEntryP);klog_print("\n");
+    	
     //6. Pick a frame, i, from the Swap Pool.
     //  Which frame is selected is determined by the Pandos page replacement algorithm. [Section 4.5.4]
         int frame_i = FIFO();
@@ -164,7 +169,7 @@ void pager(){klog_print(" pager\n");
     // 7. Determine if frame i is occupied; examine entry i in the Swap Pool table.
         if (swap_pool[frame_i].sw_pte->pte_entryLO & VALIDON) {  // check the v bit is valid[1]
             // v is valid
-            klog_print(" dentro if\n");
+            //klog_print(" dentro if\n");
             //8. If frame i is currently occupied, assume it is occupied by logical page
             //  number k belonging to process x (ASID) and that it is “dirty” (i.e. been modified):
                 disable_interrupts();   // * start TLB atomically *
@@ -197,11 +202,14 @@ void pager(){klog_print(" pager\n");
                     // with the device block number (high order three bytes) and the
                     // command to read (or write) in the lower order byte
                 
-                klog_print("pgn: ");klog_print_hex(swap_pool[frame_i].sw_pageNo);klog_print("\n");
+                ///klog_print("pgn: ");klog_print_hex(swap_pool[frame_i].sw_pageNo);klog_print("\n");
                 int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command, FLASHWRITE | (swap_pool[frame_i].sw_pageNo << BLKSHIFT), 0);
             //      Treat any error status from the write operation as a program trap.[Section 4.8]
                 if (return_doio != READY)
+                    {klog_print("WRITE ");
                     support_program_trap();
+                
+                }
         }
         //klog_print(" fuori if\n");
         // 9.Read the contents of the Current Process’s backing store/flash device
@@ -214,7 +222,10 @@ void pager(){klog_print(" pager\n");
             //klog_print("data0: ");klog_print_hex(devAddrBase->dtp.data0);klog_print("\n");
             int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command, FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
             if (return_doio != READY) //il prof nel p2test mette come controllo "if ((status & TERMSTATMASK) != RECVD)"
+                {klog_print("READ ");
                 support_program_trap();
+                
+                }
         // 10. Update the Swap Pool table’s entry i [frame] to reflect frame i’s new contents:
         // page p[=pteEntryP] belonging to the Current Process’s ASID, and a pointer to the
         // Current Process’s Page Table entry for page p.
@@ -227,7 +238,7 @@ void pager(){klog_print(" pager\n");
             disable_interrupts(); //* start TLB atomically *
             current_support->sup_privatePgTbl[pteEntryP].pte_entryLO = (starting_address) | VALIDON | DIRTYON;
             //klog_print("sa: ");klog_print_hex(starting_address);klog_print("\n");
-        klog_print("LO: ");klog_print_hex(current_support->sup_privatePgTbl[pteEntryP].pte_entryLO);klog_print("\n");
+        //klog_print("LO: ");klog_print_hex(swap_pool[frame_i].sw_pte->pte_entryLO);klog_print("\n");
         // 12. Update the TLB. The cached entry in the TLB for the Current Process’s page p is clearly out of date; it was just updated in the previous step.
         // Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
             update_TLB();
@@ -235,7 +246,7 @@ void pager(){klog_print(" pager\n");
         // 13. Release mutual exclusion over the Swap Pool table. (NSYS4 – V operation on the Swap Pool semaphore)
             mutex_asid = -1;    //my asid is not longer holding mutex
             SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
-            klog_print(" pager done\n");
+          //  klog_print(" done\n");
         // 14. Return control to the Current Process to retry the instruction that
         // caused the page fault: LDST on the saved exception state
             LDST((state_t*)&current_support->sup_exceptState[PGFAULTEXCEPT]);
