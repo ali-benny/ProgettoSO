@@ -166,4 +166,6 @@ void test(){
     for (int i = 0; i < UPROCMAX; i++){
         SYSCALL(PASSEREN, (memaddr) &master_sem, 0, 0);
     }
+    
+    SYSCALL(TERMINATE, 0, 0, 0);
 }

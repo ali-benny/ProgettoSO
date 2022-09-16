@@ -44,7 +44,7 @@ void uTLB_RefillHandler(){
     //2. Get the Page Table entry for page number p for the Current Process.
     //  This will be located in the Current Process’s Page Table,
     //  which is part of its Support Structure.
-    pteEntry_t pteEntryP = current_process->p_supportStruct->sup_privatePgTbl[page_number_P];
+    pteEntry_t entry = current_process->p_supportStruct->sup_privatePgTbl[page_number_P];
     //klog_print("tlbasid: ");klog_print_hex(current_process->p_supportStruct->sup_asid);klog_print("\n");
    /*if (current_process->p_supportStruct->sup_asid == 1){
     	//klog_print("casid: ");klog_print_hex(current_process->p_supportStruct->sup_asid);klog_print("\n");
@@ -57,9 +57,9 @@ void uTLB_RefillHandler(){
     //3. Write this Page Table entry into the TLB. This is a three-set process:
     //(a) setENTRYHI
     
-    setENTRYHI((unsigned int) pteEntryP.pte_entryHI );
+    setENTRYHI((unsigned int) entry.pte_entryHI );
     //(b) setENTRYLO
-    setENTRYLO((unsigned int) pteEntryP.pte_entryLO );
+    setENTRYLO((unsigned int) entry.pte_entryLO );
     //(c) TLBWR
     TLBWR();
 	//
@@ -156,7 +156,7 @@ void pager(){//klog_print(" pager\n");
 		else 
 			pteEntryP = (current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - PRESENTFLAG) >> VPNSHIFT;
     	//klog_print("asid: ");klog_print_hex(current_support->sup_asid);klog_print("\n");
-    	klog_print("p: ");klog_print_hex(pteEntryP);klog_print("\n");
+    	//klog_print("p: ");klog_print_hex(pteEntryP);klog_print("\n");
     	
     //6. Pick a frame, i, from the Swap Pool.
     //  Which frame is selected is determined by the Pandos page replacement algorithm. [Section 4.5.4]
@@ -246,7 +246,7 @@ void pager(){//klog_print(" pager\n");
         // 13. Release mutual exclusion over the Swap Pool table. (NSYS4 – V operation on the Swap Pool semaphore)
             mutex_asid = -1;    //my asid is not longer holding mutex
             SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
-          //  klog_print(" done\n");
+            //klog_print(" done\n");
         // 14. Return control to the Current Process to retry the instruction that
         // caused the page fault: LDST on the saved exception state
             LDST((state_t*)&current_support->sup_exceptState[PGFAULTEXCEPT]);

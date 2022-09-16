@@ -15,7 +15,7 @@ state_t* state_exc;
 extern int swap_pool_sem;
 extern int mutex_asid;
 //se dobbiamo utilizzare più terminali o più stampanti questi potrebbero diventare vettori di dim 8 (= num device installati)
-int uproc_sem[UPROCMAX];
+extern int sup_dev_sem[48];
 extern swap_t swap_pool[POOLSIZE];
 extern int master_sem; 
 
@@ -149,12 +149,12 @@ void Terminate(int a0){
  *
  * @return il numero di caratteri attualmente trasmessi
  */
-int write(devreg_t* command, int* semaphore, char* msg, int len) {
+int write(memaddr command, int* semaphore, char* msg, int len) {
 	klog_print("write-");
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
 	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
 	//int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len * Lunghezza_carattere) <= USERSTACKTOP);
-	int is_in_Uproc_address_space = ((int)&msg >= UPROCSTARTADDR && ((int)&msg + len) <= USERSTACKTOP);
+	int is_in_Uproc_address_space = ((memaddr)msg >= UPROCSTARTADDR && ((memaddr)msg) <= USERSTACKTOP);
 	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
 
 	char* s = msg;
@@ -162,7 +162,7 @@ int write(devreg_t* command, int* semaphore, char* msg, int len) {
 	int status;
 	int is_ready = 1; // "is all ok in doing next DOIO"
 	if (len >= 0 && len <= 128 && is_in_Uproc_address_space) {
-		SYSCALL(PASSEREN, (int)semaphore, 0, 0); // P(semaphore)
+		SYSCALL(PASSEREN, (memaddr)semaphore, 0, 0); // P(semaphore)
 		mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
 		// controllo se non ho avuto errore al DOIO precedente,
 		// se ho ancora caratteri da stampare (len - count)
@@ -215,7 +215,7 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid];
 	
-	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid-1], str, len);
+	state_exc->reg_v0 = write(devAddrBase + 3, &sup_dev_sem[support_exc->sup_asid-1], str, len);
 }
 
 /**
@@ -240,9 +240,9 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 	int len = (int) a2;
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
-	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid];
+	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid - 1];
 	
-	state_exc->reg_v0 = write(devAddrBase + 3, &uproc_sem[support_exc->sup_asid-1], str, len);
+	state_exc->reg_v0 = write((memaddr)&devAddrBase->dtp.command, &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1 + 8], str, len);
 }
 
 /**
@@ -262,6 +262,45 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 */
 void Read_Terminal(int a0, unsigned int a1){
 	klog_print("sys5- ");
+	char *str = (char*)a1;
+	// address of the device's device register
+	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid - 1];
+	
+	int* semaphore = &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1];
+	
+	int is_in_Uproc_address_space = ((memaddr)msg >= UPROCSTARTADDR && ((memaddr)msg) <= USERSTACKTOP);
+
+	char* s = str;
+	int count = 0;
+	int status;
+	int is_ready = 1; // "is all ok in doing next DOIO"
+	if (is_in_Uproc_address_space) {
+		SYSCALL(PASSEREN, (memaddr)semaphore, 0, 0); // P(semaphore)
+		mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
+		// controllo se non ho avuto errore al DOIO precedente,
+		// se ho ancora caratteri da stampare (len - count)
+		// e se non ho già raggiunto la fine della stringa (*)
+		while (is_ready && count > 0 && *s != EOS ) {
+			int value = PRINTCHR | (((int)*s) << 8);	//! forse non `e int btw
+			status         = SYSCALL(DOIO, (int)command, (int)value, 0);
+			if (status != READY) {
+				state_exc->reg_v0 = status;
+				is_ready = 0; //in this case i haven't to do nexts DOIO
+			}
+			s++;
+			count++;
+		}
+		mutex_asid = -1; //my asid is not longer holding mutex
+		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
+	} else {
+		klog_print("write with wrong parameters");
+		if(is_in_Uproc_address_space)
+			klog_print("len error");
+		else
+			klog_print("address error");
+		SYSCALL(TERMINATE, 0, 0, 0);
+	}
 /*
 // *idea generale* //
 	int trasmitted_char = 0;
