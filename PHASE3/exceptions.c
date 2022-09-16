@@ -47,7 +47,6 @@ void syscall_handler(unsigned int cause){
 	//paragrafo 3.5.11 (Syscall in Usermode)
 	//we are simulating a Program Trap exception
 	//Cause.ExeCode = RI [= Reserved Instruction]
-	klog_print("ciao ");
 		//state_reg->cause = (cause & ~CAUSE_EXCCODE_MASK) | (EXC_RI << CAUSE_EXCCODE_BIT);
 		passup_or_die(GENERALEXCEPT);
 	}else{

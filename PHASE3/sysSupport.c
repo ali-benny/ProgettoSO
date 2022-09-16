@@ -32,7 +32,7 @@ void support_exception_handler(){
 	int cause = CAUSE_GET_EXCCODE(support_exc->sup_exceptState[GENERALEXCEPT].cause);
 	unsigned int a0 = state_exc->reg_a0;
 	// klog_print("a0: ");klog_print_hex(a0);klog_print("\n");
-	klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
+	//klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
 	if (cause == SYSEXCEPTION){
 		support_syscall_handler(a0);
 	}else{
@@ -168,26 +168,27 @@ int write(memaddr command, int* semaphore, char* msg, int len) {
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && *s != EOS ) {
+		klog_print("s: ");klog_print_hex(*s);klog_print("\n");
 			int value = PRINTCHR | (((int)*s) << 8);	//! forse non `e int btw
-			status         = SYSCALL(DOIO, (int)command, (int)value, 0);
-			if (status != READY) {
-				state_exc->reg_v0 = status;
-				is_ready = 0; //in this case i haven't to do nexts DOIO
+			status = SYSCALL(DOIO, (int)command, (int)value, 0);
+			if ((status & 0xFF) != RECVD) {
+				is_ready = 0;
 			}
 			s++;
 			count--;
 		}
 		mutex_asid = -1; //my asid is not longer holding mutex
 		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
-	} else {
-		klog_print("write with wrong parameters");
-		if(is_in_Uproc_address_space)
-			klog_print("len error");
-		else
-			klog_print("address error");
-		SYSCALL(TERMINATE, 0, 0, 0);
 	}
-	return len-count;	// num caratteri inviati
+	if (status == OKCHARTRANS)
+		return len-count;	// num caratteri inviati
+	else{ 
+		klog_print("status: ");klog_print_hex(status);klog_print("\n");
+		if (status == 1) status = -1;
+		else if (status == 2) status = -2;
+		else if (status == 3) status = -3;
+		else if (status == 4) status = -4;
+		return status;}
 	//nota (*) esempio xcvd "server scrivi 'ciao' lunghezza 100".
 }
 
@@ -213,9 +214,9 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
 	int len = (int) a2;
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
-	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid];
+	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid -1 ];
 	
-	state_exc->reg_v0 = write(devAddrBase + 3, &sup_dev_sem[support_exc->sup_asid-1], str, len);
+	state_exc->reg_v0 = write((memaddr)&devAddrBase->dtp.command, &sup_dev_sem[(PRNTINT-3)*8 + support_exc->sup_asid -1], str, len);
 }
 
 /**
@@ -241,7 +242,7 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid - 1];
-	
+	klog_print("pos: ");klog_print_hex((TERMINT-3)*8 + support_exc->sup_asid -1 + 8);klog_print("\n");
 	state_exc->reg_v0 = write((memaddr)&devAddrBase->dtp.command, &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1 + 8], str, len);
 }
 
@@ -269,7 +270,7 @@ void Read_Terminal(int a0, unsigned int a1){
 	
 	int* semaphore = &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1];
 	
-	int is_in_Uproc_address_space = ((memaddr)msg >= UPROCSTARTADDR && ((memaddr)msg) <= USERSTACKTOP);
+	int is_in_Uproc_address_space = ((memaddr)str >= UPROCSTARTADDR && ((memaddr)str) <= USERSTACKTOP);
 
 	char* s = str;
 	int count = 0;
@@ -282,10 +283,10 @@ void Read_Terminal(int a0, unsigned int a1){
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && *s != EOS ) {
+			klog_print("s: ");klog_print_hex(*s);klog_print("\n");
 			int value = PRINTCHR | (((int)*s) << 8);	//! forse non `e int btw
-			status         = SYSCALL(DOIO, (int)command, (int)value, 0);
+			status         = SYSCALL(DOIO, (int)&devAddrBase->dtp.command, (int)value, 0);
 			if (status != READY) {
-				state_exc->reg_v0 = status;
 				is_ready = 0; //in this case i haven't to do nexts DOIO
 			}
 			s++;
@@ -293,13 +294,16 @@ void Read_Terminal(int a0, unsigned int a1){
 		}
 		mutex_asid = -1; //my asid is not longer holding mutex
 		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
-	} else {
-		klog_print("write with wrong parameters");
-		if(is_in_Uproc_address_space)
-			klog_print("len error");
-		else
-			klog_print("address error");
-		SYSCALL(TERMINATE, 0, 0, 0);
+	}
+	if (status == OKCHARTRANS)
+		state_exc->reg_v0 = count;
+	else{ 
+		klog_print("rtatus: ");klog_print_hex(status);klog_print("\n");
+		if (status == 1) status = -1;
+		else if (status == 2) status = -2;
+		else if (status == 3) status = -3;
+		else if (status == 4) status = -4;
+		state_exc->reg_v0 = status;
 	}
 /*
 // *idea generale* //

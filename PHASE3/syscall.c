@@ -336,12 +336,14 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 		IntLineNo = 4; // per lettura e scrittura
         //terminali di scrittura
         if(&(devReg->devreg[IntLineNo][DevNo].term.transm_command) == (memaddr*) cmdAddr){ 
+        	klog_print("caio1 "); 
             devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
             state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
             found = 1;
         }
         //terminali di lettura
 		if(&(devReg->devreg[IntLineNo][DevNo].term.recv_command) == (memaddr*) cmdAddr){ 
+		klog_print("caio2 "); 
             isRecv = 1;
             devReg->devreg[IntLineNo][DevNo].term.recv_command = cmdValue;
 			state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.recv_status;
@@ -369,6 +371,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	}
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
+    klog_print("dev: ");klog_print_hex(device_position);klog_print("\n");
 	P_operation(&device_sem[device_position],1);
 #ifdef SYS_DEBUG
 		klog_print(" done!\n");
