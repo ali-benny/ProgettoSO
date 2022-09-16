@@ -161,14 +161,13 @@ int write(memaddr command, int* semaphore, char* msg, int len) {
 	int count = len;
 	int status;
 	int is_ready = 1; // "is all ok in doing next DOIO"
-	if (len >= 0 && len <= 128 && is_in_Uproc_address_space) {
+	if (len > 0 && len <= 128 && (memaddr)s >= KUSEG) {
 		SYSCALL(PASSEREN, (memaddr)semaphore, 0, 0); // P(semaphore)
 		mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
 		// controllo se non ho avuto errore al DOIO precedente,
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && *s != EOS ) {
-		klog_print("s: ");klog_print_hex(*s);klog_print("\n");
 			int value = PRINTCHR | (((int)*s) << 8);	//! forse non `e int btw
 			status = SYSCALL(DOIO, (int)command, (int)value, 0);
 			if ((status & 0xFF) != RECVD) {
@@ -179,11 +178,10 @@ int write(memaddr command, int* semaphore, char* msg, int len) {
 		}
 		mutex_asid = -1; //my asid is not longer holding mutex
 		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
-	}
+	}else {klog_print("QUI");support_program_trap();}
 	if (status == OKCHARTRANS)
 		return len-count;	// num caratteri inviati
 	else{ 
-		klog_print("status: ");klog_print_hex(status);klog_print("\n");
 		if (status == 1) status = -1;
 		else if (status == 2) status = -2;
 		else if (status == 3) status = -3;
@@ -242,8 +240,7 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid - 1];
-	klog_print("pos: ");klog_print_hex((TERMINT-3)*8 + support_exc->sup_asid -1 + 8);klog_print("\n");
-	state_exc->reg_v0 = write((memaddr)&devAddrBase->dtp.command, &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1 + 8], str, len);
+	state_exc->reg_v0 = write((memaddr)&devAddrBase->term.transm_command, &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1 + 8], str, len);
 }
 
 /**
@@ -283,9 +280,8 @@ void Read_Terminal(int a0, unsigned int a1){
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && *s != EOS ) {
-			klog_print("s: ");klog_print_hex(*s);klog_print("\n");
-			int value = PRINTCHR | (((int)*s) << 8);	//! forse non `e int btw
-			status         = SYSCALL(DOIO, (int)&devAddrBase->dtp.command, (int)value, 0);
+			int value = 2 | (((int)*s) << 8);	//! 2 = RECVCHAR
+			status         = SYSCALL(DOIO, (int)&devAddrBase->term.recv_command, (int)value, 0);
 			if (status != READY) {
 				is_ready = 0; //in this case i haven't to do nexts DOIO
 			}
@@ -294,11 +290,10 @@ void Read_Terminal(int a0, unsigned int a1){
 		}
 		mutex_asid = -1; //my asid is not longer holding mutex
 		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
-	}
+	}else support_program_trap();
 	if (status == OKCHARTRANS)
 		state_exc->reg_v0 = count;
 	else{ 
-		klog_print("rtatus: ");klog_print_hex(status);klog_print("\n");
 		if (status == 1) status = -1;
 		else if (status == 2) status = -2;
 		else if (status == 3) status = -3;
