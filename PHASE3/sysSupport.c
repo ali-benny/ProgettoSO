@@ -32,7 +32,7 @@ void support_exception_handler(){
 	int cause = CAUSE_GET_EXCCODE(support_exc->sup_exceptState[GENERALEXCEPT].cause);
 	unsigned int a0 = state_exc->reg_a0;
 	// klog_print("a0: ");klog_print_hex(a0);klog_print("\n");
-	//klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
+//	klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
 	if (cause == SYSEXCEPTION){
 		support_syscall_handler(a0);
 	}else{
@@ -87,7 +87,7 @@ void support_syscall_handler(unsigned int cause){
  * 
  */
 void support_program_trap(){
-	klog_print("p_trap\n");
+	//klog_print("p_trap\n");
 	//processor state in the exception is in support_exc->sup_exceptState
 	if (support_exc->sup_asid == mutex_asid) {//if my asid is holding mutex
 		//siamo in mutua esclusione (quindi l'asid corrente è uguale al asid salvato in mutex_asid
@@ -123,7 +123,7 @@ void Get_TOD(int a0){
  * 
 */
 void Terminate(int a0){
-	klog_print("sys2");
+	//klog_print("sys2");
 	//a che serve la terminate della struttura di supporto se devo solo chiamare la terminate del kernel...?
  //   klog_print("asid: ");klog_print_hex(support_exc->sup_asid);klog_print("\n");
 	if(a0 == TERMINATE) {
@@ -150,7 +150,7 @@ void Terminate(int a0){
  * @return il numero di caratteri attualmente trasmessi
  */
 int write(memaddr command, int* semaphore, char* msg, int len) {
-	klog_print("write-");
+	//klog_print("write-");
 	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
 	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
 	//int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len * Lunghezza_carattere) <= USERSTACKTOP);
@@ -267,7 +267,7 @@ void Read_Terminal(int a0, unsigned int a1){
 	
 	int* semaphore = &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1];
 	
-	int is_in_Uproc_address_space = ((memaddr)str >= UPROCSTARTADDR && ((memaddr)str) <= USERSTACKTOP);
+	//int is_in_Uproc_address_space = ((memaddr)str >= UPROCSTARTADDR && ((memaddr)str) <= USERSTACKTOP);
 
 	char* s = str;
 	int count = 0;
@@ -290,7 +290,7 @@ void Read_Terminal(int a0, unsigned int a1){
 		}
 		mutex_asid = -1; //my asid is not longer holding mutex
 		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
-	}else support_program_trap();
+	}else {klog_print("QUO");support_program_trap();}
 	if (status == OKCHARTRANS)
 		state_exc->reg_v0 = count;
 	else{ 
@@ -300,31 +300,6 @@ void Read_Terminal(int a0, unsigned int a1){
 		else if (status == 4) status = -4;
 		state_exc->reg_v0 = status;
 	}
-/*
-// *idea generale* //
-	int trasmitted_char = 0;
-	//sospendi il processo mentre l'input viene letto
-//	SYSCALL(PASSEREN, &sem_terminale_associato_al_processo, 0, 0);
-	//devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
-	
-	int *commandAddress = ...;
-	//devReg->devreg[IntLineNo][DevNo].term.recv_command
-	int commandValue = ...;
-	char carattere_letto = SYSCALL(DOIO, &commandAddress, commandValue, 0);		//? boh, forse non serve
-	while(carattere_letto != EOS) { //finchè la riga da leggere non è finita
-		//scrivo carattere_letto sul buffer
-		transmitted_char++;
-	}
-//	SYSCALL(VERHOGEN, &sem_terminale_associato_al_processo, 0, 0);
-	state_exc->reg_v0 = transmitted_char;
-	
-	*/
-	// if read was successfull
-	// then return in v0 the number of characters actually transmitted (--> to buffer)
-	
-	// if the operation end with status != 5 [character received]
-	// then return in v0 the negative of the device's status value
-
 	/*pandosplus_phase3.pdf
 	paragrafo 4.7.5 Read From Terminal (SYS5)
 		int SYS5 (READ FROM TERMINAL, char *addr) When requested, this service causes
