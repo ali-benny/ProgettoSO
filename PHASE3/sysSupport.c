@@ -59,6 +59,7 @@ void support_exception_handler() {
 	klog_print(" a0: ");klog_print_hex(a0);
 	klog_print(" cause: ");klog_print_hex(cause);
 #endif
+klog_print(" cause: ");klog_print_hex(cause);
 	if (cause == SYSEXCEPTION){
 		support_syscall_handler(a0);
 	}else{
