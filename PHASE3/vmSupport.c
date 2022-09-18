@@ -14,6 +14,8 @@
 #define BLKSHIFT	  8		/* blocknumber shift, added for phase 3 */
 #define PFNSHIFT	  12	/* pfn shift */
 
+//#define VM_DEBUG //per debuggare pager e utlb
+
 extern pcb_PTR current_process;
 int swap_pool_sem;      //swap pool semaphore
 swap_t swap_pool[POOLSIZE]; //swap pool table 
@@ -30,7 +32,10 @@ int mutex_asid;     //which asid is holding the mutual exclusion for support sem
  * * Return control (LDST) to the Current Process to restart the address translation process.
  * 
  */
-void uTLB_RefillHandler(){
+void uTLB_RefillHandler() {
+#ifdef VM_DEBUG
+	klog_print("U"); klog_print_hex(current_process->p_supportStruct->sw_asid);
+#endif
     //1. Determine the page number (denoted as p) of the missing TLB entry
     //  by inspecting EntryHi in the saved exception state located at the start
     //  of the BIOS Data Page. [Section 3.4]
@@ -45,24 +50,13 @@ void uTLB_RefillHandler(){
     //  This will be located in the Current Process’s Page Table,
     //  which is part of its Support Structure.
     pteEntry_t entry = current_process->p_supportStruct->sup_privatePgTbl[page_number_P];
-    //klog_print("tlbasid: ");klog_print_hex(current_process->p_supportStruct->sup_asid);klog_print("\n");
-   /*if (current_process->p_supportStruct->sup_asid == 1){
-    	//klog_print("casid: ");klog_print_hex(current_process->p_supportStruct->sup_asid);klog_print("\n");
-    	klog_print("lo: ");klog_print_hex(pteEntryP.pte_entryLO);klog_print("\n");
-    	klog_print("p: ");klog_print_hex(page_number_P);klog_print("\n");
-    	}*/
-    //klog_print("lo: ");klog_print_hex(pteEntryP.pte_entryLO);klog_print("\n");
-    //klog_print("p: ");klog_print_hex(page_number_P);klog_print("\n");
-    //klog_print("tlb_asid: ");klog_print_hex((pteEntryP.pte_entryHI & 0b00000000000000000000111111000000)>>ASIDSHIFT);klog_print("\n");
     //3. Write this Page Table entry into the TLB. This is a three-set process:
-    //(a) setENTRYHI
-    
+    //	(a) setENTRYHI    
     setENTRYHI((unsigned int) entry.pte_entryHI );
-    //(b) setENTRYLO
+    //	(b) setENTRYLO
     setENTRYLO((unsigned int) entry.pte_entryLO );
-    //(c) TLBWR
+    //	(c) TLBWR
     TLBWR();
-	//
     //4. Return control to the Current Process to retry the instruction that
     //  caused the TLB-Refill event: LDST on the saved exception state
     //  located at the start of the BIOS Data Page.
@@ -83,7 +77,7 @@ void uTLB_RefillHandler(){
 
  * @return 
  */
-int FIFO(){
+int FIFO() {
     int static page_index = 0;      // prima pagina, static così è inizializzata una e una sola volta.
     return (page_index++)%POOLSIZE;
 }
@@ -99,13 +93,13 @@ void disable_interrupts(){
 /** Enable TLB Atomically
  * 
  */
-void enable_interrupts(){
+void enable_interrupts() {
     
     setSTATUS(getSTATUS() | IMON); //esempio: 00FF0000 | 0000FF00 = 00FFFF00
 }
 
 //DA MODIFICARE: vedi 4.5.2
-void update_TLB(){
+void update_TLB() {
     //Probe the TLB (TLBP) to see if the newly updated TLB entry is
     //indeed cached in the TLB. If so (Index.P is 0), rewrite (update) that
     //entry (TLBWI) to match the entry in the Page Table.
@@ -126,129 +120,144 @@ void update_TLB(){
 
     Nota: chiamiamo il pager quando c'è page-fault quindi di sicuro la pagina cercata non c'è in cache.
  */
-void pager(){//klog_print(" pager\n");
-    //1. Obtain the pointer to the Current Process’s Support Structure: NSYS8 (fase 2)
-    support_t* current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
-    
-    //2. Determine the cause of the TLB exception.
-    //  The saved exception state responsible for this TLB exception
-    //  should be found in the Current Process’s Support Structure for TLB exceptions.
-    //  (sup exceptState[0]’s Cause register)
-    unsigned int exccode =  CAUSE_GET_EXCCODE(current_support->sup_exceptState[PGFAULTEXCEPT].cause);
+void pager(){
+#ifdef VM_DEBUG
+	klog_print(" pager");
+#endif
+	//1. Obtain the pointer to the Current Process’s Support Structure: NSYS8 (fase 2)
+	support_t* current_support = (support_t *)SYSCALL(GETSUPPORTPTR, 0, 0, 0);
 
-    //3. If the Cause is a TLB-Modification exception, treat this exception as
-    //  a program trap [Section 4.8], otherwise continue.
-    if (exccode == 1){      // see pop Table 1.1 [pag 163 e 35]
-        klog_print("PRIMO ");
-        support_program_trap();
-        
-    }else{
-    //4.  Gain mutual exclusion over the Swap Pool table.
-    //  (NSYS3 – P operation on the Swap Pool semaphore)
-        SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
+	//2. Determine the cause of the TLB exception.
+	//  The saved exception state responsible for this TLB exception
+	//  should be found in the Current Process’s Support Structure for TLB exceptions.
+	//  (sup exceptState[0]’s Cause register)
+	unsigned int exccode =  CAUSE_GET_EXCCODE(current_support->sup_exceptState[PGFAULTEXCEPT].cause);
+
+	//3. If the Cause is a TLB-Modification exception, treat this exception as
+	//  a program trap [Section 4.8], otherwise continue.
+	if (exccode == 1){      // see pop Table 1.1 [pag 163 e 35]
+#ifdef VM_DEBUG
+		klog_print(" TLB-MODification error!");
+#endif
+		support_program_trap();
+
+	} else {
+		//4.  Gain mutual exclusion over the Swap Pool table.
+		//  (NSYS3 – P operation on the Swap Pool semaphore)
+		SYSCALL(PASSEREN, (int)&swap_pool_sem, 0, 0);
 		mutex_asid = current_support->sup_asid;
-        
-    //5. Determine the missing page number (denoted as p):
-    //  found in the saved exception state’s EntryHi.
-        int pteEntryP;
-        if (current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi  >= 0xBFFFF000 && current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi <= USERSTACKTOP)
+
+		//5. Determine the missing page number (denoted as p):
+		//  found in the saved exception state’s EntryHi.
+		int pteEntryP;
+		if (current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi  >= 0xBFFFF000
+					&& current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi <= USERSTACKTOP)
 			pteEntryP = 31;
 		else 
 			pteEntryP = (current_support->sup_exceptState[PGFAULTEXCEPT].entry_hi - PRESENTFLAG) >> VPNSHIFT;
-    	//klog_print("asid: ");klog_print_hex(current_support->sup_asid);klog_print("\n");
-    	//klog_print("p: ");klog_print_hex(pteEntryP);klog_print("\n");
-    	
-    //6. Pick a frame, i, from the Swap Pool.
-    //  Which frame is selected is determined by the Pandos page replacement algorithm. [Section 4.5.4]
-        int frame_i = FIFO();
-        // --> for point 8.c and 9. 9 is outside the if.
-        memaddr starting_address = SWAPPOOLSTART + PAGESIZE * frame_i;  //this is for 8 & 9
-        devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
-		devreg_t* devAddrBase;
-		//klog_print(" prima if\n");
-    // 7. Determine if frame i is occupied; examine entry i in the Swap Pool table.
-        if (swap_pool[frame_i].sw_pte->pte_entryLO & VALIDON) {  // check the v bit is valid[1]
-            // v is valid
-            //klog_print(" dentro if\n");
-            //8. If frame i is currently occupied, assume it is occupied by logical page
-            //  number k belonging to process x (ASID) and that it is “dirty” (i.e. been modified):
-                disable_interrupts();   // * start TLB atomically *
+#ifdef VM_DEBUG
+		klog_print(" entry_p:");klog_print_hex(pteEntryP);
+#endif
 
-            //      (a) Update process x’s Page Table: mark Page Table entry k as not valid.
-            //      This entry is easily accessible, since the Swap Pool table’s
-            //      entry i contains a pointer to this Page Table entry.
-                swap_pool[frame_i].sw_pte->pte_entryLO &= ~VALIDON;  // v is not valid now
-                //nota:
-                //VALIDON vuol dire tutti i bit a 0 tranne un bit a 1, il bit di validità
-                //(~ è il complemento a 1);
-                // &= è "come" un +=
-                // e significa che tutti i bit rimangono come prima tranne il bit di validità.
-                
-            //      (b) Update the TLB, if needed. The TLB is a cache of the most
-            //      recently executed process’s Page Table entries. If process x’s page
-            //      k’s Page Table entry is currently cached in the TLB it is clearly
-            //      out of date; it was just updated in the previous step.  [Section 4.5.2]                          
-            //   Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
-                update_TLB();
-                enable_interrupts();    // * end TLB atomically *
-            //      (c) Update process x’s backing store. Write the contents of frame i
-            //      to the correct location on process x’s backing store/flash device. [Section 4.5.1]
-                    // 1. write the flash device's DATA0 field with the appropriate starting physical address of the 4k block to be read (or written);
-                    // the particularframe’s starting address
-                
-	            devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][ swap_pool[frame_i].sw_asid - 1 ];  //flash device line 4-3 = 1
-                devAddrBase->dtp.data0 = starting_address;
-                    // 2. Use the NSYS5 [doio] system call to write the flash device’s COMMAND field 
-                    // with the device block number (high order three bytes) and the
-                    // command to read (or write) in the lower order byte
-                
-                ///klog_print("pgn: ");klog_print_hex(swap_pool[frame_i].sw_pageNo);klog_print("\n");
-                int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command, FLASHWRITE | (swap_pool[frame_i].sw_pageNo << BLKSHIFT), 0);
-            //      Treat any error status from the write operation as a program trap.[Section 4.8]
-                if (return_doio != READY)
-                    {klog_print("WRITE ");
-                    support_program_trap();
-                
-                }
-        }
-        //klog_print(" fuori if\n");
-        // 9.Read the contents of the Current Process’s backing store/flash device
-        // logical page p into frame i. [Section 4.5.1]
-        // Treat any error status from the read operation as a program trap. [Section 4.8]
-            devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][current_support->sup_asid-1];  //flash device line 4-3 = 1
-            //klog_print("11: ");klog_print_hex(&devAddrBase->dtp.command);klog_print("\n");
-            //klog_print("asid: ");klog_print_hex(current_support->sup_asid);klog_print("\n");
-            devAddrBase->dtp.data0 =(memaddr) starting_address;
-            //klog_print("data0: ");klog_print_hex(devAddrBase->dtp.data0);klog_print("\n");
-            int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command, FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
-            if (return_doio != READY) //il prof nel p2test mette come controllo "if ((status & TERMSTATMASK) != RECVD)"
-                {klog_print("READ ");
-                support_program_trap();
-                
-                }
-        // 10. Update the Swap Pool table’s entry i [frame] to reflect frame i’s new contents:
-        // page p[=pteEntryP] belonging to the Current Process’s ASID, and a pointer to the
-        // Current Process’s Page Table entry for page p.
-            swap_pool[frame_i].sw_asid = current_support->sup_asid;
-            swap_pool[frame_i].sw_pageNo = pteEntryP;
-            swap_pool[frame_i].sw_pte = &current_support->sup_privatePgTbl[pteEntryP];
-            
-        // 11. Update the Current Process’s Page Table entry for page p to indicate
-        // it is now present (V bit) and occupying frame i (PFN field).
-            disable_interrupts(); //* start TLB atomically *
-            current_support->sup_privatePgTbl[pteEntryP].pte_entryLO = (starting_address) | VALIDON | DIRTYON;
-            //klog_print("sa: ");klog_print_hex(starting_address);klog_print("\n");
-        //klog_print("LO: ");klog_print_hex(swap_pool[frame_i].sw_pte->pte_entryLO);klog_print("\n");
-        // 12. Update the TLB. The cached entry in the TLB for the Current Process’s page p is clearly out of date; it was just updated in the previous step.
-        // Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
-            update_TLB();
-            enable_interrupts(); //* end TLB atomically *
-        // 13. Release mutual exclusion over the Swap Pool table. (NSYS4 – V operation on the Swap Pool semaphore)
-            mutex_asid = -1;    //my asid is not longer holding mutex
-            SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
-            //klog_print(" done\n");
-        // 14. Return control to the Current Process to retry the instruction that
-        // caused the page fault: LDST on the saved exception state
-            LDST((state_t*)&current_support->sup_exceptState[PGFAULTEXCEPT]);
-    }
+		//6. Pick a frame, i, from the Swap Pool.
+		//  Which frame is selected is determined by the Pandos page replacement algorithm. [Section 4.5.4]
+		int frame_i = FIFO();
+		// --> for point 8.c and 9. 9 is outside the if.
+		memaddr starting_address = SWAPPOOLSTART + PAGESIZE * frame_i;  //this is for 8 & 9
+		devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
+		devreg_t* devAddrBase;
+
+		// 7. Determine if frame i is occupied; examine entry i in the Swap Pool table.
+		if (swap_pool[frame_i].sw_pte->pte_entryLO & VALIDON) // check the v bit is valid[1]
+		{
+			// v is valid
+
+			//8. If frame i is currently occupied, assume it is occupied by logical page
+			//  number k belonging to process x (ASID) and that it is “dirty” (i.e. been modified):
+			disable_interrupts();   // * start TLB atomically *
+
+			//      (a) Update process x’s Page Table: mark Page Table entry k as not valid.
+			//      This entry is easily accessible, since the Swap Pool table’s
+			//      entry i contains a pointer to this Page Table entry.
+			swap_pool[frame_i].sw_pte->pte_entryLO &= ~VALIDON;  // v is not valid now
+
+			//      (b) Update the TLB, if needed. The TLB is a cache of the most
+			//      recently executed process’s Page Table entries. If process x’s page
+			//      k’s Page Table entry is currently cached in the TLB it is clearly
+			//      out of date; it was just updated in the previous step.  [Section 4.5.2]                          
+			//   Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
+			update_TLB();
+			enable_interrupts();    // * end TLB atomically *
+			//      (c) Update process x’s backing store. Write the contents of frame i
+			//      to the correct location on process x’s backing store/flash device. [Section 4.5.1]
+			
+			//			SECTION 4.5.1		Reading and Writing from/to a Flash Device
+			//	   			(1.) write the flash device's DATA0 field with the appropriate starting physical address
+			//	      			of the 4k block to be read (or written);
+			//	      			the particularframe’s starting address
+			devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][ swap_pool[frame_i].sw_asid - 1 ];  //flash device line
+			devAddrBase->dtp.data0 = starting_address;
+			//	   			(2.) Use the NSYS5 [doio] system call to write the flash device’s COMMAND field 
+			//	      			with the device block number (high order three bytes) and the
+			//	      			command to read (or write) in the lower order byte
+			int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command,
+								FLASHWRITE | (swap_pool[frame_i].sw_pageNo << BLKSHIFT), 0);
+			//      Treat any error status from the write operation as a program trap.[Section 4.8]
+			if (return_doio != READY) {
+#ifdef VM_DEBUG
+				klog_print(" WRITE not ready!");
+#endif
+				support_program_trap();
+			}
+
+		}
+
+		// 9.Read the contents of the Current Process’s backing store/flash device
+		// logical page p into frame i. [Section 4.5.1]
+		// Treat any error status from the read operation as a program trap. [Section 4.8]
+		//		SECTION 4.5.1		Reading and Writing from/to a Flash Device
+		//			(1.) write the flash device's DATA0 field with the appropriate starting physical address
+		//				of the 4k block to be read (or written);
+		//				the particularframe’s starting address
+		devAddrBase = (devreg_t*) &devReg->devreg[ 1 ][current_support->sup_asid-1];  //flash device line
+		devAddrBase->dtp.data0 =(memaddr) starting_address;
+		//	   		(2.) Use the NSYS5 [doio] system call to write the flash device’s COMMAND field 
+		//	      		with the device block number (high order three bytes) and the
+		//	      		command to read (or write) in the lower order byte
+		int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command,
+								FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
+		if (return_doio != READY) {
+		//il prof nel p2test mette come controllo "if ((status & TERMSTATMASK) != RECVD)"
+#ifdef VM_DEBUG
+			klog_print(" READ not ready!");
+#endif
+			support_program_trap();
+		}
+
+		// 10. Update the Swap Pool table’s entry i [frame] to reflect frame i’s new contents:
+		// page p[=pteEntryP] belonging to the Current Process’s ASID, and a pointer to the
+		// Current Process’s Page Table entry for page p.
+		swap_pool[frame_i].sw_asid = current_support->sup_asid;
+		swap_pool[frame_i].sw_pageNo = pteEntryP;
+		swap_pool[frame_i].sw_pte = &current_support->sup_privatePgTbl[pteEntryP];
+
+		// 11. Update the Current Process’s Page Table entry for page p to indicate
+		// it is now present (V bit) and occupying frame i (PFN field).
+		disable_interrupts(); //* start TLB atomically *
+		current_support->sup_privatePgTbl[pteEntryP].pte_entryLO = (starting_address) | VALIDON | DIRTYON;
+
+		// 12. Update the TLB. The cached entry in the TLB for the Current Process’s page p
+		// is clearly out of date; it was just updated in the previous step.
+		// Important Point: This step and the previous step must be accomplished atomically. [Section 4.5.3]
+		update_TLB();
+		enable_interrupts(); //* end TLB atomically *
+
+		// 13. Release mutual exclusion over the Swap Pool table. (NSYS4 – V operation on the Swap Pool semaphore)
+		mutex_asid = -1;    //my asid is not longer holding mutex
+		SYSCALL(VERHOGEN, (int)&swap_pool_sem, 0, 0);
+
+		// 14. Return control to the Current Process to retry the instruction that
+		// caused the page fault: LDST on the saved exception state
+		LDST((state_t*)&current_support->sup_exceptState[PGFAULTEXCEPT]);
+	}
 }

@@ -13,7 +13,7 @@
 
 #include "syscall.h"
 
-//#define SYS_DEBUG //per debuggare le systemcall
+//#define NSYS_DEBUG //per debuggare le systemcall di livello kernel
 
 //richiami delle variabili globali di main.c
 extern struct list_head high_priority_q;
@@ -32,7 +32,7 @@ extern state_t* state_reg;
 void auxiliary_terminate(pcb_PTR current); //terminate
 
 void Blocking_Syscall(){
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 	klog_print("Blocksys..");
 #endif
 	//As described above [Section 3.5.12] the value of the PC must be incremented by 4 
@@ -73,7 +73,7 @@ void Blocking_Syscall(){
  */
 void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 	if(a0 == CREATEPROCESS) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Create_Process ...");
 #endif
 
@@ -107,7 +107,7 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 		} else
 			state_reg->reg_v0 = -1;	
 		
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Create_Process ERROR: a0 != CREATEPROCESS\n");
@@ -125,7 +125,7 @@ void Create_Process(int a0, unsigned int a1, unsigned int a2, unsigned int a3) {
 */
 void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
     if(a0 == TERMPROCESS) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Terminate_Process ...");
 #endif	
 		pcb_PTR trovato ;
@@ -154,7 +154,7 @@ void Terminate_Process(int a0, unsigned int a1) { //! DA CONTROLLARE
 			if(trovato != NULL) //se l'ho trovato
 				auxiliary_terminate(trovato);
 		}		
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 		current_process = NULL;
@@ -202,13 +202,13 @@ void SYSCALL(PASSEREN, int* semaddr, 0, 0)
 */
 void Passeren(int a0, unsigned int a1) {
 	if(a0 == PASSEREN) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Pass...");
 #endif
 
 		int *semaddr = (int *) a1;
 		P_operation(semaddr,0);
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!");
 #endif
 	} else klog_print("Passeren ERROR: a0 != PASSEREN\n");
@@ -261,14 +261,14 @@ pcb_PTR P_operation(int *semaddr, int isDevSem) {
 */
 void Verhogen(int a0, unsigned int a1) {
 	if(a0 == VERHOGEN) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Ver...");
 #endif
 
 	int *semaddr = (int *) a1;
 	V_operation(semaddr,0);
 	
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!");
 #endif
 	} else klog_print("Verhogen ERROR: a0 != VERHOGEN\n");
@@ -319,7 +319,7 @@ int SYSCALL(DOIO, int *cmdAddr, int cmdValue, 0)
 */
 void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	if(a0 == DOIO) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("IO...");
 #endif
 	unsigned int *cmdAddr = (unsigned int *) a1;
@@ -370,7 +370,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 	if(isRecv == 1) device_position = IntLineNo*8 + DevNo + 8;
     else device_position = IntLineNo*8 + DevNo;
 	P_operation(&device_sem[device_position],1);
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else
@@ -387,14 +387,14 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 */
 void Get_CPU_Time(int a0) {
 	if (a0 == GETTIME) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Get_CPU_Time ...");
 #endif
 
 	int time = STCK(time);
 	state_reg->reg_v0 = current_process->p_time + time;
 
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Get_CPU_Time ERROR: a0 != GETTIME\n");
@@ -410,12 +410,12 @@ int SYSCALL(CLOCKWAIT, 0, 0, 0)
 */
 void Wait_For_Clock(int a0) {
 	if (a0 == CLOCKWAIT) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Wait_For_Clock ...");
 #endif
 	P_operation(&device_sem[48],1);
 	
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Wait_For_Clock ERROR: a0 != CLOCKWAIT\n");
@@ -430,13 +430,13 @@ void Wait_For_Clock(int a0) {
 */
 void Get_Support_Data(int a0) {
 	if (a0 == GETSUPPORTPTR) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Get_Support_Data ...");
 #endif
 
 	state_reg->reg_v0 = (unsigned int) current_process->p_supportStruct; //! modificato per fix error con cast
 
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Get_Support_Data ERROR: a0 != GETSUPPORT\n");
@@ -452,7 +452,7 @@ int SYSCALL(GETPROCESSID, int parent, 0, 0)
 */
 void Get_Process_Id(int a0, unsigned int a1) {
 	if (a0 == GETPROCESSID) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Get_Process_Id ...");
 #endif
 
@@ -463,7 +463,7 @@ void Get_Process_Id(int a0, unsigned int a1) {
 		state_reg->reg_v0 = current_process->p_parent->p_pid;
 	
 	LDST(state_reg);
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Get_Process_Id ERROR: a0 != GETPROCESSID\n");
@@ -479,7 +479,7 @@ int SYSCALL(YIELD, 0, 0, 0)
 */
 void Yield(int a0) {
 	if (a0 == YIELD) {
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print("Yield ...\n");
 #endif
     
@@ -510,7 +510,7 @@ void Yield(int a0) {
 	setTIMER(5000);
 	LDST(state_reg);
 
-#ifdef SYS_DEBUG
+#ifdef NSYS_DEBUG
 		klog_print(" done!\n");
 #endif
 	} else klog_print("Yield ERROR: a0 != YIELD\n");

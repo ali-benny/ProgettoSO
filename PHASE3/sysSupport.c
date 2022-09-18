@@ -10,6 +10,8 @@
  */
 #include "sysSupport.h"
 
+//#define SUP_SYS_DEBUG //per debuggare le system call del livello di supporto
+
 support_t* support_exc; // current process support struct
 state_t* state_exc;
 extern int swap_pool_sem;
@@ -19,20 +21,44 @@ extern int sup_dev_sem[48];
 extern swap_t swap_pool[POOLSIZE];
 extern int master_sem; 
 
+//auxiliar function to determine if we are in Uproc_address_space
+int uproc_space(char* str) {
+	//It is an error to write to a ... device from an address
+	//outside of the requesting U-proc’s logical address space
+	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
+	return (memaddr)str >= UPROCSTARTADDR && ((memaddr)str) <= USERSTACKTOP;
+}
+
+//auxiliar function to determine "WHO IS IN MUTEX RIGHT NOW ON THE SUPPORT STRUCTURE?"
+void passeren_on_sem(int* semaphore, int asid) {
+	SYSCALL(PASSEREN, (memaddr)semaphore, 0, 0); // P(semaphore)
+	mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
+}
+void verhogen_on_sem(int* semaphore) {
+	mutex_asid = -1; //my asid is not longer holding mutex
+	SYSCALL(VERHOGEN, (memaddr)semaphore, 0, 0); // V(semaphore)
+}
+
+
 /** 
  * Support Syscall Exception Handler
  * 
  * 
  */
-void support_exception_handler(){
-	//klog_print("exc_h\n");
+void support_exception_handler() {
+#ifdef SUP_SYS_DEBUG
+	klog_print(" exc_h");
+#endif
 	//we need the support_struct of the current process, and we get it with NSYS8
 	support_exc = (support_t*)SYSCALL(GETSUPPORTPTR,0,0,0); // current process support struct by NSYS8
 	state_exc = &support_exc->sup_exceptState[GENERALEXCEPT];
 	int cause = CAUSE_GET_EXCCODE(support_exc->sup_exceptState[GENERALEXCEPT].cause);
 	unsigned int a0 = state_exc->reg_a0;
-	// klog_print("a0: ");klog_print_hex(a0);klog_print("\n");
-//	klog_print("cause: ");klog_print_hex(cause);klog_print("\n");
+
+#ifdef SUP_SYS_DEBUG
+	klog_print(" a0: ");klog_print_hex(a0);
+	klog_print(" cause: ");klog_print_hex(cause);
+#endif
 	if (cause == SYSEXCEPTION){
 		support_syscall_handler(a0);
 	}else{
@@ -47,12 +73,15 @@ void support_exception_handler(){
  *
  * @returns None
  */
-void support_syscall_handler(unsigned int cause){
-	//klog_print("sys_h\n");
+void support_syscall_handler(unsigned int cause) {
+#ifdef SUP_SYS_DEBUG
+	klog_print(" sys_h");
+#endif
 	unsigned int a0 = cause;
 	//state_exc inizializzato dal chiamante
 	unsigned int a1 = state_exc->reg_a1;
 	unsigned int a2 = state_exc->reg_a2;
+
 	switch(a0) {
 		case GET_TOD:
 			Get_TOD(a0);
@@ -86,13 +115,15 @@ void support_syscall_handler(unsigned int cause){
  * 
  * 
  */
-void support_program_trap(){
-	//klog_print("p_trap\n");
+void support_program_trap() {
+#ifdef SUP_SYS_DEBUG
+	klog_print(" p_trap");
+#endif
 	//processor state in the exception is in support_exc->sup_exceptState
 	if (support_exc->sup_asid == mutex_asid) {//if my asid is holding mutex
 		//siamo in mutua esclusione (quindi l'asid corrente è uguale al asid salvato in mutex_asid
-		mutex_asid = -1; //my asid is not longer holding mutex
-		SYSCALL(VERHOGEN, (memaddr)&swap_pool_sem, 0, 0);
+
+		verhogen_on_sem(&swap_pool_sem);
 	}
 	// terminate the process with SYS2
 	SYSCALL(TERMINATE, 0, 0, 0);
@@ -108,7 +139,10 @@ void support_program_trap(){
  * @return microsecondi di attesa dall'accensione
 */
 void Get_TOD(int a0){
-	klog_print("sys1");
+
+#ifdef SUP_SYS_DEBUG
+	klog_print(" get tod");
+#endif
 	int time;
 	STCK(time); /* Macro to read the TOD clock */
 	state_exc->reg_v0 = time;
@@ -123,9 +157,9 @@ void Get_TOD(int a0){
  * 
 */
 void Terminate(int a0){
-	//klog_print("sys2");
-	//a che serve la terminate della struttura di supporto se devo solo chiamare la terminate del kernel...?
- //   klog_print("asid: ");klog_print_hex(support_exc->sup_asid);klog_print("\n");
+#ifdef SUP_SYS_DEBUG
+	klog_print(" sup_terminate asid: ");klog_print_hex(support_exc->sup_asid);
+#endif
 	if(a0 == TERMINATE) {
 		for (int i = 0 ; i< POOLSIZE; i +=1){
         	if(swap_pool[i].sw_asid == support_exc->sup_asid)
@@ -150,20 +184,23 @@ void Terminate(int a0){
  * @return il numero di caratteri attualmente trasmessi
  */
 int write(memaddr command, int* semaphore, char* msg, int len) {
-	//klog_print("write-");
-	//It is an error to write to a ... device from an address outside of the requesting U-proc’s logical address space
-	//controlliamo che msg sia dentro kseg e lo sia per tutta la lunghezza della stringa.
-	//int is_in_Uproc_address_space = (msg >= UPROCSTARTADDR && (msg + len * Lunghezza_carattere) <= USERSTACKTOP);
-	int is_in_Uproc_address_space = ((memaddr)msg >= UPROCSTARTADDR && ((memaddr)msg) <= USERSTACKTOP);
-	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
+
+#ifdef SUP_SYS_DEBUG
+	klog_print("-write");
+#endif
 
 	char* s = msg;
 	int count = len;
 	int status;
 	int is_ready = 1; // "is all ok in doing next DOIO"
-	if (len > 0 && len <= 128 && (memaddr)s >= KUSEG) {
-		SYSCALL(PASSEREN, (memaddr)semaphore, 0, 0); // P(semaphore)
-		mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
+
+	//It is an error ... request a SYS3 with a length less than 0, or a length greater than 128.
+	//It is an error to write to a ... device from an address
+	//outside of the requesting U-proc’s logical address space
+	if (len > 0 && len <= 128 && uproc_space(msg)) {
+
+		passeren_on_sem(semaphore, support_exc->sup_asid);
+
 		// controllo se non ho avuto errore al DOIO precedente,
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
@@ -176,17 +213,19 @@ int write(memaddr command, int* semaphore, char* msg, int len) {
 			s++;
 			count--;
 		}
-		mutex_asid = -1; //my asid is not longer holding mutex
-		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
-	}else {klog_print("QUI");support_program_trap();}
+
+		verhogen_on_sem(semaphore);
+
+	}else {
+#ifdef SUP_SYS_DEBUG
+		klog_print(" WRITE parameter error, or out of user space memory!");
+#endif
+		support_program_trap();
+	}
 	if (status == OKCHARTRANS)
 		return len-count;	// num caratteri inviati
-	else{ 
-		if (status == 1) status = -1;
-		else if (status == 2) status = -2;
-		else if (status == 3) status = -3;
-		else if (status == 4) status = -4;
-		return status;}
+	else
+		return -status;
 	//nota (*) esempio xcvd "server scrivi 'ciao' lunghezza 100".
 }
 
@@ -206,15 +245,19 @@ int write(memaddr command, int* semaphore, char* msg, int len) {
  * 
  * @return numero di caratteri attualmente trasmessi e negative of the devices's status [in write]
 */
-void Write_Printer(int a0, unsigned int a1, unsigned int a2){
-	klog_print("sys3- ");
+void Write_Printer(int a0, unsigned int a1, unsigned int a2) {
+
+#ifdef SUP_SYS_DEBUG
+	klog_print(" write_printer");
+#endif
 	char* str = (char*) a1;
 	int len = (int) a2;
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid -1 ];
 	
-	state_exc->reg_v0 = write((memaddr)&devAddrBase->dtp.command, &sup_dev_sem[(PRNTINT-3)*8 + support_exc->sup_asid -1], str, len);
+	state_exc->reg_v0 = write((memaddr)&devAddrBase->dtp.command,
+					&sup_dev_sem[(PRNTINT-3)*8 + support_exc->sup_asid -1], str, len);
 }
 
 /**
@@ -234,13 +277,16 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2){
  * 
 */
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
-	klog_print("sys4- ");
+#ifdef SYS_SUP_DEBUG
+	klog_print(" write_terminal");
+#endif
 	char *str = (char*)a1;
 	int len = (int) a2;
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid - 1];
-	state_exc->reg_v0 = write((memaddr)&devAddrBase->term.transm_command, &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1 + 8], str, len);
+	state_exc->reg_v0 = write((memaddr)&devAddrBase->term.transm_command,
+					&sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1 + 8], str, len);
 }
 
 /**
@@ -259,23 +305,28 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
  * @return 
 */
 void Read_Terminal(int a0, unsigned int a1){
-	klog_print("sys5- ");
+
+#ifdef SUP_SYS_DEBUG
+	klog_print(" read_terminal");
+#endif
 	char *str = (char*)a1;
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid - 1];
 	
 	int* semaphore = &sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1];
-	
-	//int is_in_Uproc_address_space = ((memaddr)str >= UPROCSTARTADDR && ((memaddr)str) <= USERSTACKTOP);
 
 	char* s = str;
 	int count = 0;
 	int status;
 	int is_ready = 1; // "is all ok in doing next DOIO"
-	if (is_in_Uproc_address_space) {
-		SYSCALL(PASSEREN, (memaddr)semaphore, 0, 0); // P(semaphore)
-		mutex_asid = support_exc->sup_asid; //my asid is holding mutex using semaphores in support level
+
+	//It is an error to write to a ... device from an address
+	//outside of the requesting U-proc’s logical address space
+	if (uproc_space(str)) {
+
+		passeren_on_sem(semaphore, support_exc->sup_asid);
+
 		// controllo se non ho avuto errore al DOIO precedente,
 		// se ho ancora caratteri da stampare (len - count)
 		// e se non ho già raggiunto la fine della stringa (*)
@@ -288,18 +339,20 @@ void Read_Terminal(int a0, unsigned int a1){
 			s++;
 			count++;
 		}
-		mutex_asid = -1; //my asid is not longer holding mutex
-		SYSCALL(VERHOGEN, (int)semaphore, 0, 0); // V(semaphore)
-	}else {klog_print("QUO");support_program_trap();}
+		
+		verhogen_on_sem(semaphore);
+
+	} else {
+#ifdef SUP_SYS_DEBUG
+		klog_print(" READ TERMINAL error: attempt to read not in u-proc address space!");
+#endif
+		support_program_trap();
+	}
 	if (status == OKCHARTRANS)
 		state_exc->reg_v0 = count;
-	else{ 
-		if (status == 1) status = -1;
-		else if (status == 2) status = -2;
-		else if (status == 3) status = -3;
-		else if (status == 4) status = -4;
-		state_exc->reg_v0 = status;
-	}
+	else
+		state_exc->reg_v0 = -status;
+
 	/*pandosplus_phase3.pdf
 	paragrafo 4.7.5 Read From Terminal (SYS5)
 		int SYS5 (READ FROM TERMINAL, char *addr) When requested, this service causes

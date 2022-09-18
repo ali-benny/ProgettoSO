@@ -11,6 +11,8 @@
 
 #include "initProc.h"
 
+//#ifdef INIT_DEBUG per debuggare le funzioni di inizializzazione degli 8 processi
+
 /* global variables */
 extern int swap_pool_sem;      //swap pool semaphore
 extern swap_t swap_pool[POOLSIZE];
@@ -57,7 +59,10 @@ serve un semaforo dedicato.
  * 
  */
 void initialize_uproc() {
-    //klog_print("init_uproc\n");
+
+#ifdef INIT_DEBUG
+    klog_print(" init_uproc");
+#endif
     //stato
     static state_t uproc_state[UPROCMAX];
     //struttura di supporto
@@ -119,7 +124,9 @@ void initialize_uproc() {
     
     //Initialize and launch (NSYS1) between 1 and 8 U-procs.
     for (int i = 0; i < UPROCMAX; i++){
-    //klog_print("i: ");klog_print_hex(i+1);klog_print("\n");
+#ifdef INIT_DEBUG
+    	klog_print(" creating i: ");klog_print_hex(i+1);
+#endif
         SYSCALL(CREATEPROCESS, (memaddr) &uproc_state[i], PROCESS_PRIO_LOW, (memaddr) &uproc_support[i]);   //! prio cosa mettiano?
         //PROCESS_PRIO_LOW scelta a caso giusto per.
     }
@@ -149,7 +156,9 @@ void initSwapStructs(){
  * par 4.9 Process Initialization and test
  */
 void test(){
-    //klog_print("test\n");
+#ifdef INIT_DEBUG
+    klog_print(" test");
+#endif
     master_sem = 0;
     //Initialize the Level 4/Phase 3 data structures. These are:
     //– The Swap Pool table and Swap Pool semaphore
