@@ -183,7 +183,7 @@ void Terminate(int a0){
  *
  * @return il numero di caratteri attualmente trasmessi
  */
-int write(memaddr command, int* semaphore, char* msg, int len) {
+void write(memaddr command, int* semaphore, char* msg, int len) {
 
 #ifdef SUP_SYS_DEBUG
 	klog_print("-write");
@@ -215,17 +215,16 @@ int write(memaddr command, int* semaphore, char* msg, int len) {
 		}
 
 		verhogen_on_sem(semaphore);
-
+		if (status == OKCHARTRANS)
+			state_exc->reg_v0 = len-count;	// num caratteri inviati
+		else
+			state_exc->reg_v0 = -status;  //errore
 	}else {
 #ifdef SUP_SYS_DEBUG
 		klog_print(" WRITE parameter error, or out of user space memory!");
 #endif
 		support_program_trap();
 	}
-	if (status == OKCHARTRANS)
-		return len-count;	// num caratteri inviati
-	else
-		return -status;
 	//nota (*) esempio xcvd "server scrivi 'ciao' lunghezza 100".
 }
 
@@ -256,7 +255,7 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2) {
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[PRNTINT-3][support_exc->sup_asid -1 ];
 	
-	state_exc->reg_v0 = write((memaddr)&devAddrBase->dtp.command,
+	write((memaddr)&devAddrBase->dtp.command,
 					&sup_dev_sem[(PRNTINT-3)*8 + support_exc->sup_asid -1], str, len);
 }
 
@@ -285,7 +284,7 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 	// address of the device's device register
 	devregarea_t* devReg = (devregarea_t*) RAMBASEADDR; // device register
 	devreg_t* devAddrBase = (devreg_t*) &devReg->devreg[TERMINT-3][support_exc->sup_asid - 1];
-	state_exc->reg_v0 = write((memaddr)&devAddrBase->term.transm_command,
+	write((memaddr)&devAddrBase->term.transm_command,
 					&sup_dev_sem[(TERMINT-3)*8 + support_exc->sup_asid -1 + 8], str, len);
 }
 
@@ -341,6 +340,10 @@ void Read_Terminal(int a0, unsigned int a1){
 		}
 		
 		verhogen_on_sem(semaphore);
+		if (status == OKCHARTRANS)
+			state_exc->reg_v0 = count;
+		else
+			state_exc->reg_v0 = -status;
 
 	} else {
 #ifdef SUP_SYS_DEBUG
@@ -348,10 +351,7 @@ void Read_Terminal(int a0, unsigned int a1){
 #endif
 		support_program_trap();
 	}
-	if (status == OKCHARTRANS)
-		state_exc->reg_v0 = count;
-	else
-		state_exc->reg_v0 = -status;
+	
 
 	/*pandosplus_phase3.pdf
 	paragrafo 4.7.5 Read From Terminal (SYS5)
