@@ -11,7 +11,7 @@
 
 #include "initProc.h"
 
-//#ifdef INIT_DEBUG per debuggare le funzioni di inizializzazione degli 8 processi
+//#define INIT_DEBUG //per debuggare le funzioni di inizializzazione degli 8 processi
 
 /* global variables */
 extern int swap_pool_sem;      //swap pool semaphore

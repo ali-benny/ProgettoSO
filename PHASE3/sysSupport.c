@@ -99,12 +99,13 @@ void support_syscall_handler(unsigned int cause) {
 			Read_Terminal(a0, a1);
 			break;
 		default:
-			//passup_or_die(GENERALEXCEPT);
 			support_program_trap();
 	}
 	
-	state_exc->pc_epc += 4;
-	LDST(state_exc);
+	if(a0 != TERMINATE){
+		state_exc->pc_epc += 4;
+		LDST(state_exc);
+	}
 }
 
 /**
@@ -119,12 +120,6 @@ void support_program_trap() {
 #ifdef SUP_SYS_DEBUG
 	klog_print(" p_trap");
 #endif
-	//processor state in the exception is in support_exc->sup_exceptState
-	if (support_exc->sup_asid == mutex_asid) {//if my asid is holding mutex
-		//siamo in mutua esclusione (quindi l'asid corrente è uguale al asid salvato in mutex_asid
-
-		verhogen_on_sem(&swap_pool_sem);
-	}
 	// terminate the process with SYS2
 	SYSCALL(TERMINATE, 0, 0, 0);
 }
@@ -161,6 +156,16 @@ void Terminate(int a0){
 	klog_print(" sup_terminate asid: ");klog_print_hex(support_exc->sup_asid);
 #endif
 	if(a0 == TERMINATE) {
+		if (support_exc->sup_asid == mutex_asid) {//if my asid is holding mutex
+			//siamo in mutua esclusione (quindi l'asid corrente è uguale al asid salvato in mutex_asid
+
+			verhogen_on_sem(&swap_pool_sem);
+		}
+		
+		for(int i = 0; i < 6; i += 1){
+            if(sup_dev_sem[(i*8) + support_exc->sup_asid - 1] == 0)
+                SYSCALL (VERHOGEN,(memaddr) &sup_dev_sem[(i*8) + support_exc->sup_asid - 1], 0, 0);
+		}
 		for (int i = 0 ; i< POOLSIZE; i +=1){
         	if(swap_pool[i].sw_asid == support_exc->sup_asid)
           		swap_pool[i].sw_asid = NOPROC;
@@ -206,8 +211,8 @@ void write(memaddr command, int* semaphore, char* msg, int len) {
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && *s != EOS ) {
 			int value = PRINTCHR | (((int)*s) << 8);	//! forse non `e int btw
-			status = SYSCALL(DOIO, (int)command, (int)value, 0);
-			if ((status & 0xFF) != RECVD) {
+			status = SYSCALL(DOIO, (int)command, (int)value, 0) & 0xFF;
+			if ((status) != RECVD) {
 				is_ready = 0;
 			}
 			s++;
@@ -221,7 +226,7 @@ void write(memaddr command, int* semaphore, char* msg, int len) {
 			state_exc->reg_v0 = -status;  //errore
 	}else {
 #ifdef SUP_SYS_DEBUG
-		klog_print(" WRITE parameter error, or out of user space memory!");
+			klog_print(" WRITE parameter error, or out of user space memory!");
 #endif
 		support_program_trap();
 	}
@@ -247,7 +252,7 @@ void write(memaddr command, int* semaphore, char* msg, int len) {
 void Write_Printer(int a0, unsigned int a1, unsigned int a2) {
 
 #ifdef SUP_SYS_DEBUG
-	klog_print(" write_printer");
+	klog_print(" printer");
 #endif
 	char* str = (char*) a1;
 	int len = (int) a2;
@@ -276,8 +281,8 @@ void Write_Printer(int a0, unsigned int a1, unsigned int a2) {
  * 
 */
 void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
-#ifdef SYS_SUP_DEBUG
-	klog_print(" write_terminal");
+#ifdef SUP_SYS_DEBUG
+	klog_print(" terminal");
 #endif
 	char *str = (char*)a1;
 	int len = (int) a2;
@@ -306,7 +311,7 @@ void Write_Terminal(int a0, unsigned int a1, unsigned int a2){
 void Read_Terminal(int a0, unsigned int a1){
 
 #ifdef SUP_SYS_DEBUG
-	klog_print(" read_terminal");
+	klog_print(" read");
 #endif
 	char *str = (char*)a1;
 	// address of the device's device register
@@ -331,7 +336,7 @@ void Read_Terminal(int a0, unsigned int a1){
 		// e se non ho già raggiunto la fine della stringa (*)
 		while (is_ready && count > 0 && *s != EOS ) {
 			int value = 2 | (((int)*s) << 8);	//! 2 = RECVCHAR
-			status         = SYSCALL(DOIO, (int)&devAddrBase->term.recv_command, (int)value, 0);
+			status         = SYSCALL(DOIO, (int)&devAddrBase->term.recv_command, (int)value, 0) & 0xFF;
 			if (status != READY) {
 				is_ready = 0; //in this case i haven't to do nexts DOIO
 			}

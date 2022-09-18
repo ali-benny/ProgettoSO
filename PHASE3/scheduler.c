@@ -60,7 +60,7 @@ void auxiliar_scheduler(){
 		//if the Process Count > 0 and the Soft-block Count > 0
 	} else if (process_count>0 && soft_block_count>0) {
 		//enter a Wait State (vedi 7.2.2-pop)
-		setSTATUS(IECON| IMON); // ovvero:	setSTATUS(0b00010000000000001111111100000001);
+		setSTATUS(IECON| IMON); // ovvero:	setSTATUS(0b00000000000000001111111100000001);
 		WAIT();
 		//Deadlock for Pandos is defined as when
 		//the Process Count > 0 and the Soft-block Count is zero

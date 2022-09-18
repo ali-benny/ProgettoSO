@@ -336,6 +336,7 @@ void DO_IO(int a0, unsigned int a1, unsigned int a2) {
 		IntLineNo = 4; // per lettura e scrittura
         //terminali di scrittura
         if(&(devReg->devreg[IntLineNo][DevNo].term.transm_command) == (memaddr*) cmdAddr){ 
+        			//klog_print("reg: ");klog_print_hex(cmdAddr);klog_print("\n");
             devReg->devreg[IntLineNo][DevNo].term.transm_command = cmdValue;
             state_reg->reg_v0 = devReg->devreg[IntLineNo][DevNo].term.transm_status;
             found = 1;

@@ -20,7 +20,7 @@ extern pcb_PTR current_process;
 int swap_pool_sem;      //swap pool semaphore
 swap_t swap_pool[POOLSIZE]; //swap pool table 
 int mutex_asid;     //which asid is holding the mutual exclusion for support semaphores (this case swap_pool_sem)
-
+extern int sup_dev_sem[48];
 /**
  *  pandosplus_phase3.pdf pag 6,7
  * paragrafo 4.3 The TLB-Refill event handler
@@ -34,7 +34,7 @@ int mutex_asid;     //which asid is holding the mutual exclusion for support sem
  */
 void uTLB_RefillHandler() {
 #ifdef VM_DEBUG
-	klog_print("U"); klog_print_hex(current_process->p_supportStruct->sw_asid);
+	klog_print("U"); klog_print_hex(current_process->p_supportStruct->sup_asid);
 #endif
     //1. Determine the page number (denoted as p) of the missing TLB entry
     //  by inspecting EntryHi in the saved exception state located at the start
@@ -87,7 +87,7 @@ int FIFO() {
  */
 void disable_interrupts(){
     
-    setSTATUS(getSTATUS() & (~IMON));
+    setSTATUS(getSTATUS() & DISABLEINTS);
 }
 
 /** Enable TLB Atomically
@@ -95,7 +95,7 @@ void disable_interrupts(){
  */
 void enable_interrupts() {
     
-    setSTATUS(getSTATUS() | IMON); //esempio: 00FF0000 | 0000FF00 = 00FFFF00
+    setSTATUS(getSTATUS() | (~DISABLEINTS)); //esempio: 00FF0000 | 0000FF00 = 00FFFF00
 }
 
 //DA MODIFICARE: vedi 4.5.2
@@ -200,8 +200,10 @@ void pager(){
 			//	   			(2.) Use the NSYS5 [doio] system call to write the flash device’s COMMAND field 
 			//	      			with the device block number (high order three bytes) and the
 			//	      			command to read (or write) in the lower order byte
+			SYSCALL(PASSEREN, (memaddr)&sup_dev_sem[(FLASHINT-3)*8 + swap_pool[frame_i].sw_pageNo -1], 0, 0);
 			int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command,
 								FLASHWRITE | (swap_pool[frame_i].sw_pageNo << BLKSHIFT), 0);
+			SYSCALL(VERHOGEN, (memaddr)&sup_dev_sem[(FLASHINT-3)*8 + swap_pool[frame_i].sw_pageNo -1], 0, 0);
 			//      Treat any error status from the write operation as a program trap.[Section 4.8]
 			if (return_doio != READY) {
 #ifdef VM_DEBUG
@@ -224,8 +226,10 @@ void pager(){
 		//	   		(2.) Use the NSYS5 [doio] system call to write the flash device’s COMMAND field 
 		//	      		with the device block number (high order three bytes) and the
 		//	      		command to read (or write) in the lower order byte
+		SYSCALL(PASSEREN, (memaddr)&sup_dev_sem[(FLASHINT-3)*8 + current_support->sup_asid -1], 0, 0);
 		int return_doio = SYSCALL(DOIO, (memaddr)&devAddrBase->dtp.command,
 								FLASHREAD | (pteEntryP << BLKSHIFT)  , 0); 
+		SYSCALL(VERHOGEN, (memaddr)&sup_dev_sem[(FLASHINT-3)*8 + current_support->sup_asid -1], 0, 0);
 		if (return_doio != READY) {
 		//il prof nel p2test mette come controllo "if ((status & TERMSTATMASK) != RECVD)"
 #ifdef VM_DEBUG
